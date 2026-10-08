@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>KPI Khu vực 5.5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+/* Layout: header + chọn PGD → thanh mục (6 mục) → nội dung từng mục; tổng quan: kết luận → bảng KPI theo nhóm → heatmap PGD × KPI */
+:root{
+  --bg:#F3F5F4; --surface:#FFFFFF; --ink:#17221F; --muted:#5E6B67; --line:#DDE3E0; --soft:#EBEFED;
+  --accent:#0E6577; --accent-2:#7FB7C2; --cat2:#C9822B; --cat3:#7457C2; --cat4:#B4466F; --p1:#B4466F; --p2:#2E7FA8; --p3:#8A6A1F; --accent-soft:#D8ECEF;
+  --good:#2D7A4B; --good-soft:#DDEFE3; --warn:#A86A12; --warn-soft:#F7EBD3; --crit:#B83A2E; --crit-soft:#F6DEDA;
+  --font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1514; --surface:#172120; --ink:#E4EBE9; --muted:#97A5A1; --line:#2A3634; --soft:#1E2928;
+  --accent:#5DB4C4; --accent-2:#2F6B77; --cat2:#E7A957; --cat3:#A994F2; --cat4:#E48AAE; --p1:#E48AAE; --p2:#6FB8DD; --p3:#D9B45C; --accent-soft:#1D3A40;
+  --good:#5DBB83; --good-soft:#1C3527; --warn:#E0A94B; --warn-soft:#3A2E17; --crit:#EE7A6C; --crit-soft:#432420;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1514; --surface:#172120; --ink:#E4EBE9; --muted:#97A5A1; --line:#2A3634; --soft:#1E2928;
+  --accent:#5DB4C4; --accent-2:#2F6B77; --cat2:#E7A957; --cat3:#A994F2; --cat4:#E48AAE; --p1:#E48AAE; --p2:#6FB8DD; --p3:#D9B45C; --accent-soft:#1D3A40;
+  --good:#5DBB83; --good-soft:#1C3527; --warn:#E0A94B; --warn-soft:#3A2E17; --crit:#EE7A6C; --crit-soft:#432420;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;padding:0 16px}
+.wrap{max-width:1240px;margin:0 auto;padding-block:20px 48px;display:flex;flex-direction:column;gap:16px}
+.num{font-variant-numeric:tabular-nums}
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font-size:22px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:15px;font-weight:600}
+h3{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sub{color:var(--muted);font-size:13px}
+select,button{font:inherit;color:inherit}
+select{min-width:240px;max-width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-weight:500}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+label.sel{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding-top:4px}
+nav.tabs button{border:0;background:none;padding:10px 14px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav.tabs button:hover{color:var(--ink)}
+section.view{display:flex;flex-direction:column;gap:14px}
+section.view[hidden]{display:none}
+
+.verdict{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center}
+.verdict p{margin:0;font-size:15px;flex:1 1 380px;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;border:0}
+.chip.crit{background:var(--crit-soft);color:var(--crit)} .chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.good{background:var(--good-soft);color:var(--good)} .chip.na{background:var(--soft);color:var(--muted)}
+.chip.solid{background:var(--crit);color:var(--surface)}
+button.chip{cursor:pointer;background:var(--soft);color:var(--muted);padding:5px 11px}
+button.chip[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.tile .head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.tile .big{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.tile .meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.tile .meta b{color:var(--ink);font-weight:600;text-align:right}
+.barbox{position:relative;padding-bottom:15px}
+.bar{position:relative;height:8px;background:var(--soft);border-radius:4px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.bar .mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);opacity:.5}
+.barbox .cap{position:absolute;bottom:0;transform:translateX(-50%);font-size:10.5px;color:var(--muted);white-space:nowrap}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel .ph{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+svg{display:block;width:100%;height:auto}
+svg text{font-family:var(--font)}
+svg text:not([fill]){fill:var(--ink)}
+svg .t-muted, svg text.t-muted{fill:var(--muted)} svg .grid{stroke:var(--line)} svg .axis{stroke:var(--muted)}
+svg .row{cursor:pointer} svg .row:hover .hl{fill:var(--soft)} svg .sel .hl{fill:var(--accent-soft)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+/* KPI board */
+.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:12px}
+.kgroup{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;min-width:0}
+.kgroup h3{margin-bottom:6px}
+.krow{display:grid;grid-template-columns:minmax(120px,1.4fr) minmax(70px,.8fr) minmax(90px,1.2fr) 64px minmax(64px,.7fr);gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.krow:first-of-type{border-top:0}
+.krow .nm{font-weight:500;min-width:0}
+.krow .nm small{display:block;color:var(--muted);font-size:11px;font-weight:400}
+.krow .v{text-align:right;font-weight:600}
+.krow .v small{display:block;color:var(--muted);font-weight:400;font-size:11px}
+.krow .vs{text-align:right;font-size:12px;color:var(--muted)}
+.pill{display:inline-block;min-width:50px;text-align:center;padding:2px 7px;border-radius:6px;font-weight:600;font-size:12.5px}
+.pill.good{background:var(--good-soft);color:var(--good)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.crit{background:var(--crit-soft);color:var(--crit)} .pill.na{background:var(--soft);color:var(--muted)}
+.mini{position:relative;height:6px;background:var(--soft);border-radius:3px}
+.mini i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
+.mini b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.45}
+@media (max-width:560px){.krow{grid-template-columns:1fr auto 60px}.krow .mini,.krow .vs{display:none}}
+
+/* tables */
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+th,td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+thead th{position:sticky;top:0;background:var(--soft);font-weight:600;font-size:11.5px;color:var(--muted)}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+thead th:first-child{background:var(--soft);z-index:2}
+tbody tr.click{cursor:pointer} tbody tr.click:hover td{background:var(--soft)}
+tbody tr.sel td{background:var(--accent-soft)}
+tr.reg td{font-weight:700;background:var(--soft)}
+th.grp{text-align:center;color:var(--ink);border-left:1px solid var(--line)}
+td.gl,th.gl{border-left:1px solid var(--line)}
+.neg{color:var(--crit)} .pos{color:var(--good)}
+.typ{font-size:10.5px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-left:6px}
+/* heatmap */
+table.heat td.h{padding:6px 4px;text-align:center;font-weight:600;font-size:12px;min-width:52px}
+table.heat th.k{white-space:normal;min-width:52px;max-width:70px;text-align:center;line-height:1.2;vertical-align:bottom}
+td.h.good{background:var(--good-soft);color:var(--good)} td.h.warn{background:var(--warn-soft);color:var(--warn)}
+td.h.crit{background:var(--crit-soft);color:var(--crit)} td.h.na{color:var(--muted)}
+tr.sel td.h{outline:2px solid var(--accent);outline-offset:-2px}
+
+.actions{display:flex;flex-direction:column;gap:8px;max-height:430px;overflow-y:auto}
+.act{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;cursor:pointer}
+.act:hover{border-color:var(--accent)} .act.sel{border-color:var(--accent);background:var(--accent-soft)}
+.act .nm{font-weight:600} .act .why{grid-column:1/-1;font-size:12.5px;color:var(--muted)}
+.act .gap{font-weight:700;text-align:right}
+.foot{color:var(--muted);font-size:12px}
+.note{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:13px}
+
+html,body{margin:0}
+[hidden]{display:none!important}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.userbox{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
+.userbox .who{font-size:12.5px;color:var(--muted)}
+.btn{cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 12px;font:inherit;font-size:13px;font-weight:500}
+.btn:hover{border-color:var(--accent)} .btn:disabled{opacity:.55;cursor:wait}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.login{min-height:100vh;display:grid;place-items:center;padding:24px 16px;box-sizing:border-box}
+.login .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:32px 28px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
+.login h1{font-size:22px} .login .lock{font-size:12px;color:var(--muted);line-height:1.5}
+#loginMsg{min-height:20px;font-size:13px;color:var(--crit)}
+.todo{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.linkrow{display:flex;gap:8px} .linkrow input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;font-size:12.5px}
+.scorebar{display:inline-block;width:120px;height:8px;background:var(--soft);border-radius:4px;vertical-align:middle;position:relative;overflow:hidden}
+.scorebar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+td.l,th.l{text-align:left}
+.t-muted{color:var(--muted)}
+@media (max-width:700px){.hdr-right{align-items:stretch}.userbox{justify-content:flex-start}}
+</style>
+</head>
+<body>
+<div class="login" id="login" hidden>
+  <div class="card">
+    <div class="eyebrow">F88 · Miền Trung</div>
+    <h1>KPI Khu vực 5.5</h1>
+    <p class="sub">Đăng nhập bằng tài khoản Google đã được quản lý khu vực cấp quyền.</p>
+    <div id="gbtn"></div>
+    <div id="loginMsg"></div>
+    <p class="lock">Số liệu chỉ được tải sau khi đăng nhập và được lọc theo quyền: tài khoản PGD chỉ xem được PGD của mình. Phiên đăng nhập tự hết hạn sau 6 giờ hoặc khi đóng trình duyệt.</p>
+  </div>
+</div>
+<div id="app" hidden>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="eyebrow">Miền Trung · Trung Bộ</div>
+      <h1 id="title">Khu vực (5.5) Hồ Phi Tuấn</h1>
+      <div class="sub" id="asof"></div>
+    </div>
+    <div class="hdr-right">
+      <div class="userbox">
+        <span class="who" id="who"></span><span class="chip na" id="roleChip"></span>
+        <button type="button" class="btn" id="refreshBtn">Làm mới</button>
+        <button type="button" class="btn primary" id="snapBtn" hidden>Chốt tháng</button>
+        <button type="button" class="btn" id="logoutBtn">Đăng xuất</button>
+      </div>
+      <div class="sub" id="liveMsg"></div>
+      <label class="sel" for="pick">Đang xem<select id="pick"></select></label>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-v="tq">Tổng quan</button>
+    <button role="tab" data-v="hs">Hồ sơ PGD</button>
+    <button role="tab" data-v="xh">Xếp hạng</button>
+    <button role="tab" data-v="dn">Dư nợ &amp; Net</button>
+    <button role="tab" data-v="gn">Giải ngân &amp; khách hàng</button>
+    <button role="tab" data-v="kn">Kênh bán</button>
+    <button role="tab" data-v="pt">Chi tiết kênh</button>
+    <button role="tab" data-v="dt">Doanh thu &amp; bảo hiểm</button>
+    <button role="tab" data-v="mb">MBBank</button>
+    <button role="tab" data-v="kt">Kiểm tra dữ liệu</button>
+    <button role="tab" data-v="raw">Dữ liệu gốc</button>
+  </nav>
+
+  <!-- TỔNG QUAN -->
+  <section class="view" id="v-tq">
+    <div class="verdict"><p id="verdict"></p><div class="chips" id="vchips"></div></div>
+    <div class="board" id="board"></div>
+    <div class="panel">
+      <div class="ph"><h2 id="heatTitle">Bản đồ %HT theo PGD</h2><span class="sub">Bấm một dòng để xem PGD đó</span></div>
+      <div class="tablebox"><table class="heat" id="heat"></table></div>
+      <div class="foot">Xanh ≥ 100% · vàng 90–100% · đỏ &lt; 90%. Chỉ tiêu có MT là trần (rút gốc, %RFW, trễ hạn) dùng %HT theo công thức của báo cáo: càng cao càng tốt.</div>
+    </div>
+  </section>
+
+  <!-- HỒ SƠ PGD -->
+  <section class="view" id="v-hs" hidden>
+    <div class="verdict" id="hsHead"></div>
+    <div class="grid2">
+      <div class="panel"><div class="ph"><h2>Việc cần làm trước</h2><span class="sub">3 chỉ tiêu thấp nhất dưới 90% MT</span></div><ol class="todo" id="hsTodo"></ol></div>
+      <div class="panel"><div class="ph"><h2>Link riêng của PGD</h2><span class="sub">Mở là vào thẳng hồ sơ PGD này (vẫn phải đăng nhập)</span></div><div id="hsLink"></div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h2 id="hsTitle">Toàn bộ chỉ tiêu</h2><span class="sub">Xếp từ yếu đến mạnh · Xu hướng = %HT các tháng đã chốt</span></div>
+      <div class="tablebox"><table id="hsTbl"></table></div>
+    </div>
+  </section>
+
+  <!-- XẾP HẠNG -->
+  <section class="view" id="v-xh" hidden>
+    <div class="panel">
+      <div class="ph"><h2>Xếp hạng PGD</h2><span class="sub">Bấm một dòng để mở hồ sơ PGD</span></div>
+      <div class="tablebox"><table id="xhTbl"></table></div>
+      <div class="foot">Điểm = trung bình %HT có trọng số của 26 chỉ tiêu (Tăng Net ×3; Dư nợ DPD0, GN NET, Số KH mới, Doanh thu ×2; còn lại ×1). Mỗi chỉ tiêu tính tối đa 150% để một chỉ tiêu vượt quá nhiều không che các chỉ tiêu khác.</div>
+    </div>
+  </section>
+
+  <!-- DƯ NỢ -->
+  <section class="view" id="v-dn" hidden>
+    <div class="tiles" id="dnTiles"></div>
+    <div class="grid2">
+      <div class="panel">
+        <div class="ph"><h2 id="wfTitle">Cầu nối Net</h2><span class="sub">Net = GN tổng − RG − RFW + RB − GN-RFW</span></div>
+        <svg id="wf" viewBox="0 0 560 300" role="img" aria-label="Cầu nối Net"></svg>
+        <div class="legend"><span><i style="background:var(--good)"></i>Làm tăng</span><span><i style="background:var(--crit)"></i>Làm giảm</span><span><i style="background:var(--accent)"></i>Tăng Net</span></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><h2>Tăng Net so MT theo PGD</h2><span class="sub">Xếp theo mức hụt</span></div>
+        <svg id="byPoint" viewBox="0 0 560 360" role="img" aria-label="Tăng Net theo PGD"></svg>
+        <div class="legend"><span><i style="background:var(--ink);width:2px;height:12px"></i>MT của PGD</span><span>Số bên phải = hụt so MT</span></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <div class="ph"><h2>Ma trận rủi ro</h2><span class="sub">Cỡ chấm theo DPD0</span></div>
+        <svg id="mx" viewBox="0 0 560 360" role="img" aria-label="Ma trận rủi ro"></svg>
+        <div class="sub">Ngang: %RG tăng so T-1. Dọc: %RFW so với MT của PGD (1× = đúng MT).</div>
+      </div>
+      <div class="panel">
+        <div class="ph"><h2>Cần xử lý</h2><span class="sub" id="actSub"></span></div>
+        <div class="actions" id="actions"></div>
+      </div>
+    </div>
+    <div class="panel" data-chooser="dn"></div>
+  </section>
+
+  <!-- GIẢI NGÂN -->
+  <section class="view" id="v-gn" hidden>
+    <div class="tiles" id="gnTiles"></div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="panel">
+        <div class="ph"><h2>GN NET = KH mới + KH quay lại</h2><span class="sub">Số trong thanh = số tiền · bên phải: GN NET / MT · %HT</span></div>
+        <svg id="gnStack" viewBox="0 0 560 360" role="img" aria-label="Giải ngân NET theo PGD"></svg>
+        <div class="legend"><span><i style="background:var(--accent)"></i>GN KHM</span><span><i style="background:var(--cat2)"></i>GN NET KHQL</span><span><i style="background:var(--ink);width:2px;height:12px"></i>MT GN NET</span></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><h2 id="tuTitle">Topup theo kênh</h2><span class="sub">3 tháng gần nhất</span></div>
+        <svg id="topup" viewBox="0 0 1100 300" role="img" aria-label="Topup theo kênh"></svg>
+        <div class="legend"><span><i style="background:var(--line)"></i>T-2</span><span><i style="background:var(--muted)"></i>T-1</span><span><i style="background:var(--accent)"></i>Tháng T</span></div>
+      </div>
+    </div>
+    <div class="panel" data-chooser="gn"></div>
+    <div class="panel">
+      <div class="ph"><h2>Khách hàng &amp; hợp đồng theo PGD</h2></div>
+      <div class="tablebox"><table id="khTbl"></table></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h2>Giải ngân vay lại theo loại tài sản</h2><span class="sub">T-2 → T-1 → T</span></div>
+      <div class="tablebox"><table id="vlTbl"></table></div>
+    </div>
+  </section>
+
+  <!-- KÊNH BÁN -->
+  <section class="view" id="v-kn" hidden>
+    <div class="panel">
+      <div class="ph"><h2 id="fnTitle">Phễu chuyển đổi theo kênh</h2><span class="sub">Form → KHM → Giải ngân · thanh = %HT so MT, vạch = 100% · % KHM = tỷ trọng trong tổng 4 kênh</span></div>
+      <svg id="funnel" viewBox="0 0 1100 340" role="img" aria-label="Phễu chuyển đổi theo kênh"></svg>
+    </div>
+    <div class="panel">
+      <div class="ph"><h2>Theo PGD · từng kênh</h2><span class="sub">TH · MT · %HT · T-1 · vs T-1 · bấm chỉ tiêu để đổi, bấm dòng để xem PGD</span></div>
+      <div id="knMetric"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h2>KHM theo PGD và kênh</h2><span class="sub">Số trong thanh = số KHM · bên phải: tổng / MT · %HT</span></div>
+      <svg id="knKhm" viewBox="0 0 1100 400" role="img" aria-label="KHM theo PGD và kênh"></svg>
+      <div class="legend" id="knLeg1"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h2>Giải ngân theo PGD và kênh</h2><span class="sub">Số trong thanh = số tiền · bên phải: tổng · vs T-1</span></div>
+      <svg id="knGn" viewBox="0 0 1100 400" role="img" aria-label="Giải ngân theo PGD và kênh"></svg>
+      <div class="legend" id="knLeg2"></div>
+    </div>
+    <div class="panel" data-chooser="kn"></div>
+  </section>
+
+  <!-- PTĐT -->
+  <section class="view" id="v-pt" hidden>
+    <div class="panel">
+      <div class="ph"><h2 id="ptTitle">Phễu chương trình</h2><span class="sub">Đầu vào → tỷ lệ chuyển đổi → KHM · thanh = %HT so MT</span></div>
+      <div class="chips" id="ptPick"></div>
+      <svg id="ptFunnel" viewBox="0 0 1100 420" role="img" aria-label="Phễu chương trình PTĐT"></svg>
+    </div>
+    <div class="panel">
+      <div class="ph"><h2 id="ptMetricTitle">Theo PGD · từng chương trình</h2><span class="sub">TH · MT · %HT · T-1 · vs T-1 · bấm chỉ tiêu để đổi, bấm dòng để xem PGD</span></div>
+      <div id="ptMetric"></div>
+    </div>
+    <div class="panel" data-chooser="pt"></div>
+  </section>
+
+  <!-- DOANH THU -->
+  <section class="view" id="v-dt" hidden>
+    <div class="tiles" id="dtTiles"></div>
+    <div class="panel" data-chooser="dt"></div>
+    <div class="panel">
+      <div class="ph"><h2>Tỷ lệ tick bảo hiểm bán kèm</h2><span class="sub">T-1 → TH</span></div>
+      <div class="tablebox"><table id="tickTbl"></table></div>
+    </div>
+  </section>
+
+  <!-- MBBANK -->
+  <section class="view" id="v-mb" hidden>
+    <div class="tiles" id="mbTiles"></div>
+    <div class="panel" data-chooser="mb"></div>
+    <div class="panel">
+      <div class="ph"><h2>Tỷ lệ khách vay mở tài khoản MBBank</h2></div>
+      <div class="tablebox"><table id="mbTbl"></table></div>
+    </div>
+  </section>
+
+  <!-- KIỂM TRA DỮ LIỆU -->
+  <section class="view" id="v-kt" hidden>
+    <div class="panel">
+      <div class="ph"><h2>Kiểm tra dữ liệu</h2><span class="sub">Tự đối chiếu số giữa 3 file mỗi lần tải</span></div>
+      <div class="tablebox"><table id="ktTbl"></table></div>
+      <div class="foot">Lệch nhỏ (±2) do làm tròn được tính là khớp. "Cần xem" là chênh lệch có thể do định nghĩa khác nhau giữa các báo cáo, nên kiểm tra với bộ phận làm số.</div>
+    </div>
+  </section>
+
+  <!-- RAW -->
+  <section class="view" id="v-raw" hidden>
+    <div class="panel">
+      <div class="ph"><h2>Dữ liệu gốc từ Google Sheet</h2>
+        <label class="sel" for="rawPick">Bảng<select id="rawPick"></select></label></div>
+      <div class="tablebox"><table id="rawTbl"></table></div>
+      <div class="foot" id="rawFoot"></div>
+    </div>
+  </section>
+</div>
+
+
+</div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

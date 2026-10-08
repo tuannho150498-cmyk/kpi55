@@ -22,7 +22,7 @@ Số liệu chỉ đi qua Apps Script, sau khi kiểm tra email có trong danh s
 ## Bước 2 – Google OAuth Client ID
 1. https://console.cloud.google.com → tạo project `KPI55`.
 2. **APIs & Services → OAuth consent screen**: External, điền tên app + email → Lưu (không cần thêm scope).
-   Bấm **Publish app** để mọi Gmail đăng nhập được (quyền xem thật vẫn do sheet Users quyết định).
+   Ứng dụng đã được xuất bản (In production): mọi Gmail bấm đăng nhập được, nhưng chỉ ai có trong tab Users mới xem được số.
 3. **Credentials → Create credentials → OAuth client ID** → loại **Web application**
    - Authorized JavaScript origins: `https://<tên-github>.github.io`
 4. Copy Client ID (dạng `xxxx.apps.googleusercontent.com`).
@@ -53,6 +53,17 @@ Mở file **KPI55 – Quản trị**, tab **Users**, mỗi người một dòng:
 
 ## Bước 5 – Khóa 3 file Google Sheet nguồn
 Ở cả 3 file: **Chia sẻ → Quyền truy cập chung → Bị hạn chế**. Apps Script vẫn đọc được vì chạy bằng tài khoản của anh.
+
+## Cấp quyền cho người mới
+Chỉ cần thêm 1 dòng vào tab **Users** của file Quản trị (Email, Họ tên, Vai trò, Mã PGD, Kích hoạt = TRUE). Không cần thêm ở Google Cloud nữa.
+
+## Tính năng
+- **Báo cáo Zalo**: nút trên thanh trên cùng, sao chép đoạn tin nhắn 6 chỉ tiêu + PGD cần đẩy, dán thẳng vào Zalo.
+- **Còn thiếu**: thẻ chỉ tiêu và Hồ sơ PGD ghi rõ còn thiếu bao nhiêu để đạt MT (RFW ghi vượt trần).
+- **Ghi chú hành động**: Admin và Khu vực ghi việc cần làm cho từng PGD ở Hồ sơ PGD; trưởng PGD đăng nhập là thấy. Lưu ở tab GhiChu (tự tạo).
+- **Ai đã xem** (chỉ Admin): ai đã mở báo cáo hôm nay, lần mở gần nhất, hoạt động gần đây (đọc từ tab NhatKy).
+- **Tải nhanh**: máy chủ giữ số liệu 5 phút; nút Làm mới luôn lấy số mới nhất từ Google Sheet.
+- **Cài lên điện thoại**: mở trang bằng Chrome (Android) → ⋮ → Thêm vào màn hình chính; Safari (iPhone) → Chia sẻ → Thêm vào MH chính.
 
 ## Sử dụng
 - **Làm mới**: tải lại số mới nhất từ Google Sheet.

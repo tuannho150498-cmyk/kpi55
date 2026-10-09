@@ -705,20 +705,56 @@ function tile(k){ const d=KM[k], v=kv(k,ent()), s=st(v.ht,k,v.th), c=sc(s), g=ga
     '<div class="big num" data-n="'+(v.th??'')+'" data-u="'+d.u+'">'+fu(d.u,v.th)+'</div>'+(s[1]==='solid'?'<span class="pill crit" style="align-self:flex-start">NET ÂM</span>':'')+
     '<div class="metas">'+m.map(x=>'<div class="meta"><span>'+x[0]+'</span><b class="num '+(x[2]||'')+'">'+x[1]+'</b></div>').join('')+'</div></article>'; }
 function toast(t){ const el=$('toast'); if(!el) return; el.textContent=t; el.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>{ el.hidden=true; },2400); }
-function reportText(){ const e=ent(), L=[];
-  L.push('KPI '+(sel<0?'Khu vực '+REGION.replace(/^\(([\d.]+)\)\s*/,'$1 – '):short(e))+' · số liệu '+(META.asof||''));
-  MAIN.forEach(k=>{ const d=KM[k], v=kv(k,e), s2=st(v.ht,k,v.th), g=gapTxt(d,v);
-    L.push('▪ '+CODE[k]+': '+fu(d.u,v.th)+' / '+(d.low?'trần ':'MT ')+fu(d.u,v.mt)+' ('+(s2[1]==='solid'?'âm':pct0(v.ht))+')'+(g?' – '+g:'')); });
-  L.push('▪ MB: '+pct0(subScore(SUBMB,e))+' · BH: '+pct0(subScore(SUBBH,e)));
+function rptHead(kind){ const e=ent(); return kind+' '+(sel<0?'Khu vực '+REGION.replace(/^\(([\d.]+)\)\s*/,'$1 – '):short(e))+' · số liệu '+(META.asof||''); }
+function rptLine(lab,k,e){ const d=KM[k], v=kv(k,e), s2=st(v.ht,k,v.th), g=gapTxt(d,v);
+  if(v.th==null&&v.mt==null) return null;
+  return '▪ '+lab+': '+fu(d.u,v.th)+' / '+(d.low?'trần ':'MT ')+fu(d.u,v.mt)+' ('+(s2[1]==='solid'?'âm':pct0(v.ht))+')'+(g?' – '+g:''); }
+function reportText(){ const e=ent(), L=[rptHead('KPI')];
+  MAIN.forEach(k=>{ const l=rptLine(CODE[k],k,e); if(l) L.push(l); });
+  [['TLTH','tre'],['MB nạp rút','mbnr'],['MB mở TK','mbtk'],['BH độc lập','bhdl']].forEach(([lab,k])=>{ const l=rptLine(lab,k,e); if(l) L.push(l); });
+  L.push('▪ Điểm MB: '+pct0(subScore(SUBMB,e))+' · BH: '+pct0(subScore(SUBBH,e)));
   if(sel<0&&canRank()&&POINTS.length>3){ const rn=POINTS.map(n=>({n,v:kv('net',n)})).filter(o=>o.v.ht!=null).sort((a,b)=>b.v.ht-a.v.ht);
     L.push('Dẫn đầu NET: '+rn.slice(0,3).map(o=>short(o.n)).join(', '));
     L.push('Cần đẩy NET: '+rn.slice(-3).reverse().map(o=>short(o.n)).join(', ')); }
   else { const weak=MAIN.filter(k=>{ const v=kv(k,e); return v.ht!=null&&(v.ht<T.warn||(k==='net'&&v.th<0)); }); if(weak.length) L.push('Cần đẩy: '+weak.map(k=>CODE[k]).join(', ')); }
   return L.join('\n'); }
-async function copyReport(){ const t=reportText();
+/* số kèm (% đạt MT, so cùng kỳ T-1) cho tin nhắn kênh */
+const rPart=(v,u)=>{ if(v.th==null) return '–'; const x=[]; if(v.ht!=null) x.push(pct0(v.ht)); if(v.vs!=null) x.push(spct(v.vs));
+  return fu(u,v.th)+(v.mt!=null?'/'+fu(u,v.mt):'')+(x.length?' ('+x.join(', ')+')':''); };
+const rRate=v=>v.th==null?'–':pct1(v.th)+(v.mt!=null?' (MT '+pct1(v.mt)+')':'');
+const rAmt=v=>v.th==null?'–':fmt(v.th)+(v.vs!=null?' ('+spct(v.vs)+')':'');
+function reportKB(){ const e=ent(), L=[rptHead('KÊNH BÁN')], g=(i,s)=>kv('c'+i+s,e);
+  const S=s=>CH.reduce((o,c,i)=>{ const v=g(i,s); o.th+=v.th||0; o.mt+=v.mt||0; return o; },{th:0,mt:0}), F=S('form'), Kk=S('khm'), G=S('gn');
+  L.push('▪ Tổng 4 kênh: Form '+fmt(F.th)+'/'+fmt(F.mt)+(F.mt?' ('+pct0(F.th/F.mt)+')':'')+' · KHM '+fmt(Kk.th)+'/'+fmt(Kk.mt)+(Kk.mt?' ('+pct0(Kk.th/Kk.mt)+')':'')+
+    ' · F2S '+(F.th?pct1(Kk.th/F.th):'–')+(F.mt?' (MT '+pct1(Kk.mt/F.mt)+')':'')+' · GN '+fmt(G.th)+' tr');
+  CH.forEach(([,lab],i)=>{ L.push('▪ '+lab+': Form '+rPart(g(i,'form'),'cnt')+' · KHM '+rPart(g(i,'khm'),'cnt')+' · F2S '+rRate(g(i,'f2s'))+' · GN '+rAmt(g(i,'gn'))); });
+  if(sel<0&&canRank()&&POINTS.length>3){ const rk=POINTS.map(n=>{ const t=CH.reduce((o,c,i)=>{ const v=kv('c'+i+'khm',n); o.th+=v.th||0; o.mt+=v.mt||0; return o; },{th:0,mt:0}); return {n,h:t.mt?t.th/t.mt:null}; }).filter(o=>o.h!=null).sort((a,b)=>b.h-a.h);
+    if(rk.length){ L.push('Dẫn đầu KHM kênh: '+rk.slice(0,3).map(o=>short(o.n)+' '+pct0(o.h)).join(', ')); L.push('Cần đẩy KHM kênh: '+rk.slice(-3).reverse().map(o=>short(o.n)+' '+pct0(o.h)).join(', ')); } }
+  return L.join('\n'); }
+function reportCT(){ const e=ent(), L=[rptHead('CHI TIẾT KÊNH')];
+  CHD.forEach((c,ci)=>{ const rows=[]; c.progs.forEach(([g,lab,,inK,inL,cvK,pre],pi)=>{ const id='x'+ci+'_'+pi, fi=kv(id+'in',e), cv=kv(id+'cv',e), kh=kv(id+'khm',e), tk=pre?kv(id+'pre',e):null;
+      if(fi.th==null&&kh.th==null&&cv.th==null) return;
+      rows.push('▪ '+lab+': '+inL+' '+rPart(fi,'cnt')+' · '+cvK+' '+rRate(cv)+' · KHM '+rPart(kh,'cnt')+(tk&&tk.th!=null?' · Task '+fmt(tk.th):'')); });
+    if(rows.length){ L.push('◆ '+c.lab); L.push(...rows); } });
+  if(L.length===1) L.push('Chưa có số liệu chi tiết kênh.');
+  return L.join('\n'); }
+async function copyText(t){
   try{ await navigator.clipboard.writeText(t); toast('Đã sao chép'); }
   catch(err){ const a=document.createElement('textarea'); a.value=t; a.setAttribute('readonly',''); a.style.position='fixed'; a.style.opacity='0'; document.body.appendChild(a); a.select();
     let ok=false; try{ ok=document.execCommand('copy'); }catch(e2){} a.remove(); toast(ok?'Đã sao chép':'Không sao chép được, thử lại trên trình duyệt khác'); } }
+const COPYS={kpi:reportText, kb:reportKB, ct:reportCT, all:()=>[reportText(),reportKB(),reportCT()].join('\n\n')};
+function copyMenu(btn){ let m=$('copyMenu');
+  if(!m){ m=document.createElement('div'); m.id='copyMenu'; m.className='copymenu'; m.setAttribute('role','menu'); m.hidden=true;
+    m.innerHTML='<p class="cmh">Sao chép nhanh</p>'+[['kpi','KPI','6 KPI chính, TLTH, MB, BH độc lập'],['kb','Kênh bán','4 kênh: Form, KHM, F2S, giải ngân'],['ct','Chi tiết kênh','Từng chương trình HO, MKT, PTĐT'],['all','Tất cả','Gộp cả 3 vào một tin']]
+      .map(([k,l,s])=>'<button type="button" role="menuitem" data-k="'+k+'"><b>'+l+'</b><small>'+s+'</small></button>').join('');
+    document.body.appendChild(m);
+    m.addEventListener('click',e=>{ const b=e.target.closest('button[data-k]'); if(!b) return; m.hidden=true; if(booted) copyText(COPYS[b.dataset.k]()); });
+    document.addEventListener('click',e=>{ if(!m.hidden&&!m.contains(e.target)&&!e.target.closest('#copyBtn')) m.hidden=true; });
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape') m.hidden=true; }); }
+  if(!m.hidden){ m.hidden=true; return; }
+  const r=btn.getBoundingClientRect(); m.hidden=false; const w=m.offsetWidth;
+  m.style.top=(r.bottom+8)+'px'; m.style.left=Math.max(8,Math.min(window.innerWidth-w-8,r.right-w))+'px'; }
+function copyReport(){ copyMenu($('copyBtn')); }
 const fdt=t=>new Date(t).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 function renderNotes(){ const box=$('notesBox'); if(!box) return; const e=ent(), canW=USER&&USER.role!=='pgd';
   const list=NOTES.filter(n=>sel<0||n.pgd===e).sort((a,b)=>b.t-a.t).slice(0,30);

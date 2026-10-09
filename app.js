@@ -802,9 +802,16 @@ window.KPI={boot, start:startView, render:()=>render(), setUser, setHistory, sna
   async function openApp(){ $('login').hidden=true; $('app').hidden=false; await load(); }
   window.kpiApi=(a,x)=>api(a,x);
   window.kpiNeed=async v=>{ if(v==='nk'){ try{ KPI.setActivity(await api('activity')); }catch(e){ KPI.setActivity({error:e.message}); } KPI.render(); } };
-  async function load(fresh){ fresh=fresh===true; msg('Đang tải số liệu…'); $('refreshBtn').disabled=true; document.body.classList.add('busy'); if(first) $('skel').hidden=false;
-    try{ const j=await api('data',{fresh}); KPI.setUser(j.user); showUser(j.user); KPI.boot(j.sheets,j.meta);
-      if(first){ KPI.start(); first=false; } else KPI.render();
+  // Hiện ngay số liệu lần trước (lưu trong phiên), rồi tải số mới ở nền
+  const CK='kpi55-cache';
+  function showData(j){ KPI.setUser(j.user); showUser(j.user); KPI.boot(j.sheets,j.meta);
+    if(first){ KPI.start(); first=false; } else KPI.render(); }
+  async function load(fresh){ fresh=fresh===true; $('refreshBtn').disabled=true; document.body.classList.add('busy');
+    let cached=null; if(first){ try{ cached=JSON.parse(sessionStorage.getItem(CK)||'null'); }catch(e){} }
+    if(cached){ try{ showData(cached); msg('Số liệu lúc '+(cached.meta.fetched||'')+' · đang cập nhật…'); }catch(e){ cached=null; } }
+    if(!cached){ msg('Đang tải số liệu…'); if(first) $('skel').hidden=false; }
+    try{ const j=await api('data',{fresh}); showData(j);
+      try{ sessionStorage.setItem(CK,JSON.stringify(j)); }catch(e){}
       msg('Cập nhật lúc '+(j.meta.fetched||''));
       api('history').then(h=>{ KPI.setHistory(h.rows); KPI.render(); }).catch(()=>{});
       api('notes').then(n=>{ KPI.setNotes(n.rows); KPI.render(); }).catch(()=>{});
@@ -813,7 +820,7 @@ window.KPI={boot, start:startView, render:()=>render(), setUser, setHistory, sna
     finally{ $('refreshBtn').disabled=false; document.body.classList.remove('busy'); $('skel').hidden=true; } }
   function signOut(m){
     if(token) fetch(C.API_URL,{method:'POST',body:JSON.stringify({action:'logout',token})}).catch(()=>{});
-    token=null; try{ sessionStorage.removeItem('kpi55-token'); if(m) sessionStorage.setItem('kpi55-msg',m); }catch(e){}
+    token=null; try{ sessionStorage.removeItem('kpi55-token'); sessionStorage.removeItem('kpi55-cache'); if(m) sessionStorage.setItem('kpi55-msg',m); }catch(e){}
     try{ google.accounts.id.disableAutoSelect(); }catch(e){}
     location.replace(location.pathname+location.search); }          // tải lại trang để xóa sạch số liệu khỏi bộ nhớ
   $('refreshBtn').addEventListener('click',()=>load(true));

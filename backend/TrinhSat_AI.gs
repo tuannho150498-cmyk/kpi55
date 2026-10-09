@@ -5,16 +5,14 @@
  *      ANTHROPIC_API_KEY = sk-ant-...      (bắt buộc, lấy tại console.anthropic.com)
  *      AI_MODEL          = claude-haiku-5-5 (tùy chọn; đổi sang claude-sonnet-5-5 nếu muốn viết sâu hơn)
  *
- * 2) Trong hàm doPost của Code.gs, ở chỗ đang xử lý action 'botlog', thêm một nhánh y hệt cho 'ai':
- *      if (action === 'ai') return <hàm trả JSON đang dùng>(aiAnalyze_(user, body));
- *    (user = người dùng đã kiểm tra phiên; body = JSON trình duyệt gửi lên, có body.payload)
+ * 2) Trong hàm doPost của Code.gs (Mã.gs), thêm 1 dòng cạnh case 'botlog':
+ *      case 'ai':       out = aiAnalyze_(session_(req), req); break;
  *
  * 3) Triển khai → Quản lý triển khai → sửa → Phiên bản mới → Triển khai.
  *
  * Quyền: admin luôn dùng được. Người khác chỉ dùng được khi admin bật công tắc ở mục
  * "Ai được dùng Trinh sát" trên trang "Cơ hội & Cảnh báo" (danh sách tài khoản lấy từ tab Users
  * của file "KPI55 – Quản trị"; email được bật lưu ở thuộc tính TRINHSAT_EMAILS).
- * Lần đầu chạy, Google có thể hỏi cấp thêm quyền Drive (để tìm file Quản trị) → đồng ý.
  *
  * AI chỉ nhận danh sách tín hiệu + 6 KPI chính mà trang đã tính sẵn cho đúng phạm vi người đó được xem,
  * không đọc file Google Sheet gốc.
@@ -43,16 +41,10 @@ function trinhSatAllowed_(user) {
   return trinhSatEmails_().indexOf(String(user.email || '').toLowerCase()) >= 0;
 }
 
-// Tìm file "KPI55 – Quản trị" (tab Users). Có thể đặt sẵn ID vào thuộc tính TRINHSAT_ADMIN_ID để khỏi tìm.
+// Danh sách tài khoản trong tab Users của file Quản trị, kèm cờ đã bật Trinh sát hay chưa.
 function trinhSatUsers_() {
-  const props = PropertiesService.getScriptProperties();
-  let id = props.getProperty('TRINHSAT_ADMIN_ID');
-  if (!id) {
-    const it = DriveApp.getFilesByName('KPI55 – Quản trị');
-    if (!it.hasNext()) throw new Error('Không tìm thấy file "KPI55 – Quản trị". Đặt ID file vào thuộc tính TRINHSAT_ADMIN_ID.');
-    id = it.next().getId(); props.setProperty('TRINHSAT_ADMIN_ID', id);
-  }
-  const sh = SpreadsheetApp.openById(id).getSheetByName('Users');
+  const ss = adminSS_();                 // hàm sẵn có trong Mã.gs: mở file KPI55 – Quản trị
+  const sh = ss.getSheetByName('Users');
   if (!sh) throw new Error('File Quản trị chưa có tab Users.');
   const rows = sh.getDataRange().getValues(); if (rows.length < 2) return [];
   const key = function (s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd').toLowerCase().replace(/\s+/g, ''); };

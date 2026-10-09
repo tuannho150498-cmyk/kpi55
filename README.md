@@ -62,6 +62,7 @@ Chỉ cần thêm 1 dòng vào tab **Users** của file Quản trị (Email, H�
 - **Còn thiếu**: thẻ chỉ tiêu và Hồ sơ PGD ghi rõ còn thiếu bao nhiêu để đạt MT (RFW ghi vượt trần).
 - **Ghi chú hành động**: Admin và Khu vực ghi việc cần làm cho từng PGD ở Hồ sơ PGD; trưởng PGD đăng nhập là thấy. Lưu ở tab GhiChu (tự tạo).
 - **Ai đã xem** (chỉ Admin): ai đã mở báo cáo hôm nay, lần mở gần nhất, hoạt động gần đây (đọc từ tab NhatKy).
+- **Cơ hội & Cảnh báo** (menu Tổng hợp, **chỉ admin**; admin bật/tắt công tắc cho từng tài khoản trong tab Users ngay trên trang, mục *Ai được dùng Trinh sát*): bấm **Quét & phân tích** → bot lấy số mới nhất, quét KPI chính, KPI phụ, rủi ro (NET âm, %RFW, GN quá hạn, rút gốc), kênh bán và bán chéo, rồi xếp tín hiệu theo mức Khẩn / Cao / Theo dõi và Cơ hội. Bấm một tín hiệu để mở hồ sơ PGD đó. **Viết nhận xét** gọi AI tóm tắt (cần cài `backend/TrinhSat_AI.gs`); **Sao chép báo cáo** để dán vào nhóm. Phạm vi theo ô "Đang xem"; tài khoản PGD chỉ quét PGD mình.
 - **Tải nhanh**: máy chủ giữ số liệu 5 phút; nút Làm mới luôn lấy số mới nhất từ Google Sheet.
 - **Cài lên điện thoại**: mở trang bằng Chrome (Android) → ⋮ → Thêm vào màn hình chính; Safari (iPhone) → Chia sẻ → Thêm vào MH chính.
 
@@ -73,6 +74,15 @@ Chỉ cần thêm 1 dòng vào tab **Users** của file Quản trị (Email, H�
 
 ## Khi sửa Code.gs
 Luôn **Triển khai → Quản lý triển khai → Phiên bản mới**, nếu không web vẫn chạy code cũ.
+
+## Nhận xét AI (Trinh sát)
+1. Dán `backend/TrinhSat_AI.gs` vào dự án Apps Script (tệp mới).
+2. **Cài đặt dự án → Thuộc tính tập lệnh**: thêm `ANTHROPIC_API_KEY` (bắt buộc), `AI_MODEL` (tùy chọn, mặc định `claude-haiku-5-5`).
+3. Trong `doPost` của Code.gs, cạnh nhánh `botlog`, thêm nhánh `ai` gọi `aiAnalyze_(user, body)`.
+4. Triển khai **Phiên bản mới**. Lần đầu bấm mục cấp quyền, nếu báo thiếu quyền: trong Apps Script chạy thử hàm `trinhSatUsers_` một lần để cấp quyền Drive.
+- Quyền: admin luôn dùng được; email được cấp lưu ở thuộc tính `TRINHSAT_EMAILS` (máy chủ tự kiểm tra, người chưa được cấp không thấy trang và không gọi được AI).
+- Giới hạn 30 lượt/người/ngày; cùng bộ số liệu thì dùng lại nhận xét cũ trong 6 giờ.
+- AI chỉ nhận các tín hiệu đã tính sẵn, không đọc file Sheet gốc.
 
 ## Lỗi thường gặp
 | Thông báo | Cách xử lý |

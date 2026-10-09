@@ -540,19 +540,175 @@ body.botopen .botfab{display:none}
 .copymenu button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;font:inherit;border:0;background:none;border-radius:10px;padding:9px 10px;cursor:pointer;color:var(--ink)}
 .copymenu button:hover,.copymenu button:focus-visible{background:var(--soft)}
 .copymenu button b{font-size:14px}.copymenu button small{font-size:12px;color:var(--muted)}
+/* v9 Trinh sát */
+.rdbtns,.rdsum{display:flex;gap:8px;flex-wrap:wrap}
+.rdlist{display:flex;flex-direction:column;gap:8px}
+.rdrow{appearance:none;font:inherit;color:var(--ink);text-align:left;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;padding:11px 12px 11px 14px;border-radius:12px;background:rgba(255,255,255,.7);border:1px solid rgba(226,231,239,.8);border-left:4px solid var(--line);transition:transform .15s,box-shadow .15s}
+.rdrow:hover{transform:translateX(3px);box-shadow:var(--sh1)}
+.rdrow.w3{border-left-color:var(--crit)} .rdrow.w2{border-left-color:var(--warn)} .rdrow.o2,.rdrow.o1{border-left-color:var(--good)}
+.rdm{display:flex;flex-direction:column;gap:3px;min-width:0}
+.rdm span{font-size:13px} .rdm em{font-style:normal;font-size:12.5px;color:var(--navy2);font-weight:500}
+.rdmore{align-self:flex-start;margin-top:2px}
+.rdai{font-size:14px;line-height:1.6} .rdai h4{margin:12px 0 4px;font-size:13.5px} .rdai p{margin:0 0 6px} .rdai ul{margin:0 0 8px;padding-left:20px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rdrow{background:var(--surface);border-top-color:var(--line);border-right-color:var(--line);border-bottom-color:var(--line)}}
+.rdperm{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rdperm li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px;min-width:0}
+.rdperm li span{overflow:hidden;text-overflow:ellipsis}
+.rdpbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.rdpbar input{flex:0 1 220px;min-width:0;padding:8px 12px;border:1px solid var(--line);border-radius:12px;font:inherit;font-size:14px;background:var(--surface);color:var(--ink)}
+.rdpu{display:flex;flex-direction:column;gap:2px;min-width:0} .rdpu small{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.sw{flex:none;position:relative;width:46px;height:28px;border-radius:999px;border:0;padding:0;cursor:pointer;background:var(--line);transition:background .18s}
+.sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s}
+.sw[aria-checked="true"]{background:var(--good)} .sw[aria-checked="true"] i{transform:translateX(18px)} .sw:disabled{opacity:.6;cursor:wait}
+.sw:focus-visible{outline:2px solid var(--navy2);outline-offset:2px}
+:root[data-theme="dark"] .rdrow{background:var(--surface);border-top-color:var(--line);border-right-color:var(--line);border-bottom-color:var(--line)}
+/* ===== Màn đăng nhập: không gian 3D có chuyển động ===== */
+.login.lg{--px:0;--py:0;position:fixed;inset:0;z-index:50;overflow:hidden;display:block;padding:0;color:#EAF2F7;
+  background:radial-gradient(120% 80% at 50% 0%,#16365A 0%,#0B1B30 45%,#050C17 100%);font-family:var(--font);color-scheme:dark}
+.login.lg[hidden]{display:none}
+.lg-fx{position:absolute;inset:0;width:100%;height:100%}
+.lg-aurora i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;mix-blend-mode:screen;animation:lgDrift 18s ease-in-out infinite alternate}
+.lg-aurora i:nth-child(1){width:60vmax;height:60vmax;left:-20vmax;top:-25vmax;background:radial-gradient(circle,#1D9BB0 0%,transparent 65%)}
+.lg-aurora i:nth-child(2){width:50vmax;height:50vmax;right:-22vmax;top:10vh;background:radial-gradient(circle,#B8925A 0%,transparent 65%);animation-duration:22s;opacity:.35}
+.lg-aurora i:nth-child(3){width:55vmax;height:55vmax;left:15vw;bottom:-35vmax;background:radial-gradient(circle,#3D5BD9 0%,transparent 65%);animation-duration:26s;opacity:.4}
+@keyframes lgDrift{to{transform:translate3d(6vmax,4vmax,0) scale(1.15)}}
+.lg-floor{position:absolute;left:-50%;right:-50%;bottom:0;height:46vh;perspective:340px;perspective-origin:50% 0;pointer-events:none;
+  -webkit-mask-image:linear-gradient(to top,#000 10%,transparent 95%);mask-image:linear-gradient(to top,#000 10%,transparent 95%)}
+.lg-floor div{position:absolute;inset:0;transform-origin:50% 0;transform:rotateX(72deg) translateX(calc(var(--px) * -40px));
+  background-image:linear-gradient(rgba(125,220,235,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(125,220,235,.35) 1px,transparent 1px);
+  background-size:64px 64px;animation:lgRun 3.2s linear infinite}
+@keyframes lgRun{to{background-position:0 64px}}
+.lg-stage{position:relative;height:100%;overflow-y:auto;display:grid;place-items:center;padding:28px 16px;perspective:1100px}
+.lg-card{position:relative;width:100%;max-width:420px;padding:22px 26px 26px;border-radius:28px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;
+  background:linear-gradient(160deg,rgba(38,72,110,.78),rgba(10,22,40,.86));border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 40px 80px -30px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.25);
+  transform:rotateX(calc(var(--py) * -6deg)) rotateY(calc(var(--px) * 8deg));animation:lgIn .9s cubic-bezier(.2,.8,.2,1) backwards}
+.lg-card::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;pointer-events:none;
+  background:conic-gradient(from var(--lga,0deg),transparent 0 60%,#7DDCEB 75%,#E9D3AE 85%,transparent 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:lgSpin 6s linear infinite}
+@property --lga{syntax:'<angle>';inherits:false;initial-value:0deg}
+@keyframes lgSpin{to{--lga:360deg}}
+@keyframes lgIn{from{opacity:0;transform:translateY(40px) rotateX(18deg) scale(.94)}}
+.lg-hero{position:relative;width:100%;height:150px;display:grid;place-items:center;transform-style:preserve-3d;}
+.lg-orbit{position:absolute;inset:0;display:grid;place-items:center;perspective:700px}
+.lg-ring{position:relative;width:0;height:0;transform-style:preserve-3d;animation:lgOrbit 24s linear infinite}
+@keyframes lgOrbit{from{transform:rotateX(-16deg) rotateY(0)}to{transform:rotateX(-16deg) rotateY(360deg)}}
+.lg-ring span{position:absolute;left:0;top:0;translate:-50% -50%;white-space:nowrap;padding:5px 11px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.04em;
+  color:#E9F7FA;background:linear-gradient(135deg,rgba(29,155,176,.55),rgba(61,91,217,.35));border:1px solid rgba(125,220,235,.45);
+  box-shadow:0 0 18px -4px rgba(125,220,235,.7);--r:clamp(118px,30vw,150px);transform:rotateY(calc(var(--i) * 60deg)) translateZ(var(--r)) rotateY(calc(var(--i) * -60deg)) rotateX(16deg);animation:lgFace 24s linear infinite}
+@keyframes lgFace{from{transform:rotateY(calc(var(--i) * 60deg)) translateZ(var(--r)) rotateY(calc(var(--i) * -60deg)) rotateX(16deg)}to{transform:rotateY(calc(var(--i) * 60deg)) translateZ(var(--r)) rotateY(calc(var(--i) * -60deg - 360deg)) rotateX(16deg)}}
+.lg-ring span::after{content:" ▲";color:#7FE3A6;font-size:9px}
+.lg-cube{width:64px;height:64px;perspective:500px;filter:drop-shadow(0 18px 24px rgba(0,0,0,.5))}
+.lg-cubei{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:lgCube 9s cubic-bezier(.6,0,.4,1) infinite}
+@keyframes lgCube{0%,18%{transform:rotateX(-18deg) rotateY(25deg)}25%,43%{transform:rotateX(-18deg) rotateY(115deg)}50%,68%{transform:rotateX(-18deg) rotateY(205deg)}75%,93%{transform:rotateX(-18deg) rotateY(295deg)}100%{transform:rotateX(-18deg) rotateY(385deg)}}
+.lg-cubei b{position:absolute;inset:0;display:grid;place-items:center;border-radius:14px;font-size:19px;font-weight:700;letter-spacing:-.02em;color:#F3E2C4;
+  background:linear-gradient(140deg,#2A4D7E,#13243D 75%);border:1px solid rgba(233,211,174,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.lg-cubei .f1{transform:translateZ(32px)} .lg-cubei .f2{transform:rotateY(90deg) translateZ(32px);color:#7DDCEB} .lg-cubei .f3{transform:rotateY(180deg) translateZ(32px)}
+.lg-cubei .f4{transform:rotateY(-90deg) translateZ(32px);color:#7DDCEB} .lg-cubei .f5{transform:rotateX(90deg) translateZ(32px)} .lg-cubei .f6{transform:rotateX(-90deg) translateZ(32px)}
+.lg-eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#E9D3AE;}
+.lg-title{font-size:30px;font-weight:700;letter-spacing:-.03em;margin:0;color:#fff;text-shadow:0 8px 30px rgba(29,155,176,.45)}
+.lg-title span{background:linear-gradient(90deg,#7DDCEB,#E9D3AE,#7DDCEB);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:lgShine 4s linear infinite}
+@keyframes lgShine{to{background-position:200% 0}}
+.lg-greet{margin:0;font-size:14px;color:#B9CADB;}
+.lg-quote{width:100%;min-height:86px;padding:14px 16px 12px;border-radius:18px;background:rgba(5,12,23,.35);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.lg-quote p{margin:0;font-size:15.5px;line-height:1.5;font-weight:500;color:#F5F9FC}
+.lg-quote p.in{animation:lgQ .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes lgQ{from{opacity:0;filter:blur(8px);transform:translateY(10px)}}
+.lg-dots{display:flex;justify-content:center;gap:6px} .lg-dots i{width:6px;height:6px;border-radius:99px;background:rgba(255,255,255,.25);cursor:pointer;transition:width .3s,background .3s}
+.lg-dots i.on{width:20px;background:#7DDCEB}
+.lg-month{width:100%;display:flex;flex-direction:column;gap:6px;}
+.lg-mtop{display:flex;justify-content:space-between;font-size:12px;color:#9FB2C6} .lg-mtop b{color:#E9D3AE;font-weight:600}
+.lg-mbar{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.lg-mbar i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#1D9BB0,#7DDCEB,#E9D3AE);box-shadow:0 0 12px rgba(125,220,235,.8);transition:width 1.6s cubic-bezier(.2,.8,.2,1)}
+.lg-btn{position:relative;margin-top:4px;min-height:44px;display:grid;place-items:center}
+.lg-btn::before{content:"";position:absolute;inset:-8px -14px;border-radius:999px;background:radial-gradient(closest-side,rgba(125,220,235,.45),transparent);animation:lgPulse 2.4s ease-in-out infinite;pointer-events:none}
+@keyframes lgPulse{50%{opacity:.35;transform:scale(1.08)}}
+.login.lg #loginMsg{min-height:18px;font-size:13px;color:#FF9C8F}
+.login.lg .lock{margin:2px 0 0;font-size:11.5px;line-height:1.55;color:#8DA0B5}
+@media (max-width:420px){.lg-card{padding:16px 18px 22px;border-radius:24px}.lg-title{font-size:26px}.lg-hero{height:132px}.lg-quote p{font-size:15px}}
+@media (prefers-reduced-motion:reduce){.login.lg *,.login.lg *::before{animation:none!important;transition:none!important}.lg-card{transform:none}}
 </style>
 </head>
 <body>
-<div class="login" id="login" hidden>
-  <div class="card">
-    <div class="eyebrow">F88 · Miền Trung</div>
-    <h1>KPI Khu vực 5.5</h1>
-    <p class="sub">Đăng nhập bằng tài khoản Google đã được quản lý khu vực cấp quyền.</p>
-    <div id="gbtn"></div>
-    <div id="loginMsg"></div>
-    <p class="lock">Số liệu chỉ được tải sau khi đăng nhập và được lọc theo quyền: tài khoản PGD chỉ xem được PGD của mình. Phiên đăng nhập tự hết hạn sau 6 giờ hoặc khi đóng trình duyệt.</p>
+<div class="login lg" id="login" hidden>
+  <canvas class="lg-fx" id="lgFx" aria-hidden="true"></canvas>
+  <div class="lg-aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="lg-floor" aria-hidden="true"><div></div></div>
+  <div class="lg-stage">
+    <div class="lg-card" id="lgCard">
+      <div class="lg-hero" aria-hidden="true">
+        <div class="lg-orbit"><div class="lg-ring">
+          <span style="--i:0">DPD0</span><span style="--i:1">NET</span><span style="--i:2">GN NET</span><span style="--i:3">KHM</span><span style="--i:4">TLT</span><span style="--i:5">RFW</span>
+        </div></div>
+        <div class="lg-cube"><div class="lg-cubei">
+          <b class="f1">5.5</b><b class="f2">F88</b><b class="f3">KPI</b><b class="f4">5.5</b><b class="f5"></b><b class="f6"></b>
+        </div></div>
+      </div>
+      <div class="lg-eyebrow">F88 · Miền Trung</div>
+      <h1 class="lg-title">KPI Khu vực <span>5.5</span></h1>
+      <p class="lg-greet" id="lgGreet">Chào anh chị 👋</p>
+      <div class="lg-quote" aria-live="polite"><p id="lgQuote"></p><div class="lg-dots" id="lgDots"></div></div>
+      <div class="lg-month"><div class="lg-mtop"><span id="lgMonthLab">Tháng này</span><b id="lgMonthLeft"></b></div><div class="lg-mbar"><i id="lgMonthBar"></i></div></div>
+      <div class="lg-btn"><div id="gbtn"></div></div>
+      <div id="loginMsg"></div>
+      <p class="lock">🔒 Chỉ tài khoản đã được cấp quyền mới xem được số. Tài khoản PGD chỉ thấy PGD của mình. Phiên tự hết hạn sau 6 giờ hoặc khi đóng trình duyệt.</p>
+    </div>
   </div>
 </div>
+<script>
+/* Màn đăng nhập: hiệu ứng chiều sâu + câu động lực (không phụ thuộc app.js) */
+(function(){
+  const L=document.getElementById('login'); if(!L) return;
+  const RM=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* --- ngày, lời chào, tiến độ tháng --- */
+  const now=new Date(), h=now.getHours(), d=now.getDate(), N=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(), left=N-d;
+  const greet=h<11?'Chào buổi sáng ☀️':h<13?'Chào buổi trưa 🌤️':h<18?'Chào buổi chiều 🌇':'Chào buổi tối 🌙';
+  const dow=['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'][now.getDay()];
+  document.getElementById('lgGreet').textContent=greet+' · '+dow+', '+d+'/'+(now.getMonth()+1);
+  document.getElementById('lgMonthLab').textContent='Tháng '+(now.getMonth()+1)+' · ngày '+d+'/'+N;
+  document.getElementById('lgMonthLeft').textContent=left?'còn '+left+' ngày về đích':'Ngày chốt số 🏁';
+  setTimeout(()=>{ document.getElementById('lgMonthBar').style.width=Math.round(d/N*100)+'%'; },400);
+  /* --- câu động lực theo thời điểm --- */
+  const Q={
+    sang:['Sáng nay, mỗi cuộc gọi là một khách hàng mới đang chờ mình.','Ngày mới, số mới. Mở báo cáo, chọn một việc và làm thật tốt.','Đi sớm một bước, cả ngày nhẹ nhàng hơn.'],
+    chieu:['Nửa ngày còn lại vẫn đủ để lật ngược chỉ tiêu.','Một hồ sơ chốt chiều nay giá trị hơn cả kế hoạch đẹp trên giấy.','Uống ngụm nước, xem số, rồi tăng tốc nào!'],
+    toi:['Nhìn lại hôm nay để ngày mai bước chắc hơn.','Cảm ơn vì một ngày đã cố gắng. Số liệu ghi nhận, khách hàng nhớ.','Nghỉ ngơi thật tốt, mai mình bứt phá tiếp.'],
+    dau:['Tháng mới, bảng trắng mới. Khởi đầu nhanh là nhẹ cả tháng.','Tuần đầu chạy chắc, tuần cuối không phải chạy đuổi.'],
+    cuoi:['Còn '+left+' ngày, mỗi hồ sơ bây giờ đều quý gấp đôi.','Về đích là chuyện của cả đội. Mở số xem PGD nào cần tiếp sức.','Nước rút rồi! Chỉ tiêu nào còn thiếu, mình xử lý ngay hôm nay.'],
+    chung:['Số liệu luôn chỉ đường cho người chịu nhìn vào nó.','Kỷ luật nhỏ mỗi ngày làm nên KPI lớn cuối tháng.','Mỗi PGD là một mắt xích: mạnh cùng nhau, đạt cùng nhau.','Hôm nay tốt hơn hôm qua một chút là đã thắng.','Không cần thắng mọi ngày, chỉ cần không bỏ lỡ ngày nào.','Khách hàng hài lòng hôm nay là khách quay lại tháng sau.']};
+  const pool=[].concat(h<12?Q.sang:h<18?Q.chieu:Q.toi, left<=5?Q.cuoi:d<=5?Q.dau:[], Q.chung);
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  if(left<=5) pool.unshift(Q.cuoi[0]);
+  const qEl=document.getElementById('lgQuote'), dots=document.getElementById('lgDots'), SHOW=Math.min(pool.length,5); let qi=0;
+  dots.innerHTML=Array.from({length:SHOW},()=>'<i></i>').join('');
+  function setQ(i){ qi=i%SHOW; qEl.classList.remove('in'); void qEl.offsetWidth; qEl.textContent='“'+pool[qi]+'”'; qEl.classList.add('in');
+    [...dots.children].forEach((x,k)=>x.classList.toggle('on',k===qi)); }
+  setQ(0); if(!RM) setInterval(()=>{ if(!L.hidden&&!document.hidden) setQ(qi+1); },5200);
+  dots.addEventListener('click',e=>{ const k=[...dots.children].indexOf(e.target); if(k>=0) setQ(k); });
+  if(RM) return;
+  /* --- nghiêng 3D theo ngón tay / chuột / con quay --- */
+  let tx=0,ty=0,cx=0,cy=0;
+  window.addEventListener('pointermove',e=>{ tx=e.clientX/innerWidth*2-1; ty=e.clientY/innerHeight*2-1; },{passive:true});
+  if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission!=='function')
+    window.addEventListener('deviceorientation',e=>{ if(e.gamma==null) return; tx=Math.max(-1,Math.min(1,e.gamma/30)); ty=Math.max(-1,Math.min(1,(e.beta-45)/30)); },{passive:true});
+  /* --- hạt sáng nhiều lớp độ sâu --- */
+  const cv=document.getElementById('lgFx'), g=cv.getContext('2d'); let W=0,H=0,DPR=1,pts=[];
+  function size(){ DPR=Math.min(window.devicePixelRatio||1,2); W=cv.clientWidth; H=cv.clientHeight; cv.width=W*DPR; cv.height=H*DPR; g.setTransform(DPR,0,0,DPR,0,0);
+    const n=Math.round(Math.min(90,W*H/9000)); pts=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,z:Math.random()*0.9+0.1,s:Math.random()*0.35+0.15,gold:Math.random()<0.22})); }
+  size(); window.addEventListener('resize',size);
+  function frame(){ requestAnimationFrame(frame); if(L.hidden||document.hidden) return;
+    cx+=(tx-cx)*0.06; cy+=(ty-cy)*0.06; L.style.setProperty('--px',cx.toFixed(3)); L.style.setProperty('--py',cy.toFixed(3));
+    g.clearRect(0,0,W,H);
+    for(const p of pts){ p.y-=p.s*p.z*1.4; if(p.y<-10){ p.y=H+10; p.x=Math.random()*W; }
+      const x=p.x+cx*28*p.z, y=p.y+cy*18*p.z, r=p.z*2.1;
+      g.beginPath(); g.arc(x,y,r,0,6.283); g.fillStyle=p.gold?'rgba(233,211,174,'+(0.25+p.z*0.6)+')':'rgba(125,220,235,'+(0.15+p.z*0.55)+')'; g.fill(); }
+    g.lineWidth=0.6;
+    for(let i=0;i<pts.length;i++){ const a=pts[i]; if(a.z<0.55) continue;
+      for(let j=i+1;j<pts.length;j++){ const b=pts[j]; if(b.z<0.55) continue; const dx=a.x-b.x, dy=a.y-b.y, dd=dx*dx+dy*dy;
+        if(dd<9000){ g.strokeStyle='rgba(125,220,235,'+(0.16*(1-dd/9000))+')'; g.beginPath(); g.moveTo(a.x+cx*28*a.z,a.y+cy*18*a.z); g.lineTo(b.x+cx*28*b.z,b.y+cy*18*b.z); g.stroke(); } } } }
+  requestAnimationFrame(frame);
+})();
+</script>
 <div id="app" hidden>
 <div class="shell" id="shell">
   <aside class="side" id="side" aria-label="Điều hướng">
@@ -560,7 +716,7 @@ body.botopen .botfab{display:none}
       <div class="logo" aria-hidden="true">5.5</div>
       <div class="bt"><div class="eyebrow" id="eyebrow">F88 · Miền Trung</div><div class="bname" id="title">Khu vực 5.5</div></div>
     </div>
-    <nav class="navlist"><div class="navg"><h4>Tổng hợp</h4><button type="button" class="navbtn" data-v="tq"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Tổng quan</span></button><button type="button" class="navbtn" data-v="hs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Hồ sơ PGD</span></button><button type="button" class="navbtn" data-v="xh"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></svg><span>Xếp hạng PGD</span></button></div><div class="navg"><h4>Chỉ tiêu</h4><button type="button" class="navbtn" data-v="dn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg><span>DPD0 · NET · TLT · RFW</span></button><button type="button" class="navbtn" data-v="gn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg><span>GN NET · KHM</span></button><button type="button" class="navbtn" data-v="mb"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6M5 10v8M19 10v8M9 10v8M15 10v8M3 21h18"/></svg><span>MBBank</span></button><button type="button" class="navbtn" data-v="dt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span>Bảo hiểm</span></button></div><div class="navg"><h4>Kênh bán</h4><button type="button" class="navbtn" data-v="kn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg><span>Kênh bán</span></button><button type="button" class="navbtn" data-v="pt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><span>Chi tiết kênh</span></button></div><div class="navg"><h4>Quản trị</h4><button type="button" class="navbtn" data-v="nk"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Ai đã xem</span></button><button type="button" class="navbtn" data-v="kt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span>Kiểm tra dữ liệu</span></button><button type="button" class="navbtn" data-v="raw"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg><span>Dữ liệu gốc</span></button></div></nav>
+    <nav class="navlist"><div class="navg"><h4>Tổng hợp</h4><button type="button" class="navbtn" data-v="tq"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Tổng quan</span></button><button type="button" class="navbtn" data-v="hs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Hồ sơ PGD</span></button><button type="button" class="navbtn" data-v="xh"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></svg><span>Xếp hạng PGD</span></button><button type="button" class="navbtn" data-v="cb" hidden><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/><circle cx="12" cy="12" r="1"/></svg><span>Cơ hội &amp; Cảnh báo</span></button></div><div class="navg"><h4>Chỉ tiêu</h4><button type="button" class="navbtn" data-v="dn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg><span>DPD0 · NET · TLT · RFW</span></button><button type="button" class="navbtn" data-v="gn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg><span>GN NET · KHM</span></button><button type="button" class="navbtn" data-v="mb"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6M5 10v8M19 10v8M9 10v8M15 10v8M3 21h18"/></svg><span>MBBank</span></button><button type="button" class="navbtn" data-v="dt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span>Bảo hiểm</span></button></div><div class="navg"><h4>Kênh bán</h4><button type="button" class="navbtn" data-v="kn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg><span>Kênh bán</span></button><button type="button" class="navbtn" data-v="pt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><span>Chi tiết kênh</span></button></div><div class="navg"><h4>Quản trị</h4><button type="button" class="navbtn" data-v="nk"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Ai đã xem</span></button><button type="button" class="navbtn" data-v="kt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span>Kiểm tra dữ liệu</span></button><button type="button" class="navbtn" data-v="raw"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg><span>Dữ liệu gốc</span></button></div></nav>
     <div class="usercard">
       <div class="uinfo"><span class="who" id="who"></span><span class="chip na" id="roleChip" hidden></span><div class="permscope" id="permScope"></div></div>
       <button type="button" class="btn ghost" id="logoutBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H4"/></svg>Đăng xuất</button>
@@ -594,6 +750,28 @@ body.botopen .botfab{display:none}
       <div class="panel" id="pgdPanel"><div class="ph"><h2 id="pgdTitle">PGD</h2><button type="button" class="link" data-go="xh">Xem xếp hạng</button></div><div id="pgdMini"></div></div>
     </div>
     <div class="panel"><div class="ph"><h2>Tất cả chỉ tiêu</h2><span class="sub">TH · MT · %HT · so T-1 · bấm nhóm để mở</span></div><div id="board"></div></div>
+  </section>
+
+  <!-- CƠ HỘI & CẢNH BÁO -->
+  <section class="view" id="v-cb" hidden>
+    <div class="panel">
+      <div class="ph"><h2>Trinh sát số liệu</h2><span class="sub" id="rdMeta">Chưa quét</span></div>
+      <p class="sub" id="rdScope"></p>
+      <div class="rdbtns"><button type="button" class="btn primary" id="rdScan">Quét &amp; phân tích</button><button type="button" class="btn" id="rdCopy" hidden>Sao chép báo cáo</button></div>
+      <div class="rdsum" id="rdSum"></div>
+    </div>
+    <div class="grid2">
+      <div class="panel"><div class="ph"><h2>Cảnh báo</h2><span class="sub" id="rdWn"></span></div><div class="rdlist" id="rdWarn"></div></div>
+      <div class="panel"><div class="ph"><h2>Cơ hội</h2><span class="sub" id="rdOn"></span></div><div class="rdlist" id="rdOpp"></div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h2>Nhận xét AI</h2><button type="button" class="btn" id="rdAi" disabled>Viết nhận xét</button></div>
+      <div class="rdai" id="rdAiBox"></div>
+    </div>
+    <div class="panel" id="rdPermPanel" hidden>
+      <div class="ph"><h2>Ai được dùng Trinh sát</h2><span class="sub">Bật công tắc để cho phép</span></div>
+      <div id="rdPerm"></div>
+    </div>
   </section>
 
   <!-- HỒ SƠ PGD -->
@@ -765,7 +943,7 @@ body.botopen .botfab{display:none}
   </section>
     </main>
   </div>
-  <nav class="bnav" aria-label="Điều hướng nhanh"><button type="button" class="bn" data-v="tq" data-grp="tq"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Tổng quan</span></button><button type="button" class="bn" data-v="hs" data-grp="hs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Hồ sơ PGD</span></button><button type="button" class="bn" data-v="dn" data-grp="dn gn mb dt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg><span>Chỉ tiêu</span></button><button type="button" class="bn" data-v="kn" data-grp="kn pt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg><span>Kênh bán</span></button><button type="button" class="bn" id="moreBtn" data-grp="xh kt raw nk"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Thêm</span></button></nav>
+  <nav class="bnav" aria-label="Điều hướng nhanh"><button type="button" class="bn" data-v="tq" data-grp="tq"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Tổng quan</span></button><button type="button" class="bn" data-v="hs" data-grp="hs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Hồ sơ PGD</span></button><button type="button" class="bn" data-v="dn" data-grp="dn gn mb dt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg><span>Chỉ tiêu</span></button><button type="button" class="bn" data-v="kn" data-grp="kn pt"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg><span>Kênh bán</span></button><button type="button" class="bn" id="moreBtn" data-grp="xh cb kt raw nk"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Thêm</span></button></nav>
 </div>
 <button type="button" class="botfab" id="botFab" aria-expanded="false" aria-controls="botSheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 11h.01M12 11h.01M15 11h.01"/></svg>Hỏi báo cáo</button>
 <div class="botsheet" id="botSheet" role="dialog" aria-label="Trợ lý báo cáo" hidden>

@@ -175,7 +175,7 @@ function chooser(where){ const host=document.querySelector('[data-chooser="'+whe
 
 /* ---------- TỔNG QUAN ---------- */
 const GPAGE=['dn','gn','dt','mb','kn'];
-const PAGES={tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',dn:'DPD0 · NET · TLT · RFW',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
+const PAGES={tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
 const sc=s=>s[1]==='solid'?'crit':s[1];
 const wide=()=>window.matchMedia('(min-width:1024px)').matches;
 const openG=new Set([0,1]);
@@ -573,7 +573,9 @@ function applyRole(){ const pgd=USER&&USER.role==='pgd', adm=!USER||USER.role===
   document.querySelectorAll('.navbtn[data-v="xh"]').forEach(b=>b.hidden=pgd);
   document.querySelectorAll('.navbtn[data-v="kt"],.navbtn[data-v="raw"],.navbtn[data-v="nk"]').forEach(b=>b.hidden=!adm);
   document.querySelectorAll('.navg').forEach(g=>g.hidden=![...g.querySelectorAll('.navbtn')].some(b=>!b.hidden));
-  if(pgd&&view==='xh') view='hs'; if(!adm&&(view==='kt'||view==='raw'||view==='nk')) view='tq'; }
+  document.querySelectorAll('.navbtn[data-v="cb"]').forEach(b=>b.hidden=!rdOk());
+  document.querySelectorAll('.navg').forEach(g=>g.hidden=![...g.querySelectorAll('.navbtn')].some(b=>!b.hidden));
+  if(pgd&&view==='xh') view='hs'; if(!adm&&(view==='kt'||view==='raw'||view==='nk')) view='tq'; if(view==='cb'&&!rdOk()) view='tq'; }
 
 
 /* ---------- v4: thẻ chỉ số, biểu đồ dọc cho điện thoại, thanh chọn PGD ---------- */
@@ -777,7 +779,7 @@ function renderNK(){ const box=$('nkBox'), rec=$('nkRecent');
   renderBotLog(); rec.innerHTML='<ul class="nlist">'+ACT.recent.filter(r=>r.act!=='bot').map(r=>'<li><div><p><b>'+esc(r.name||r.email)+'</b> · '+(act[r.act]||esc(r.act))+(r.detail?' <span class="t-muted">'+esc(r.detail)+'</span>':'')+'</p><span class="t-muted">'+fdt(r.t)+'</span></div></li>').join('')+'</ul>'; }
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }
-function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
+function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK,cb:renderCB})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
 function show(v){ const changed=view!==v; view=v;
   document.querySelectorAll('.navbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   document.querySelectorAll('.bn').forEach(b=>b.setAttribute('aria-current',(b.dataset.grp||'').split(' ').includes(v)?'page':'false'));
@@ -798,13 +800,14 @@ function boot(SRC, meta){ const prev=sel>=0?POINTS[sel]:null; loadData(SRC, meta
   $('pick').innerHTML='<option value="-1">Toàn khu vực ('+POINTS.length+' PGD)</option>'+POINTS.map((n,i)=>'<option value="'+i+'">'+esc(short(n))+'</option>').join('');
   $('pick').value=String(sel);
   const rv=$('rawPick').value; $('rawPick').innerHTML=Object.entries(TB).map(([k,t])=>'<option value="'+esc(k)+'">'+esc(t.name)+'</option>').join(''); if(rv&&TB[rv]) $('rawPick').value=rv;
-  deriveAll(); booted=true; applyRole();
+  deriveAll(); booted=true; applyRole(); rdCheck();
   if(USER&&USER.role==='pgd'&&sel<0&&POINTS.length) sel=0; $('pick').value=String(sel); }
-const VIEWS=['tq','hs','xh','dn','gn','kn','pt','dt','mb','kt','raw','nk'];
+const VIEWS=['tq','hs','xh','cb','dn','gn','kn','pt','dt','mb','kt','raw','nk'];
 let start='tq'; try{ const h=location.hash.slice(1); const s=localStorage.getItem('kpi55-view'); if(VIEWS.includes(h)) start=h; else if(VIEWS.includes(s)) start=s; }catch(e){}
 function startView(){ const q=new URLSearchParams(location.search).get('pgd');
   if(q){ const i=POINTS.findIndex(n=>matchPgd(n,q)); if(i>=0){ sel=i; $('pick').value=String(i); start='hs'; } }
   if(USER&&USER.role==='pgd'&&(start==='xh'||start==='kt')) start='hs';
+  if(start==='cb'&&!rdOk()) start='tq';
   show(start); }
 /* ---------- v8: Trợ lý báo cáo (bot dạng nút) ---------- */
 const BOT={open:false, booted:false};
@@ -928,6 +931,121 @@ function renderBotLog(){ const box=$('nkBot'); if(!box) return; const L=(ACT&&AC
     (td.length?'<div class="bgrid"><div><h4>Ai hỏi nhiều</h4><ul>'+top(by).slice(0,8).map(([k,v])=>'<li><span>'+esc(k)+'</span><b class="num">'+v+'</b></li>').join('')+'</ul></div><div><h4>Hỏi gì nhiều</h4><ul>'+top(q).slice(0,8).map(([k,v])=>'<li><span>'+esc(k)+'</span><b class="num">'+v+'</b></li>').join('')+'</ul></div></div>':'')+
     '<h4>Gần đây</h4><ul class="nlist">'+L.slice(0,60).map(r=>'<li><div><p><b>'+esc(r.name||r.email)+'</b> · '+esc(r.detail)+'</p><span class="t-muted">'+fdt(r.t)+'</span></div></li>').join('')+'</ul>'; }
 
+/* ---------- v9: Trinh sát · Cơ hội & Cảnh báo (chạy khi bấm nút) ---------- */
+/* Quyền: admin luôn dùng được; người khác chỉ khi admin cấp (kiểm tra trên máy chủ). */
+const isAdm=()=>!!(USER&&USER.role==='admin');
+const rdOk=()=>!!USER&&(isAdm()||RD.allowed===true);
+function rdCheck(){ if(!USER||isAdm()||RD.chk===USER.email||!window.kpiApi) return; RD.chk=USER.email; RD.allowed=false;
+  window.kpiApi('ai',{op:'check'}).then(j=>{ RD.allowed=!!(j&&j.allowed); applyRole(); if(RD.allowed) render(); }).catch(()=>{}); }
+const ROLELAB={khuvuc:'Khu vực',pgd:'TPGD',admin:'Admin'};
+const pgdLabel=code=>{ const n=POINTS.find(x=>matchPgd(x,code)); return n?short(n):String(code||''); };
+function rdPermRender(){ const box=$('rdPerm'), pn=$('rdPermPanel'); if(!box||!pn) return; pn.hidden=!isAdm(); if(!isAdm()) return;
+  if(RD.perm==null){ RD.perm='loading'; window.kpiApi('ai',{op:'users'}).then(j=>{ RD.perm=j.users||[]; rdPermRender(); }).catch(e=>{ RD.perm={err:e.message}; rdPermRender(); }); }
+  if(RD.perm==='loading'){ box.innerHTML='<p class="sub">Đang tải danh sách tài khoản…</p>'; return; }
+  if(RD.perm.err){ box.innerHTML='<p class="neg">Chưa đọc được danh sách: '+esc(RD.perm.err)+'</p><p class="sub">Kiểm tra đã cài TrinhSat_AI.gs và nhánh “ai” trong Code.gs.</p>'; return; }
+  const U=RD.perm.filter(u=>u.role!=='admin').sort((x,y)=>(x.role===y.role?0:x.role==='khuvuc'?-1:1)||pgdLabel(x.pgd).localeCompare(pgdLabel(y.pgd),'vi')||String(x.name).localeCompare(String(y.name),'vi'));
+  const q=norm(RD.permQ||''), on=U.filter(u=>u.allowed).length;
+  const vis=U.filter(u=>!q||norm([u.name,u.email,pgdLabel(u.pgd),ROLELAB[u.role]||u.role].join(' ')).includes(q));
+  box.innerHTML='<div class="rdpbar"><span class="sub">Đang bật <b>'+on+'</b>/'+U.length+' tài khoản · Admin luôn dùng được</span>'+(U.length>8?'<input type="search" id="rdPermQ" placeholder="Tìm tên, PGD…" value="'+esc(RD.permQ||'')+'">':'')+'</div>'+
+    (vis.length?'<ul class="rdperm">'+vis.map(u=>{ const sub=[ROLELAB[u.role]||u.role, u.pgd?pgdLabel(u.pgd):'', u.email].filter(Boolean).join(' · ');
+      return '<li><div class="rdpu"><b>'+esc(u.name||u.email)+'</b><small>'+esc(sub)+(u.active?'':' · <span class="neg">tài khoản đang khóa</span>')+'</small></div>'+
+        '<button type="button" class="sw" role="switch" aria-checked="'+(u.allowed?'true':'false')+'" aria-label="Cho '+esc(u.name||u.email)+' dùng Trinh sát" data-sw="'+esc(u.email)+'"'+(RD.permBusy?' disabled':'')+'><i></i></button></li>'; }).join('')+'</ul>'
+      :'<p class="sub">'+(U.length?'Không tìm thấy tài khoản.':'Tab Users chưa có tài khoản nào ngoài admin.')+'</p>');
+  const qi=$('rdPermQ'); if(qi&&RD.permQF){ qi.focus(); qi.setSelectionRange(qi.value.length,qi.value.length); } }
+async function rdPermToggle(email){ if(RD.permBusy||!Array.isArray(RD.perm)) return; const u=RD.perm.find(x=>x.email===email); if(!u) return;
+  u.allowed=!u.allowed; RD.permBusy=true; rdPermRender();
+  const list=RD.perm.filter(x=>x.allowed&&x.role!=='admin').map(x=>x.email);
+  try{ await window.kpiApi('ai',{op:'set',emails:list}); toast((u.allowed?'Đã bật cho ':'Đã tắt cho ')+(u.name||u.email)); }
+  catch(e){ u.allowed=!u.allowed; toast('Chưa lưu được: '+e.message); }
+  RD.permBusy=false; rdPermRender(); }
+const RD={done:false, allowed:false, chk:'', perm:null, at:null, busy:false, key:'', list:[], ai:null, aiBusy:false, more:{w:false,o:false}};
+const RACT={dpd0:'Đẩy giải ngân, hạn chế tất toán sớm.', net:'Rà KH sắp tất toán, ưu tiên giữ chân và tái vay.', gnn:'Rà hồ sơ treo, gọi lại KH đã có form chưa giải ngân.',
+  khm:'Dồn lead vào kênh có chuyển đổi cao nhất.', thu:'Chia lại danh sách nhắc nợ, gọi sớm nhóm DPD0.', rfw:'Siết chất lượng hồ sơ mới, rà các khoản GN đã chuyển quá hạn.',
+  mbnr:'Nhắc KH nạp/rút qua MBBank khi giao dịch tại quầy.', mbtk:'Mở TK MBBank ngay khi giải ngân cho KH mới.'};
+const ract=k=>RACT[k]||(SUBBH.includes(k)?'Tư vấn bảo hiểm kèm mỗi hồ sơ giải ngân.':'Đưa vào ghi chú hành động cho PGD.');
+const rtrk=e=>e===REGION?R:P[POINTS.indexOf(e)];
+function rdScope(){ if(isPgdUser()) return [myPgd()]; if(sel>=0) return [POINTS[sel]]; return [REGION].concat(canRank()?POINTS:[]); }
+function rdScanEnt(e,out){ const nm=botName(e), dl=daysLeft(), o=rtrk(e);
+  const W=(sev,k,title,txt,act)=>out.push({t:'w',sev,e,k,title,txt:nm+': '+txt,act});
+  const O=(sev,k,title,txt,act)=>out.push({t:'o',sev,e,k,title,txt:nm+': '+txt,act});
+  /* 1. KPI chính + KPI phụ */
+  MAIN.concat(SUBMB,SUBBH).forEach(k=>{ const d=KM[k], v=kv(k,e); if(v.ht==null) return; const main=isMain(k), g=gapTxt(d,v);
+    if(k==='net'&&v.th!=null&&v.th<0){ W(3,k,'NET âm','Tăng Net đang âm '+fmt(v.th)+' (MT '+fmt(v.mt)+').',ract(k)); return; }
+    if(v.ht<T.warn){ if(!main&&v.ht>=0.7) return;
+      W(main?(v.ht<0.7?3:2):1,k,kname(k)+' mới đạt '+pct0(v.ht),d.label+' '+fu(d.u,v.th)+' / '+(d.low?'trần ':'MT ')+fu(d.u,v.mt)+(g?', '+g:'')+'.',ract(k)); return; }
+    if(v.ht<T.good&&!d.low){ const pv=dl?(v.mt-v.th)/dl:0, per=(d.u==='amt'||d.u==='cnt')&&pv>=1?' (~'+fu(d.u,pv)+'/ngày)':'';
+      O(main?2:1,k,'Sắp đạt '+kname(k),d.label+' đạt '+pct0(v.ht)+', '+g+per+'.','Dồn lực vài ngày là chốt được chỉ tiêu.'); }
+    if(main&&d.vs==='pct'&&v.vs!=null&&v.vs<=-0.15) W(2,k,kname(k)+' giảm '+spct(v.vs)+' so T-1',d.label+' '+fu(d.u,v.th)+', cùng kỳ tháng trước '+fu(d.u,v.t1)+'.',ract(k)); });
+  /* 2. Rủi ro từ Tracking MT Vùng */
+  if(o){ if(o.prfwTH>T.rfw*R.prfwMT&&R.prfwMT) W(3,'rfw','%RFW cao bất thường','%RFW '+pct2(o.prfwTH)+', gấp '+nf1.format(o.prfwTH/R.prfwMT)+' lần MT khu vực.',ract('rfw'));
+    if(o.gnrfw>0) W(2,'rfw','Giải ngân mới đã quá hạn',fmt(o.gnrfw)+' giải ngân trong tháng đã chuyển quá hạn.','Gọi ngay các KH này, xem lại người thẩm định hồ sơ.');
+    if(o.prgVs>T.rg) W(2,'rg','Rút gốc tăng','%rút gốc tăng '+pct1(o.prgVs)+' so T-1 (rút gốc '+fmt(o.rgTH)+').','Liên hệ KH có ý định tất toán, chào gói tái vay.'); }
+  /* 3. Kênh bán */
+  const chs=CH.map((c,i)=>({lab:c[1],f:kv('c'+i+'form',e),k:kv('c'+i+'khm',e),c:kv('c'+i+'f2s',e)}));
+  const fTot=chs.reduce((a,x)=>a+(x.f.th||0),0), kTot=chs.reduce((a,x)=>a+(x.k.th||0),0), avg=fTot?kTot/fTot:null;
+  chs.forEach(x=>{ if(x.c.vs!=null&&x.c.vs<=-0.05&&(x.f.th||0)>=10) W(1,'khm','F2S '+x.lab+' giảm '+pp(x.c.vs),'chuyển đổi kênh '+x.lab+' còn '+pct1(x.c.th)+'.','Kiểm tra tốc độ gọi lại lead của kênh '+x.lab+'.');
+    if(x.f.vs!=null&&x.f.vs<=-0.2&&(x.f.t1||0)>=20) W(1,'khm','Form '+x.lab+' giảm '+spct(x.f.vs),'kênh '+x.lab+' có '+fmt(x.f.th)+' form, tháng trước '+fmt(x.f.t1)+'.','Tăng hoạt động tạo lead của kênh '+x.lab+'.');
+    if(x.k.vs!=null&&x.k.vs>=0.2&&(x.k.th||0)>=5) O(1,'khm','KHM '+x.lab+' tăng '+spct(x.k.vs),'kênh '+x.lab+' đã có '+fmt(x.k.th)+' KHM.','Giữ đà, phân thêm lead cho kênh này.'); });
+  const best=chs.filter(x=>x.c.th!=null&&(x.f.th||0)>=5).sort((a,b)=>b.c.th-a.c.th)[0];
+  if(best&&avg&&fTot&&best.f.th/fTot<0.25&&best.c.th>avg*1.3) O(2,'khm','Kênh '+best.lab+' chuyển đổi tốt','F2S '+pct1(best.c.th)+' (bình quân '+pct1(avg)+') nhưng chỉ chiếm '+pct0(best.f.th/fTot)+' form.','Đổ thêm lead vào kênh '+best.lab+'.');
+  /* 4. Bán chéo */
+  const gnn=kv('gnn',e), khm=kv('khm',e), bk=kv('bhbk',e), tk=kv('mbtk',e);
+  if(gnn.ht!=null&&gnn.ht>=T.good&&bk.ht!=null&&bk.ht<T.warn) O(2,'bhbk','Bán kèm bảo hiểm','GN NET đạt '+pct0(gnn.ht)+' nhưng phí BH bán kèm mới '+pct0(bk.ht)+'.','Gắn tư vấn BH vào mỗi hồ sơ giải ngân.');
+  if(khm.ht!=null&&khm.ht>=T.good&&tk.ht!=null&&tk.ht<T.warn) O(1,'mbtk','Mở TK MBBank cho KH mới','KHM đạt '+pct0(khm.ht)+' nhưng mở TK MBBank mới '+pct0(tk.ht)+'.',ract('mbtk')); }
+function rdScanRegionTop(out){ MAIN.forEach(k=>{ const r=kv(k,REGION); if(r.ht==null||r.ht>=T.good) return;
+  const top=POINTS.map(n=>({n,v:kv(k,n)})).filter(x=>x.v.ht!=null).sort((a,b)=>b.v.ht-a.v.ht)[0];
+  if(top&&top.v.ht>=1.1) out.push({t:'o',sev:1,e:top.n,k,title:'Nhân rộng cách làm '+kname(k),txt:short(top.n)+' đạt '+pct0(top.v.ht)+' trong khi khu vực mới '+pct0(r.ht)+'.',act:'Mời '+short(top.n)+' chia sẻ cách làm cho các PGD yếu.'}); }); }
+function rdAnalyze(){ const sc0=rdScope(), out=[]; sc0.forEach(e=>rdScanEnt(e,out));
+  if(sc0[0]===REGION&&sc0.length>1) rdScanRegionTop(out);
+  if(DIRTY&&!isPgdUser()) out.push({t:'w',sev:1,e:REGION,k:'',title:'Dữ liệu có ô lẫn chữ',txt:DIRTY+' ô số có ký tự lạ, số có thể bị đọc sai.',act:'Mở trang Kiểm tra dữ liệu để xem ô nào.'});
+  const rk=x=>(x.k&&isMain(x.k)?1:0)+(x.e===REGION?0.5:0);
+  out.sort((a,b)=>b.sev-a.sev||rk(b)-rk(a)); RD.list=out; RD.key=ent(); }
+const RSEV={w:{3:['Khẩn','crit'],2:['Cao','warn'],1:['Theo dõi','na']},o:{2:['Nên làm','good'],1:['Gợi ý','na']}};
+function rdRow(x,i){ const s=RSEV[x.t][x.sev]||['','na'];
+  return '<button type="button" class="rdrow '+x.t+x.sev+'" data-i="'+i+'"><span class="rdm"><b>'+esc(x.title)+'</b><span>'+esc(x.txt)+'</span><em>→ '+esc(x.act)+'</em></span><span class="pill '+s[1]+'">'+s[0]+'</span></button>'; }
+function rdList(id,t,lim){ const all=RD.list.map((x,i)=>[x,i]).filter(([x])=>x.t===t), open=RD.more[t], show=open?all:all.slice(0,lim);
+  $(id).innerHTML=all.length?show.map(([x,i])=>rdRow(x,i)).join('')+(all.length>lim?'<button type="button" class="link rdmore" data-m="'+t+'">'+(open?'Thu gọn':'Xem thêm '+(all.length-lim))+'</button>':'')
+    :'<p class="sub">'+(t==='w'?'Không có cảnh báo nào 👍':'Chưa thấy cơ hội rõ ràng.')+'</p>';
+  return all.length; }
+function mdLite(t){ return String(t).split(/\n/).map(l=>{ l=esc(l).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  if(/^#{1,4}\s/.test(l)) return '<h4>'+l.replace(/^#+\s/,'')+'</h4>'; if(/^\s*([-•*]|\d+\.)\s/.test(l)) return '<li>'+l.replace(/^\s*([-•*]|\d+\.)\s/,'')+'</li>'; return l.trim()?'<p>'+l+'</p>':''; })
+  .join('').replace(/(?:<li>.*?<\/li>)+/g,m=>'<ul>'+m+'</ul>'); }
+function renderCB(){ if(!rdOk()){ show('tq'); return; } rdPermRender(); const sc0=rdScope();
+  $('rdScope').textContent='Phạm vi: '+(sc0[0]===REGION?'Khu vực 5.5'+(sc0.length>1?' + '+(sc0.length-1)+' PGD':''):short(sc0[0]))+'. Đổi phạm vi bằng ô “Đang xem”.';
+  $('rdScan').disabled=RD.busy; $('rdScan').textContent=RD.busy?'Đang lấy số mới…':(RD.done?'Quét lại':'Quét & phân tích');
+  if(!RD.done){ $('rdMeta').textContent='Chưa quét'; $('rdSum').innerHTML=''; ['rdWarn','rdOpp'].forEach(id=>$(id).innerHTML='<p class="sub">Bấm “Quét & phân tích” để bot lấy số mới nhất và tìm tín hiệu.</p>');
+    $('rdWn').textContent=$('rdOn').textContent=''; $('rdCopy').hidden=true; $('rdAi').disabled=true; return; }
+  if(RD.key!==ent()){ rdAnalyze(); RD.ai=null; RD.more={w:false,o:false}; }
+  $('rdMeta').textContent='Quét lúc '+RD.at.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})+' · số liệu '+(META.asof||'–');
+  const c=s=>RD.list.filter(x=>x.t==='w'&&x.sev===s).length, no=RD.list.filter(x=>x.t==='o').length;
+  $('rdSum').innerHTML='<span class="chip crit">'+c(3)+' khẩn</span><span class="chip warn">'+c(2)+' cao</span><span class="chip na">'+c(1)+' theo dõi</span><span class="chip good">'+no+' cơ hội</span>';
+  $('rdWn').textContent=rdList('rdWarn','w',6)+' tín hiệu'; $('rdOn').textContent=rdList('rdOpp','o',6)+' tín hiệu';
+  $('rdCopy').hidden=false; $('rdAi').disabled=RD.aiBusy||!RD.list.length; $('rdAi').textContent=RD.aiBusy?'AI đang viết…':(RD.ai&&RD.ai.text?'Viết lại':'Viết nhận xét');
+  $('rdAiBox').innerHTML=RD.ai?(RD.ai.err?'<p class="neg">'+esc(RD.ai.err)+'</p>':mdLite(RD.ai.text)+(RD.ai.cached?'<p class="foot">Nhận xét đã lưu từ lần trước (cùng số liệu).</p>':''))
+    :'<p class="sub">AI chỉ đọc danh sách tín hiệu và 6 KPI chính ở trên, không đọc file gốc.</p>'; }
+function rdText(){ const L=['TRINH SÁT KPI · '+botName(ent())+' · số liệu '+(META.asof||'')], W=RD.list.filter(x=>x.t==='w'), Op=RD.list.filter(x=>x.t==='o');
+  L.push('','⚠️ CẢNH BÁO ('+W.length+')'); W.slice(0,10).forEach((x,i)=>L.push((i+1)+'. ['+RSEV.w[x.sev][0]+'] '+x.txt+' → '+x.act));
+  L.push('','💡 CƠ HỘI ('+Op.length+')'); Op.slice(0,8).forEach((x,i)=>L.push((i+1)+'. '+x.txt+' → '+x.act));
+  if(RD.ai&&RD.ai.text) L.push('','🤖 NHẬN XÉT',RD.ai.text.replace(/\*\*/g,'')); return L.join('\n'); }
+async function rdScan(){ if(RD.busy||!rdOk()) return; RD.busy=true; renderCB();
+  try{ if(window.kpiLoad) await window.kpiLoad(true); } finally{ RD.busy=false; }
+  RD.done=true; RD.at=new Date(); RD.ai=null; RD.more={w:false,o:false}; rdAnalyze(); botLog('Trinh sát · quét · '+botName(ent())); render(); }
+async function rdAi(){ if(RD.aiBusy||!RD.done||!rdOk()) return; RD.aiBusy=true; renderCB(); const e=ent();
+  const payload={pham_vi:botName(e), so_lieu_ngay:META.asof||'', con_lai_ngay:daysLeft(),
+    kpi_chinh:MAIN.map(k=>{ const d=KM[k], v=kv(k,e); return {kpi:kname(k), thuc_hien:fu(d.u,v.th), muc_tieu:fu(d.u,v.mt), pct_dat:pct0(v.ht), so_T1:fvs(d,v.vs)||null}; }),
+    tin_hieu:RD.list.slice(0,40).map(x=>({loai:x.t==='w'?'canh_bao':'co_hoi', muc:RSEV[x.t][x.sev][0], noi_dung:x.txt, goi_y:x.act}))};
+  try{ const j=await window.kpiApi('ai',{payload}); RD.ai={text:String(j.text||'').trim()||'(AI không trả nội dung)', cached:!!j.cached}; botLog('Trinh sát · AI · '+botName(e)); }
+  catch(err){ RD.ai={err:'Chưa viết được nhận xét: '+err.message}; }
+  finally{ RD.aiBusy=false; if(view==='cb') renderCB(); } }
+(function rdWire(){ if(!$('rdScan')) return; $('rdScan').addEventListener('click',rdScan); $('rdAi').addEventListener('click',rdAi);
+  $('rdCopy').addEventListener('click',()=>copyText(rdText()));
+  $('v-cb').addEventListener('input',e=>{ if(e.target.id!=='rdPermQ') return; RD.permQ=e.target.value; RD.permQF=true; rdPermRender(); RD.permQF=false; });
+  $('v-cb').addEventListener('click',e=>{ const sw=e.target.closest('[data-sw]'); if(sw){ rdPermToggle(sw.dataset.sw); return; }
+    const m=e.target.closest('[data-m]'); if(m){ RD.more[m.dataset.m]=!RD.more[m.dataset.m]; renderCB(); return; }
+    const r=e.target.closest('.rdrow'); if(!r) return; const x=RD.list[+r.dataset.i]; if(!x) return;
+    if(x.e===REGION){ if(!isPgdUser()){ sel=-1; $('pick').value='-1'; } show('tq'); return; }
+    const i=POINTS.indexOf(x.e); if(i>=0){ sel=i; $('pick').value=String(i); show('hs'); } }); })();
+
 window.KPI={boot, start:startView, render:()=>render(), setUser, setHistory, snapshotRows, monthOf, setNotes:r=>{NOTES=r||[];}, setActivity:a=>{ACT=a;}, view:()=>view};
 })();
 
@@ -959,6 +1077,7 @@ window.KPI={boot, start:startView, render:()=>render(), setUser, setHistory, sna
     $('snapBtn').hidden=u.role!=='admin'; window.KPI_SITE=location.origin+location.pathname; }
   async function openApp(){ $('login').hidden=true; $('app').hidden=false; await load(); }
   window.kpiApi=(a,x)=>api(a,x);
+  window.kpiLoad=f=>load(f);
   window.kpiNeed=async v=>{ if(v==='nk'){ try{ KPI.setActivity(await api('activity')); }catch(e){ KPI.setActivity({error:e.message}); } KPI.render(); } };
   // Hiện ngay số liệu lần trước (lưu trong phiên), rồi tải số mới ở nền
   const CK='kpi55-cache';

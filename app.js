@@ -737,8 +737,8 @@ function renderNK(){ const box=$('nkBox'), rec=$('nkRecent');
   const seen=users.filter(u=>u.today>0).length;
   $('nkTitle').textContent='Hôm nay '+seen+'/'+users.length+' người đã mở báo cáo';
   box.innerHTML='<ul class="ulist">'+users.map(u=>'<li><div class="uinf"><b>'+esc(u.name||u.email)+'</b><span class="t-muted">'+(lab[u.role]||u.role)+(u.pgd?' '+esc(u.pgd):'')+' · '+esc(u.email)+'</span></div><div class="ust">'+(u.today?'<span class="pill good">'+u.today+' lần</span>':'<span class="pill crit">Chưa mở</span>')+'<span class="t-muted num">'+(u.last?fdt(u.last):'chưa từng mở')+'</span></div></li>').join('')+'</ul>';
-  const act={login:'Đăng nhập',view:'Xem báo cáo','login-denied':'Bị từ chối',snapshot:'Chốt tháng',note:'Thêm ghi chú'};
-  rec.innerHTML='<ul class="nlist">'+ACT.recent.map(r=>'<li><div><p><b>'+esc(r.name||r.email)+'</b> · '+(act[r.act]||esc(r.act))+(r.detail?' <span class="t-muted">'+esc(r.detail)+'</span>':'')+'</p><span class="t-muted">'+fdt(r.t)+'</span></div></li>').join('')+'</ul>'; }
+  const act={login:'Đăng nhập',view:'Xem báo cáo','login-denied':'Bị từ chối',snapshot:'Chốt tháng',note:'Thêm ghi chú',bot:'Hỏi bot'};
+  renderBotLog(); rec.innerHTML='<ul class="nlist">'+ACT.recent.filter(r=>r.act!=='bot').map(r=>'<li><div><p><b>'+esc(r.name||r.email)+'</b> · '+(act[r.act]||esc(r.act))+(r.detail?' <span class="t-muted">'+esc(r.detail)+'</span>':'')+'</p><span class="t-muted">'+fdt(r.t)+'</span></div></li>').join('')+'</ul>'; }
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }
 function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
@@ -770,6 +770,128 @@ function startView(){ const q=new URLSearchParams(location.search).get('pgd');
   if(q){ const i=POINTS.findIndex(n=>matchPgd(n,q)); if(i>=0){ sel=i; $('pick').value=String(i); start='hs'; } }
   if(USER&&USER.role==='pgd'&&(start==='xh'||start==='kt')) start='hs';
   show(start); }
+/* ---------- v8: Trợ lý báo cáo (bot dạng nút) ---------- */
+const BOT={open:false, booted:false};
+function botCall(){ const u=USER||{}, w=String(u.name||'').trim().split(/\s+/).filter(Boolean), given=w.length?w[w.length-1]:'';
+  if(u.role==='admin') return given?'đại ca '+given:'đại ca';
+  const xh=String(u.xh||'').trim().toLowerCase();
+  const pron=xh==='anh'||xh==='chị'||xh==='chi'?(xh==='chi'?'chị':xh):(w.some(x=>/^thị$/i.test(x))?'chị':w.some(x=>/^văn$/i.test(x))?'anh':'anh/chị');
+  return given?pron+' '+given:pron; }
+const cap1=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const isPgdUser=()=>!!(USER&&USER.role==='pgd');
+const botName=e=>e===REGION?'Khu vực 5.5':short(e);
+function daysLeft(){ const m=String(META.asof||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(!m) return null;
+  const d=+m[1], last=new Date(+m[3],+m[2],0).getDate(); return Math.max(0,last-d); }
+const vsHtml=(d,v)=>{ if(v.vs==null&&v.t1==null) return '–'; const bad=v.vs==null?false:(d.low?v.vs>0:v.vs<0);
+  return (v.vs!=null?'<b class="'+(bad?'neg':'pos')+'">'+fvs(d,v.vs)+'</b>':'–')+(v.t1!=null?'<small>T-1 '+fu(d.u,v.t1)+'</small>':''); };
+const pillHt=(k,v)=>{ const s2=st(v.ht,k,v.th); return '<span class="pill '+sc(s2)+'">'+(s2[1]==='solid'?'ÂM':pct0(v.ht))+'</span>'; };
+const kname=k=>CODE[k]||KM[k].s;
+function kTable(keys,e){ return '<table class="bt"><tr><th>Chỉ tiêu</th><th>Thực hiện</th><th>% đạt</th><th>vs T-1</th></tr>'+keys.map(k=>{ const d=KM[k], v=kv(k,e);
+  return '<tr><td>'+esc(kname(k))+'</td><td class="n">'+fu(d.u,v.th)+'<small>'+(d.low?'Trần ':'MT ')+fu(d.u,v.mt)+'</small></td><td class="n">'+pillHt(k,v)+'</td><td class="n">'+vsHtml(d,v)+'</td></tr>'; }).join('')+'</table>'; }
+const notReached=e=>MAIN.filter(k=>{ const v=kv(k,e); return v.ht!=null&&(v.ht<T.good||(k==='net'&&v.th<0)); });
+const sumKV=(keys,e)=>keys.reduce((o,k)=>{ const v=kv(k,e); o.th+=v.th||0; o.mt+=v.mt||0; o.t1+=v.t1||0; if(v.th!=null) o.n++; return o; },{th:0,mt:0,t1:0,n:0});
+const chg=(a,b,low)=>{ if(!b) return '<small>–</small>'; const x=a/b-1, bad=low?x>0:x<0; return '<b class="'+(bad?'neg':'pos')+'">'+spct(x)+'</b>'; };
+const chgPP=(a,b)=>{ if(a==null||b==null) return '<small>–</small>'; const x=a-b; return '<b class="'+(x<0?'neg':'pos')+'">'+pp(x)+'</b>'; };
+
+/* các câu trả lời */
+function bSum(e){ const [ok,,,n]=cnt3(MAIN,e), mb=subScore(SUBMB,e), bh=subScore(SUBBH,e);
+  const ch=CH.map((c,i)=>({lab:c[1],v:kv('c'+i+'khm',e)})), tot=sumKV(CH.map((c,i)=>'c'+i+'khm'),e), best=ch.filter(o=>o.v.th!=null).sort((a,b)=>b.v.th-a.v.th)[0];
+  let s='<b>'+esc(botName(e))+' · số liệu '+esc(META.asof||'')+'</b>: KPI chính đạt <b>'+ok+'/'+n+'</b>.'+kTable(MAIN,e)+
+    'KPI phụ: MBBank <b>'+pct0(mb)+'</b> · Bảo hiểm <b>'+pct0(bh)+'</b>';
+  if(tot.n) s+='<br>Kênh bán: <b>'+fmt(tot.th)+'</b> KHM / MT '+fmt(tot.mt)+(best&&tot.th?', mạnh nhất <b>'+esc(best.lab)+'</b> ('+pct0(best.v.th/tot.th)+' KHM)':'');
+  if(e===REGION&&canRank()&&POINTS.length>1){ const w=ranking().slice(-1)[0]; s+='<br>PGD cần chú ý nhất: <b>'+esc(short(w.n))+'</b> ('+notReached(w.n).length+'/6 KPI chính chưa đạt).'; }
+  else { const nr=notReached(e); if(nr.length) s+='<br>Cần ưu tiên: <b>'+nr.map(k=>CODE[k]).join(', ')+'</b>.'; }
+  return s; }
+function bPush(){ const list=POINTS.map(n=>({n,m:notReached(n)})).filter(o=>o.m.length>=3).sort((a,b)=>b.m.length-a.m.length);
+  if(!list.length) return 'Không có PGD nào có từ 3 KPI chính chưa đạt 👍';
+  return '<b>'+list.length+' PGD cần đẩy</b> (từ 3 KPI chính chưa đạt):<table class="bt">'+list.map(o=>'<tr><td>'+esc(short(o.n))+'<small>'+o.m.map(k=>CODE[k]).join(', ')+'</small></td><td class="n">'+o.m.length+'/6</td></tr>').join('')+'</table>'; }
+function bRankK(k){ const d=KM[k], rows=POINTS.map(n=>({n,v:kv(k,n)})).filter(o=>o.v.ht!=null).sort((a,b)=>b.v.ht-a.v.ht);
+  return '<b>Xếp hạng '+esc(kname(k))+'</b>'+(d.low?' (chỉ tiêu trần)':'')+':<table class="bt"><tr><th></th><th>Thực hiện</th><th>% đạt</th><th>vs T-1</th></tr>'+
+    rows.map((o,i)=>'<tr><td>'+(i+1)+'. '+esc(short(o.n))+'</td><td class="n">'+fu(d.u,o.v.th)+'</td><td class="n">'+pillHt(k,o.v)+'</td><td class="n">'+vsHtml(d,o.v)+'</td></tr>').join('')+'</table>'; }
+function bRankSub(lab,keys){ const rows=POINTS.map(n=>({n,s:subScore(keys,n)})).filter(o=>o.s!=null).sort((a,b)=>b.s-a.s);
+  return '<b>Xếp hạng điểm '+lab+'</b> (bình quân % đạt '+keys.length+' chỉ tiêu):<table class="bt">'+rows.map((o,i)=>'<tr><td>'+(i+1)+'. '+esc(short(o.n))+'</td><td class="n"><span class="pill '+sc(st(o.s))+'">'+pct0(o.s)+'</span></td></tr>').join('')+'</table>'; }
+function bGap(e){ const dl=daysLeft(), keys=MAIN.concat(SUBMB,SUBBH), rows=keys.map(k=>({k,d:KM[k],v:kv(k,e)})).filter(o=>gapTxt(o.d,o.v));
+  if(!rows.length) return '<b>'+esc(botName(e))+'</b> đã đạt tất cả chỉ tiêu 🎉';
+  return '<b>'+esc(botName(e))+'</b> còn '+rows.length+' chỉ tiêu chưa đạt'+(dl!=null?' (còn '+dl+' ngày trong tháng)':'')+':<table class="bt">'+rows.map(o=>{ const g=gapTxt(o.d,o.v), amt=o.d.u==='amt'||o.d.u==='cnt';
+    const per=amt&&dl&&!o.d.low?'<small>~'+fu(o.d.u,(o.v.mt-o.v.th)/dl)+'/ngày</small>':'';
+    return '<tr><td>'+esc(kname(o.k))+(isMain(o.k)?'':'<small>'+(SUBMB.includes(o.k)?'MBBank':'Bảo hiểm')+'</small>')+'</td><td class="n">'+esc(g)+per+'</td></tr>'; }).join('')+'</table>'; }
+function bSub(e){ return '<b>KPI phụ · '+esc(botName(e))+'</b><div class="bsec">MBBank · điểm <b>'+pct0(subScore(SUBMB,e))+'</b></div>'+kTable(SUBMB,e)+
+  '<div class="bsec">Bảo hiểm · điểm <b>'+pct0(subScore(SUBBH,e))+'</b></div>'+kTable(SUBBH,e); }
+function bKB(e){ const rows=CH.map((c,i)=>{ const g=s=>kv('c'+i+s,e); return {lab:c[1],f:g('form'),k:g('khm'),c:g('f2s'),gn:g('gn')}; });
+  const S=f=>rows.reduce((o,r)=>{ o.th+=r[f].th||0; o.t1+=r[f].t1||0; o.mt+=r[f].mt||0; return o; },{th:0,t1:0,mt:0}), F=S('f'), Kk=S('k'), G=S('gn');
+  return '<b>Kênh bán · '+esc(botName(e))+'</b><table class="bt"><tr><th>Kênh</th><th>Form</th><th>KHM</th><th>F2S</th><th>GN</th></tr>'+
+    rows.map(r=>'<tr><td>'+esc(r.lab)+'</td><td class="n">'+fmt(r.f.th)+'<small>MT '+fmt(r.f.mt)+'</small></td><td class="n">'+fmt(r.k.th)+'<small>MT '+fmt(r.k.mt)+'</small></td><td class="n">'+pct1(r.c.th)+'</td><td class="n">'+fmt(r.gn.th)+'</td></tr>').join('')+
+    '<tr class="tot"><td>Tổng 4 kênh</td><td class="n">'+fmt(F.th)+'<small>MT '+fmt(F.mt)+'</small></td><td class="n">'+fmt(Kk.th)+'<small>MT '+fmt(Kk.mt)+'</small></td><td class="n">'+(F.th?pct1(Kk.th/F.th):'–')+'</td><td class="n">'+fmt(G.th)+'</td></tr></table>'+
+    'So với T-1: Form '+chg(F.th,F.t1)+' · KHM '+chg(Kk.th,Kk.t1)+' · Giải ngân '+chg(G.th,G.t1); }
+function bCT(ci,e){ const c=CHD[ci], T0={f:0,f1:0,k:0,k1:0,cw:0,cw1:0,t:0,t1:0,task:false};
+  const blk=(title,sub,o,task,tot)=>'<div class="bblk'+(tot?' tot':'')+'"><b>'+esc(title)+'</b>'+(sub?' <small class="inl">'+esc(sub)+'</small>':'')+
+    '<table class="bt"><tr><th></th><th>Tháng này</th><th>T-1</th><th>So sánh</th></tr>'+
+    '<tr><td>Form</td><td class="n">'+fmt(o.f)+'</td><td class="n">'+fmt(o.f1)+'</td><td class="n">'+chg(o.f,o.f1)+'</td></tr>'+
+    '<tr><td>KHM</td><td class="n">'+fmt(o.k)+'</td><td class="n">'+fmt(o.k1)+'</td><td class="n">'+chg(o.k,o.k1)+'</td></tr>'+
+    '<tr><td>Chuyển đổi</td><td class="n">'+pct1(o.c)+'</td><td class="n">'+pct1(o.c1)+'</td><td class="n">'+chgPP(o.c,o.c1)+'</td></tr>'+
+    (task?'<tr><td>Task</td><td class="n">'+fmt(o.t)+'</td><td class="n">'+fmt(o.t1)+'</td><td class="n">'+chg(o.t,o.t1)+'</td></tr>':'')+'</table></div>';
+  let html=''; c.progs.forEach(([g,lab,,inK,inL,cvK,pre],pi)=>{ const id='x'+ci+'_'+pi, fi=kv(id+'in',e), kh=kv(id+'khm',e), cv=kv(id+'cv',e), tk=pre?kv(id+'pre',e):null;
+    const o={f:fi.th,f1:fi.t1,k:kh.th,k1:kh.t1,c:cv.th,c1:cv.t1,t:tk&&tk.th,t1:tk&&tk.t1};
+    T0.f+=o.f||0; T0.f1+=o.f1||0; T0.k+=o.k||0; T0.k1+=o.k1||0; if(o.c!=null) T0.cw+=(o.c)*(o.f||0); if(o.c1!=null) T0.cw1+=(o.c1)*(o.f1||0); if(pre){ T0.task=true; T0.t+=o.t||0; T0.t1+=o.t1||0; }
+    html+=blk(lab,inL+' → '+cvK,o,!!pre,false); });
+  T0.c=T0.f?T0.cw/T0.f:null; T0.c1=T0.f1?T0.cw1/T0.f1:null;
+  return '<b>Chi tiết '+esc(c.lab)+' · '+esc(botName(e))+'</b>'+html+blk('Tổng '+c.lab,'',T0,T0.task,true)+'<p class="bnote">Chuyển đổi tổng = bình quân theo số form.</p>'; }
+function bProfile(e){ const [ok,,,n]=cnt3(MAIN,e); let rk='';
+  if(canRank()){ const r=ranking(), pos=r.findIndex(x=>x.n===e); if(pos>=0) rk=' · hạng <b>'+(pos+1)+'/'+r.length+'</b>'; }
+  const tot=sumKV(CH.map((c,i)=>'c'+i+'khm'),e), nr=notReached(e);
+  return '<b>'+esc(botName(e))+'</b>: KPI chính đạt <b>'+ok+'/'+n+'</b>'+rk+'.'+kTable(MAIN,e)+'KPI phụ: MBBank <b>'+pct0(subScore(SUBMB,e))+'</b> · Bảo hiểm <b>'+pct0(subScore(SUBBH,e))+'</b>'+
+    (tot.n?'<br>Kênh bán: '+fmt(tot.th)+' KHM / MT '+fmt(tot.mt):'')+(nr.length?'<br>Cần ưu tiên: <b>'+nr.map(k=>CODE[k]).join(', ')+'</b>.':''); }
+function bCmp(e){ return '<b>'+esc(botName(e))+' so với khu vực</b> (% đạt MT):<table class="bt"><tr><th></th><th>PGD</th><th>Khu vực</th><th></th></tr>'+MAIN.map(k=>{ const a=kv(k,e), b=kv(k,REGION), up=a.ht!=null&&b.ht!=null?a.ht>=b.ht:null;
+  return '<tr><td>'+CODE[k]+'</td><td class="n">'+pillHt(k,a)+'</td><td class="n">'+pct0(b.ht)+'</td><td class="n">'+(up==null?'':'<b class="'+(up?'pos':'neg')+'">'+(up?'Cao hơn':'Thấp hơn')+'</b>')+'</td></tr>'; }).join('')+'</table>'; }
+
+/* menu nút và luồng hỏi */
+const myPgd=()=>POINTS[0];
+function pickEnt(path,fn,withRegion){ if(isPgdUser()) return fn(myPgd(),path+' · '+short(myPgd()));
+  return {text:'Của đâu?',opts:(withRegion===false?[]:[['Toàn khu vực',()=>fn(REGION,path+' · Toàn khu vực')]]).concat(POINTS.map(n=>[short(n),()=>fn(n,path+' · '+short(n))]))}; }
+const done=(html,path)=>({html,path});
+const BA={
+ sum:()=>done(bSum(isPgdUser()?myPgd():REGION),'Tóm tắt hôm nay'),
+ me:()=>done(bProfile(myPgd()),'Tình hình PGD mình'),
+ push:()=>done(bPush(),'PGD cần đẩy'),
+ rank:()=>({text:'Xếp hạng theo chỉ tiêu nào?',opts:MAIN.concat(SUBMB,SUBBH).map(k=>[kname(k),()=>done(bRankK(k),'Xếp hạng · '+kname(k))])
+   .concat([['Điểm MBBank',()=>done(bRankSub('MBBank',SUBMB),'Xếp hạng · Điểm MBBank')],['Điểm Bảo hiểm',()=>done(bRankSub('Bảo hiểm',SUBBH),'Xếp hạng · Điểm Bảo hiểm')]])
+   .concat(CH.map((c,i)=>['KHM '+c[1],()=>done(bRankK('c'+i+'khm'),'Xếp hạng · KHM '+c[1])]))}),
+ gap:()=>pickEnt('Còn thiếu bao nhiêu',(e,p)=>done(bGap(e),p)),
+ pgd:()=>pickEnt('Xem 1 PGD',(e,p)=>done(bProfile(e),p),false),
+ cmp:()=>done(bCmp(myPgd()),'So với khu vực'),
+ sub:()=>pickEnt('KPI phụ',(e,p)=>done(bSub(e),p)),
+ kb:()=>pickEnt('Kênh bán',(e,p)=>done(bKB(e),p)),
+ ct:()=>({text:'Chi tiết kênh nào?',opts:CHD.map((c,ci)=>[c.lab,()=>pickEnt('Chi tiết kênh · '+c.lab,(e,p)=>done(bCT(ci,e),p))])})
+};
+function botButtons(){ return isPgdUser()?[['me','Tình hình PGD mình'],['gap','Còn thiếu bao nhiêu'],['cmp','So với khu vực'],['sub','KPI phụ (MB · BH)'],['kb','Kênh bán'],['ct','Chi tiết kênh']]
+  :[['sum','Tóm tắt hôm nay'],['push','PGD cần đẩy'],['rank','Xếp hạng'],['gap','Còn thiếu bao nhiêu'],['pgd','Xem 1 PGD'],['sub','KPI phụ (MB · BH)'],['kb','Kênh bán'],['ct','Chi tiết kênh']]; }
+function botSay(html,who){ const box=$('botMsgs'), d=document.createElement('div'); d.className='bm '+who; d.innerHTML=html; box.appendChild(d); box.scrollTop=box.scrollHeight; return d; }
+function botLog(path){ try{ if(window.kpiApi) window.kpiApi('botlog',{q:path}).catch(()=>{}); }catch(e){} }
+function botRun(res){ setTimeout(()=>{ let r; try{ r=res(); }catch(err){ botSay('Xin lỗi, em chưa đọc được số liệu phần này.','b'); return; }
+  if(r.html!=null){ botSay(r.html,'b'); botLog(r.path); return; }
+  botSay(esc(r.text),'b'); const o=document.createElement('div'); o.className='bopts';
+  r.opts.forEach(([lab,fn])=>{ const b=document.createElement('button'); b.type='button'; b.textContent=lab; b.onclick=()=>{ o.remove(); botSay(esc(lab),'u'); botRun(fn); }; o.appendChild(b); });
+  const box=$('botMsgs'); box.appendChild(o); box.scrollTop=box.scrollHeight; },180); }
+function botHello(){ const box=$('botMsgs'); box.innerHTML=''; const c=botCall();
+  botSay('Chào '+esc(c)+' 👋 Em trả lời nhanh số liệu '+(isPgdUser()?'của <b>'+esc(short(myPgd()))+'</b>':'<b>Khu vực 5.5</b>')+': KPI chính, KPI phụ, kênh bán và chi tiết kênh. '+esc(cap1(c))+' bấm một nút bên dưới nhé.','b');
+  $('botBar').innerHTML=botButtons().map(([a,l])=>'<button type="button" data-a="'+a+'">'+esc(l)+'</button>').join('')+'<button type="button" data-a="reset" class="sec">Làm lại</button>'; }
+function botToggle(o){ BOT.open=o==null?!BOT.open:o; $('botSheet').hidden=!BOT.open; $('botFab').setAttribute('aria-expanded',String(BOT.open)); document.body.classList.toggle('botopen',BOT.open);
+  if(BOT.open){ if(!BOT.booted||BOT.user!==(USER&&USER.email)){ BOT.booted=true; BOT.user=USER&&USER.email; botHello(); } } }
+(function botWire(){ const fab=$('botFab'); if(!fab) return;
+  fab.addEventListener('click',()=>{ if(!booted) return; botToggle(); });
+  $('botClose').addEventListener('click',()=>botToggle(false));
+  $('botBar').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const a=b.dataset.a;
+    if(a==='reset'){ botHello(); return; } $('botMsgs').querySelectorAll('.bopts').forEach(x=>x.remove()); botSay(esc(b.textContent),'u'); botRun(BA[a]); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&BOT.open) botToggle(false); }); })();
+function renderBotLog(){ const box=$('nkBot'); if(!box) return; const L=(ACT&&ACT.bot)||[];
+  if(!L.length){ box.innerHTML='<p class="t-muted">Chưa có ai hỏi bot.</p>'; return; }
+  const today=new Date().toDateString(), td=L.filter(r=>new Date(r.t).toDateString()===today);
+  const by={}, q={}; td.forEach(r=>{ const k=r.name||r.email; by[k]=(by[k]||0)+1; const t=String(r.detail).split(' · ')[0]; q[t]=(q[t]||0)+1; });
+  const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]);
+  box.innerHTML='<p class="bstat">Hôm nay <b>'+td.length+'</b> lượt hỏi từ <b>'+Object.keys(by).length+'</b> người.</p>'+
+    (td.length?'<div class="bgrid"><div><h4>Ai hỏi nhiều</h4><ul>'+top(by).slice(0,8).map(([k,v])=>'<li><span>'+esc(k)+'</span><b class="num">'+v+'</b></li>').join('')+'</ul></div><div><h4>Hỏi gì nhiều</h4><ul>'+top(q).slice(0,8).map(([k,v])=>'<li><span>'+esc(k)+'</span><b class="num">'+v+'</b></li>').join('')+'</ul></div></div>':'')+
+    '<h4>Gần đây</h4><ul class="nlist">'+L.slice(0,60).map(r=>'<li><div><p><b>'+esc(r.name||r.email)+'</b> · '+esc(r.detail)+'</p><span class="t-muted">'+fdt(r.t)+'</span></div></li>').join('')+'</ul>'; }
+
 window.KPI={boot, start:startView, render:()=>render(), setUser, setHistory, snapshotRows, monthOf, setNotes:r=>{NOTES=r||[];}, setActivity:a=>{ACT=a;}, view:()=>view};
 })();
 

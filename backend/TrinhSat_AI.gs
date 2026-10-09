@@ -3,7 +3,7 @@
  *
  * 1) Cài khóa API: Cài đặt dự án (bánh răng) → Thuộc tính tập lệnh → Thêm:
  *      ANTHROPIC_API_KEY = sk-ant-...      (bắt buộc, lấy tại console.anthropic.com)
- *      AI_MODEL          = claude-haiku-5-5 (tùy chọn; đổi sang claude-sonnet-5-5 nếu muốn viết sâu hơn)
+ *      AI_MODEL          = claude-sonnet-5-5 (tùy chọn; claude-haiku-5-5 rẻ hơn nhưng phân tích nông)
  *
  * 2) Trong hàm doPost của Code.gs (Mã.gs), thêm 1 dòng cạnh case 'botlog':
  *      case 'ai':       out = aiAnalyze_(session_(req), req); break;
@@ -21,14 +21,33 @@ const AI_DAILY_LIMIT = 30;           // số lần gọi AI tối đa / người
 const AI_CACHE_SECONDS = 6 * 3600;   // cùng một bộ số liệu thì dùng lại nhận xét cũ
 
 const AI_SYSTEM_ = [
-  'Bạn là chuyên viên phân tích kinh doanh của F88 (cầm đồ / cho vay), viết cho quản lý Khu vực 5.5.',
-  'Bạn nhận JSON gồm: phạm vi, ngày số liệu, số ngày còn lại trong tháng, 6 KPI chính (DPD0, NET, GN NET, KHM, TLT, RFW) và danh sách tín hiệu cảnh báo / cơ hội đã được tính sẵn.',
-  'Viết tiếng Việt, ngắn gọn, đọc được trên điện thoại, theo đúng 4 mục:',
-  '## Tình hình chung — 2-3 câu.',
-  '## 3 cảnh báo ưu tiên — gạch đầu dòng, mỗi dòng nêu PGD, con số và lý do cần xử lý trước.',
-  '## 3 cơ hội nên làm ngay — gạch đầu dòng, mỗi dòng nêu việc cụ thể và lợi ích.',
-  '## Việc cần làm hôm nay — tối đa 4 việc, có người/PGD phụ trách nếu suy ra được.',
-  'Chỉ dùng con số có trong dữ liệu, không bịa số, không suy đoán nguyên nhân không có căn cứ. Nếu dữ liệu ít, nói rõ.'
+  'Bạn là trưởng phòng phân tích kinh doanh của F88 (chuỗi cầm đồ / cho vay tiêu dùng), báo cáo cho Giám đốc Khu vực 5.5 (12 phòng giao dịch - PGD, mỗi PGD có một trưởng PGD - TPGD).',
+  '',
+  'NGHIỆP VỤ:',
+  '- DPD0: dư nợ đang trong hạn (chưa quá hạn ngày nào). Càng cao càng tốt, là quy mô sổ cho vay.',
+  '- NET (tăng Net): dư nợ tăng ròng trong tháng = giải ngân trừ khách trả gốc/tất toán. NET âm = sổ đang co lại, rất nghiêm trọng.',
+  '- GN NET: giải ngân thuần trong tháng. KHM: số khách hàng mới. Đây là đầu vào để tăng NET.',
+  '- TLT: tỷ lệ thu nợ nhóm DPD0 đến hạn. Thấp = khách đến hạn không trả, sắp chuyển quá hạn.',
+  '- RFW: tỷ lệ dư nợ chuyển từ trong hạn sang quá hạn. Là chỉ tiêu TRẦN: thực hiện càng THẤP càng tốt. Rút gốc và tỷ lệ trễ hạn cũng là chỉ tiêu trần.',
+  '- pct_dat là % hoàn thành mục tiêu tháng; với chỉ tiêu trần, pct_dat đã được quy đổi nên vẫn là càng cao càng tốt. Dưới 90% là cảnh báo, 90-100% là theo dõi, từ 100% là đạt.',
+  '- Kênh bán khách mới: Digital HO, Marketing PGD, CTV PGD, PTĐT. Form = lượt đăng ký; F2S = tỷ lệ Form chuyển thành khách vay. F2S giảm nghĩa là xử lý lead kém (gọi chậm, tư vấn yếu).',
+  '- KPI phụ: MBBank (nạp rút, mở tài khoản MB) và bảo hiểm (bán kèm khi giải ngân). Điểm = bình quân % đạt.',
+  '- Số liệu là lũy kế từ đầu tháng; con_lai_ngay là số ngày còn lại để đạt mục tiêu tháng.',
+  '',
+  'DỮ LIỆU NHẬN ĐƯỢC (JSON): kpi_chinh và kpi_phu của phạm vi đang xem, kenh_ban, bang_pgd (xếp hạng 12 PGD, nếu có), so_voi_khu_vuc (nếu đang xem 1 PGD) và tin_hieu (cảnh báo/cơ hội hệ thống đã tính sẵn).',
+  '',
+  'CÁCH VIẾT:',
+  '- Như một người quản lý giỏi nói với sếp: thẳng, cụ thể, có tên PGD và con số. Cấm câu chung chung kiểu "cần nỗ lực hơn", "cần cải thiện".',
+  '- Tìm MỐI LIÊN HỆ giữa các chỉ số để chỉ ra nguyên nhân gốc, ví dụ: KHM thấp vì F2S kênh nào giảm; NET âm dù GN tốt thì do rút gốc/tất toán cao; TLT thấp thì RFW tháng sau sẽ xấu.',
+  '- Tính cụ thể khoảng cách: còn thiếu bao nhiêu, mỗi ngày cần thêm bao nhiêu với số ngày còn lại; PGD nào kéo tụt khu vực nhiều nhất.',
+  '- Mỗi việc cần làm phải giao cho ai (PGD/TPGD hoặc kênh), làm gì, đo bằng chỉ số nào.',
+  '- Chỉ dùng số có trong dữ liệu, không bịa. Thiếu dữ liệu thì nói rõ thiếu gì.',
+  '',
+  'ĐỊNH DẠNG (tiếng Việt, đọc trên điện thoại, tổng dưới 350 chữ):',
+  '## Nhận định — 2-3 câu: tình hình chung và VẤN ĐỀ LỚN NHẤT tháng này.',
+  '## 3 điểm nóng — gạch đầu dòng: PGD/chỉ tiêu, con số, nguyên nhân gốc.',
+  '## 3 cơ hội — gạch đầu dòng: việc cụ thể, kết quả kỳ vọng bằng số.',
+  '## Việc ngày mai — tối đa 4 việc: ai làm, làm gì, đo bằng chỉ số nào.'
 ].join('\n');
 
 function trinhSatEmails_() {
@@ -103,7 +122,7 @@ function aiAnalyze_(user, body) {
     muteHttpExceptions: true,
     headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' },
     payload: JSON.stringify({
-      model: props.getProperty('AI_MODEL') || 'claude-haiku-5-5',
+      model: props.getProperty('AI_MODEL') || 'claude-sonnet-5-5',
       max_tokens: 2000, thinking: { type: 'disabled' },
       system: AI_SYSTEM_,
       messages: [{ role: 'user', content: 'Dữ liệu (JSON):\n' + data }]
@@ -127,7 +146,7 @@ function testTrinhSatAI() {
   const props = PropertiesService.getScriptProperties();
   const res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', { method: 'post', contentType: 'application/json', muteHttpExceptions: true,
     headers: { 'x-api-key': props.getProperty('ANTHROPIC_API_KEY'), 'anthropic-version': '2023-06-01' },
-    payload: JSON.stringify({ model: props.getProperty('AI_MODEL') || 'claude-haiku-5-5', max_tokens: 2000, thinking: { type: 'disabled' }, system: AI_SYSTEM_, messages: [{ role: 'user', content: 'Dữ liệu (JSON):\n' + JSON.stringify({ pham_vi: 'Khu vực 5.5', so_lieu_ngay: '09/10/2026', con_lai_ngay: 22, kpi_chinh: [{ kpi: 'NET', thuc_hien: '-120', muc_tieu: '900', pct_dat: '0%' }, { kpi: 'GN NET', thuc_hien: '8.200', muc_tieu: '9.000', pct_dat: '91%' }], tin_hieu: [{ loai: 'canh_bao', muc: 'Khẩn', noi_dung: 'GLI 247 Lê Duẩn: Tăng Net đang âm -120.', goi_y: 'Rà KH sắp tất toán.' }, { loai: 'co_hoi', muc: 'Nên làm', noi_dung: 'Khu vực 5.5: GN NET đạt 91%, còn thiếu 800.', goi_y: 'Dồn lực vài ngày.' }] }) }] }) });
+    payload: JSON.stringify({ model: props.getProperty('AI_MODEL') || 'claude-sonnet-5-5', max_tokens: 2000, thinking: { type: 'disabled' }, system: AI_SYSTEM_, messages: [{ role: 'user', content: 'Dữ liệu (JSON):\n' + JSON.stringify({ pham_vi: 'Khu vực 5.5', so_lieu_ngay: '09/10/2026', con_lai_ngay: 22, kpi_chinh: [{ kpi: 'NET', thuc_hien: '-120', muc_tieu: '900', pct_dat: '0%' }, { kpi: 'GN NET', thuc_hien: '8.200', muc_tieu: '9.000', pct_dat: '91%' }], tin_hieu: [{ loai: 'canh_bao', muc: 'Khẩn', noi_dung: 'GLI 247 Lê Duẩn: Tăng Net đang âm -120.', goi_y: 'Rà KH sắp tất toán.' }, { loai: 'co_hoi', muc: 'Nên làm', noi_dung: 'Khu vực 5.5: GN NET đạt 91%, còn thiếu 800.', goi_y: 'Dồn lực vài ngày.' }] }) }] }) });
   const j = JSON.parse(res.getContentText() || '{}');
   Logger.log('HTTP ' + res.getResponseCode() + ' | stop=' + j.stop_reason + ' | model=' + j.model + ' | khối=' + (j.content || []).map(function (c) { return c.type + ':' + String(c.text || '').slice(0, 80); }).join(' || ') + ' | lỗi=' + JSON.stringify(j.error || null) + ' | usage=' + JSON.stringify(j.usage || null));
 }

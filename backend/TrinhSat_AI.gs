@@ -104,7 +104,7 @@ function aiAnalyze_(user, body) {
     headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' },
     payload: JSON.stringify({
       model: props.getProperty('AI_MODEL') || 'claude-haiku-5-5',
-      max_tokens: 1200,
+      max_tokens: 2000, thinking: { type: 'disabled' },
       system: AI_SYSTEM_,
       messages: [{ role: 'user', content: 'Dữ liệu (JSON):\n' + data }]
     })
@@ -116,8 +116,18 @@ function aiAnalyze_(user, body) {
   if (code !== 200) return { ok: false, error: 'AI trả lỗi ' + code + ((j.error && j.error.message) ? ': ' + j.error.message : '') };
 
   const text = (j.content || []).filter(function (c) { return c.type === 'text'; }).map(function (c) { return c.text; }).join('\n').trim();
-  if (!text) return { ok: false, error: 'AI không trả nội dung.' };
+  if (!text) return { ok: false, error: 'AI không trả nội dung (stop=' + j.stop_reason + ', khối=' + (j.content || []).map(function (c) { return c.type; }).join('/') + ', model=' + j.model + ').' };
   cache.put('ai:' + hash, text, AI_CACHE_SECONDS);
   cache.put(dayKey, String(used + 1), 86400);
   return { ok: true, text: text };
+}
+
+/** Chạy thử nhận xét AI trong trình soạn thảo (chọn hàm này rồi bấm Chạy, xem Nhật ký thực thi). */
+function testTrinhSatAI() {
+  const props = PropertiesService.getScriptProperties();
+  const res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', { method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    headers: { 'x-api-key': props.getProperty('ANTHROPIC_API_KEY'), 'anthropic-version': '2023-06-01' },
+    payload: JSON.stringify({ model: props.getProperty('AI_MODEL') || 'claude-haiku-5-5', max_tokens: 2000, thinking: { type: 'disabled' }, system: AI_SYSTEM_, messages: [{ role: 'user', content: 'Dữ liệu (JSON):\n' + JSON.stringify({ pham_vi: 'Khu vực 5.5', so_lieu_ngay: '09/10/2026', con_lai_ngay: 22, kpi_chinh: [{ kpi: 'NET', thuc_hien: '-120', muc_tieu: '900', pct_dat: '0%' }, { kpi: 'GN NET', thuc_hien: '8.200', muc_tieu: '9.000', pct_dat: '91%' }], tin_hieu: [{ loai: 'canh_bao', muc: 'Khẩn', noi_dung: 'GLI 247 Lê Duẩn: Tăng Net đang âm -120.', goi_y: 'Rà KH sắp tất toán.' }, { loai: 'co_hoi', muc: 'Nên làm', noi_dung: 'Khu vực 5.5: GN NET đạt 91%, còn thiếu 800.', goi_y: 'Dồn lực vài ngày.' }] }) }] }) });
+  const j = JSON.parse(res.getContentText() || '{}');
+  Logger.log('HTTP ' + res.getResponseCode() + ' | stop=' + j.stop_reason + ' | model=' + j.model + ' | khối=' + (j.content || []).map(function (c) { return c.type + ':' + String(c.text || '').slice(0, 80); }).join(' || ') + ' | lỗi=' + JSON.stringify(j.error || null) + ' | usage=' + JSON.stringify(j.usage || null));
 }

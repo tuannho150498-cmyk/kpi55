@@ -1030,9 +1030,15 @@ function rdText(){ const L=['TRINH SÁT KPI · '+botName(ent())+' · số liệu
 async function rdScan(){ if(RD.busy||!rdOk()) return; RD.busy=true; renderCB();
   try{ if(window.kpiLoad) await window.kpiLoad(true); } finally{ RD.busy=false; }
   RD.done=true; RD.at=new Date(); RD.ai=null; RD.more={w:false,o:false}; rdAnalyze(); botLog('Trinh sát · quét · '+botName(ent())); render(); }
+function rdKpiRow(n){ const o={pgd:botName(n)}; MAIN.forEach(k=>{ const d=KM[k], v=kv(k,n); o[kname(k)]=v.ht==null?null:pct0(v.ht)+' ('+fu(d.u,v.th)+' / '+(d.low?'trần ':'MT ')+fu(d.u,v.mt)+')'; });
+  o.diem_MB=pct0(subScore(SUBMB,n)); o.diem_BH=pct0(subScore(SUBBH,n)); return o; }
 async function rdAi(){ if(RD.aiBusy||!RD.done||!rdOk()) return; RD.aiBusy=true; renderCB(); const e=ent();
   const payload={pham_vi:botName(e), so_lieu_ngay:META.asof||'', con_lai_ngay:daysLeft(),
     kpi_chinh:MAIN.map(k=>{ const d=KM[k], v=kv(k,e); return {kpi:kname(k), thuc_hien:fu(d.u,v.th), muc_tieu:fu(d.u,v.mt), pct_dat:pct0(v.ht), so_T1:fvs(d,v.vs)||null}; }),
+    kpi_phu:SUBMB.concat(SUBBH).map(k=>{ const d=KM[k], v=kv(k,e); return {kpi:kname(k), thuc_hien:fu(d.u,v.th), muc_tieu:fu(d.u,v.mt), pct_dat:pct0(v.ht)}; }),
+    kenh_ban:CH.map((c,i)=>{ const f=kv('c'+i+'form',e), k=kv('c'+i+'khm',e), cv=kv('c'+i+'f2s',e); return {kenh:c[1], form:fmt(f.th), form_vs_T1:f.vs==null?null:spct(f.vs), khm:fmt(k.th)+' / MT '+fmt(k.mt), f2s:pct1(cv.th), f2s_vs_T1:cv.vs==null?null:pp(cv.vs)}; }),
+    bang_pgd:(e===REGION&&canRank())?ranking().map((r,i)=>Object.assign({hang:i+1, diem:nf0.format(r.score)}, rdKpiRow(r.n))):null,
+    so_voi_khu_vuc:(e!==REGION&&kv('net',REGION).mt!=null)?rdKpiRow(REGION):null,
     tin_hieu:RD.list.slice(0,40).map(x=>({loai:x.t==='w'?'canh_bao':'co_hoi', muc:RSEV[x.t][x.sev][0], noi_dung:x.txt, goi_y:x.act}))};
   try{ const j=await window.kpiApi('ai',{payload}); RD.ai={text:String(j.text||'').trim()||'(AI không trả nội dung)', cached:!!j.cached}; botLog('Trinh sát · AI · '+botName(e)); }
   catch(err){ RD.ai={err:'Chưa viết được nhận xét: '+err.message}; }

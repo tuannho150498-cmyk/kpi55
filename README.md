@@ -77,7 +77,7 @@ Luôn **Triển khai → Quản lý triển khai → Phiên bản mới**, nếu
 
 ## Nhận xét AI (Trinh sát)
 1. Dán `backend/TrinhSat_AI.gs` vào dự án Apps Script (tệp mới).
-2. **Cài đặt dự án → Thuộc tính tập lệnh**: thêm `ANTHROPIC_API_KEY` (bắt buộc), `AI_MODEL` (tùy chọn, mặc định `claude-haiku-5-5`).
+2. **Cài đặt dự án → Thuộc tính tập lệnh**: thêm `ANTHROPIC_API_KEY` (bắt buộc), `AI_MODEL` (tùy chọn, mặc định `claude-sonnet-5-5`).
 3. Trong `doPost` của Mã.gs, cạnh `case 'botlog'`, thêm dòng `case 'ai': out = aiAnalyze_(session_(req), req); break;`
 4. Triển khai **Phiên bản mới**.  
 - Quyền: admin luôn dùng được; email được cấp lưu ở thuộc tính `TRINHSAT_EMAILS` (máy chủ tự kiểm tra, người chưa được cấp không thấy trang và không gọi được AI).

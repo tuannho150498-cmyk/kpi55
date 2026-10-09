@@ -78,8 +78,8 @@ Luôn **Triển khai → Quản lý triển khai → Phiên bản mới**, nếu
 ## Nhận xét AI (Trinh sát)
 1. Dán `backend/TrinhSat_AI.gs` vào dự án Apps Script (tệp mới).
 2. **Cài đặt dự án → Thuộc tính tập lệnh**: thêm `ANTHROPIC_API_KEY` (bắt buộc), `AI_MODEL` (tùy chọn, mặc định `claude-haiku-5-5`).
-3. Trong `doPost` của Code.gs, cạnh nhánh `botlog`, thêm nhánh `ai` gọi `aiAnalyze_(user, body)`.
-4. Triển khai **Phiên bản mới**. Lần đầu bấm mục cấp quyền, nếu báo thiếu quyền: trong Apps Script chạy thử hàm `trinhSatUsers_` một lần để cấp quyền Drive.
+3. Trong `doPost` của Mã.gs, cạnh `case 'botlog'`, thêm dòng `case 'ai': out = aiAnalyze_(session_(req), req); break;`
+4. Triển khai **Phiên bản mới**.  
 - Quyền: admin luôn dùng được; email được cấp lưu ở thuộc tính `TRINHSAT_EMAILS` (máy chủ tự kiểm tra, người chưa được cấp không thấy trang và không gọi được AI).
 - Giới hạn 30 lượt/người/ngày; cùng bộ số liệu thì dùng lại nhận xét cũ trong 6 giờ.
 - AI chỉ nhận các tín hiệu đã tính sẵn, không đọc file Sheet gốc.

@@ -47,7 +47,7 @@ const K=[
  {k:'dpd0',tab:'DPD0',label:'Dư nợ DPD0',s:'DPD0',g:0,u:'amt',vs:'diff'},
  {k:'net',tab:'TĂNG NET',label:'Tăng Net',s:'Tăng Net',g:0,u:'amt',vs:'abs'},
  {k:'rg',tab:'RÚT GỐC',label:'Rút gốc',s:'Rút gốc',g:0,u:'amt',vs:'pct',low:1},
- {k:'ngrg',tab:'NET GIẢI NGÂN - RÚT GỐC',label:'GN tổng − Rút gốc',s:'GN − RG',g:0,u:'amt',vs:'abs'},
+ {k:'ngrg',tab:'NET GIẢI NGÂN - RÚT GỐC',label:'NET GN − Rút gốc',s:'NET GN − RG',g:0,u:'amt',vs:'abs'},
  {k:'rfw',tab:'RFW',label:'%RFW',s:'%RFW',g:0,u:'pct2',vs:'pp',low:1},
  {k:'thu',tab:'TỶ LỆ THU DPD0',label:'Tỷ lệ thu DPD0',s:'Thu DPD0',g:0,u:'pct1',vs:'ppdiff'},
  {k:'tre',tab:'TỶ LỆ TRỄ HẠN',label:'Tỷ lệ trễ hạn',s:'Trễ hạn',g:0,u:'pct1',vs:'ppdiff',low:1},
@@ -245,7 +245,7 @@ function renderHeat(){ const e=ent();
 
 /* ---------- DƯ NỢ ---------- */
 function renderDN(){
-  $('dnTiles').innerHTML=['dpd0','net','thu','rfw','rg','tre'].map(tile).join('');
+  $('dnTiles').innerHTML=['dpd0','net','thu','rfw','ngrg','tre'].map(tile).join('');
   // waterfall
   const c=cur(); const steps=[['GN tổng',c.gnt],['RG',-c.rgTH],['RFW',-c.rfwTH],['RB',c.rb],['GN-RFW',-c.gnrfw]];
   let acc=0; const bars=steps.map(([l,v])=>{const a=acc; acc+=v; return {l,v,a,b:acc};}); bars.push({l:'Tăng Net',v:acc,a:0,b:acc,total:1});

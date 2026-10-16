@@ -9,14 +9,15 @@ function csv(txt){ const out=[]; let row=[],cell='',q=false;
 const num = s => { if(typeof s==='number') return isFinite(s)?s:null; s=String(s==null?'':s).trim().replace(/\u2212/g,'-');
   const m=s.match(/^-?[\d.,]+%?/); if(!m) return null; let t=m[0]; const p=t.endsWith('%'); t=t.replace('%','').replace(/\./g,'').replace(',','.'); const v=parseFloat(t); return isNaN(v)?null:(p?v/100:v); };
 const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'D').replace(/\s+/g,' ').trim().toUpperCase();
-let TB={}, REGION='', POINTS=[], META={}, DIRTY=0, DNRAW=null;
+let TB={}, REGION='', POINTS=[], META={}, DIRTY=0, DNRAW=null, TTRAW=null;
 const tb=n=>TB[norm(n)];
-function loadData(SRC, meta){ TB={}; META=meta||{}; DIRTY=0; DNRAW=null;
+function loadData(SRC, meta){ TB={}; META=meta||{}; DIRTY=0; DNRAW=null; TTRAW=null;
   for(const name in SRC){ const src=SRC[name]; const rows=typeof src==='string'?csv(src):(src.v||src), disp=typeof src==='string'?rows:(src.d||rows);
     rows.forEach(r=>r.forEach(c=>{ if(typeof c==='string'&&/^\s*-?[\d.,]+%?\s+[^\d\s]/.test(c)) DIRTY++; }));
     const h0=(rows[0]||[]).map(norm);
     if(h0.includes('SOURCE')&&h0.includes('KPI')&&h0.includes('PGD')){ pivot(rows,disp,h0); continue; }
     if(/^DN CAN THU/.test(norm(name))){ DNRAW=rows; continue; }
+    if(/^TANG TRUONG/.test(norm(name))){ TTRAW=rows; continue; }
     const b=rows.findIndex(r=>String(r[0]).trim()==='Miền Trung'); if(b<0) continue;
     const keep=[]; for(let i=b;i<rows.length;i++) if(String(rows[i][0]).trim()) keep.push(i);
     TB[norm(name)]={name, head:rows.slice(0,b).map(r=>r.map(c=>String(c).trim())), body:keep.map(i=>{const r=[...rows[i]]; r[0]=String(r[0]).trim(); return r;}),
@@ -181,7 +182,7 @@ function chooser(where){ const host=document.querySelector('[data-chooser="'+whe
 
 /* ---------- TỔNG QUAN ---------- */
 const GPAGE=['dn','gn','dt','mb','kn'];
-const PAGES={no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
+const PAGES={no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
 const sc=s=>s[1]==='solid'?'crit':s[1];
 const wide=()=>window.matchMedia('(min-width:1024px)').matches;
 const openG=new Set([0,1]);
@@ -787,9 +788,118 @@ function renderNK(){ const box=$('nkBox'), rec=$('nkRecent');
   box.innerHTML='<ul class="ulist">'+users.map(u=>'<li><div class="uinf"><b>'+esc(u.name||u.email)+'</b><span class="t-muted">'+(lab[u.role]||u.role)+(u.pgd?' '+esc(u.pgd):'')+' · '+esc(u.email)+'</span></div><div class="ust">'+(u.today?'<span class="pill good">'+u.today+' lần</span>':'<span class="pill crit">Chưa mở</span>')+'<span class="t-muted num">'+(u.last?fdt(u.last):'chưa từng mở')+'</span></div></li>').join('')+'</ul>';
   const act={login:'Đăng nhập',view:'Xem báo cáo','login-denied':'Bị từ chối',snapshot:'Chốt tháng',note:'Thêm ghi chú',bot:'Hỏi bot'};
   renderBotLog(); rec.innerHTML='<ul class="nlist">'+ACT.recent.filter(r=>r.act!=='bot').map(r=>'<li><div><p><b>'+esc(r.name||r.email)+'</b> · '+(act[r.act]||esc(r.act))+(r.detail?' <span class="t-muted">'+esc(r.detail)+'</span>':'')+'</p><span class="t-muted">'+fdt(r.t)+'</span></div></li>').join('')+'</ul>'; }
+/* ---------- v9: Tăng trưởng DPD0 (sheet "Tăng trưởng" trong file Chi tiết digital ho) ---------- */
+function ttData(){ const R=TTRAW; if(!R||R.length<3) return null;
+  let hr=-1; for(let i=0;i<Math.min(R.length,6);i++){ if(R[i].slice(1).some(c=>/^\s*(TH|MT)\s*$/i.test(String(c)))){ hr=i; break; } }
+  if(hr<1) return null; const mrow=R[hr-1], trow=R[hr];
+  const cols=[]; let lab='', yr=0, prevM=0;
+  for(let c=1;c<trow.length;c++){ const raw=String(mrow[c]||'').trim(); if(raw) lab=raw; const t=String(trow[c]||'').trim().toUpperCase(); if(t!=='TH'&&t!=='MT') continue;
+    const m=+(lab.match(/(\d{1,2})/)||[])[1]; if(!m) continue; cols.push({c,m,t}); }
+  // gán năm: tháng giảm => sang năm mới; năm cuối = năm của báo cáo hiện tại
+  const months=[]; const key={};
+  cols.forEach(o=>{ if(!months.length||months[months.length-1].m!==o.m){ if(prevM&&o.m<prevM) yr++; prevM=o.m; months.push({m:o.m,y:yr}); } key[o.c]=months.length-1; });
+  const asY=+(String(META.asof||'').match(/(\d{4})/)||[])[1]||new Date().getFullYear();
+  const lastY=months.length?months[months.length-1].y:0; months.forEach(o=>{ o.y=asY-(lastY-o.y); o.lab='T'+o.m+'/'+String(o.y).slice(2); });
+  const ent={};
+  for(let r=hr+1;r<R.length;r++){ const nm=String(R[r][0]||'').trim(); if(!nm) continue;
+    const isP=/^[A-Z]{2,5}\d/.test(nm); const id=isP?(POINTS.find(p=>p===nm)||POINTS.find(p=>norm(p)===norm(nm))||nm):REGION;
+    const th=months.map(()=>null), mt=months.map(()=>null);
+    cols.forEach(o=>{ const v=num(R[r][o.c]); if(v==null) return; (o.t==='TH'?th:mt)[key[o.c]]=v; });
+    ent[id]={th,mt}; }
+  return {months,ent}; }
+function ttSeries(D,e){ const o=D.ent[e]; if(!o) return null;
+  const L=D.months.map((m,i)=>({lab:m.lab,m:m.m,y:m.y,th:o.th[i],mt:o.mt[i],cur:false}));
+  const as=String(META.asof||'').split('/'), am=+as[1], ay=+as[2], cv=kv('dpd0',e);
+  if(am&&ay&&cv&&cv.th!=null){ let k=L.findIndex(x=>x.m===am&&x.y===ay);
+    if(k<0){ const last=L[L.length-1], nm=last.m===12?1:last.m+1, ny=last.m===12?last.y+1:last.y;
+      if(nm===am&&ny===ay){ L.push({lab:'T'+am+'/'+String(ay).slice(2),m:am,y:ay,th:null,mt:cv.mt,cur:false}); k=L.length-1; } }
+    if(k>=0&&L[k].th==null){ L[k].th=cv.th; L[k].cur=true; if(L[k].mt==null) L[k].mt=cv.mt; } }
+  return L; }
+function ttStats(L){ const H=L.filter(x=>x.th!=null); const cur=H[H.length-1];
+  const dec=L.find(x=>x.m===12&&x.y===cur.y-1), yoy=L.find(x=>x.m===cur.m&&x.y===cur.y-1);
+  const yr=L.filter(x=>x.y===cur.y&&!x.cur&&x.mt!=null&&x.th!=null), ok=yr.filter(x=>x.th>=x.mt).length;
+  const end=[...L].reverse().find(x=>x.y===cur.y&&x.mt!=null);
+  const left=end?Math.max(0,end.m-cur.m):0, need=end?end.mt-cur.th:null;
+  const C=L.filter(x=>x.th!=null&&!x.cur), bi=C.length-1, b3=bi>=3?C[bi-3]:null, pace=b3?(C[bi].th-b3.th)/3:null;
+  const needM=left?need/left:null, fc=end&&pace!=null?cur.th+pace*left:null;
+  return {pace, paceFrom:b3, paceTo:C[bi], needM, fc, fcPct:fc!=null&&end?fc/end.mt:null, ratio:pace>0&&needM>0?needM/pace:null, cur, ytd:dec&&dec.th?cur.th/dec.th-1:null, ytdAbs:dec&&dec.th!=null?cur.th-dec.th:null, yoy:yoy&&yoy.th?cur.th/yoy.th-1:null, ok, n:yr.length, dec, yoyM:yoy, end, need, left, needPct:end&&cur.th?end.mt/cur.th-1:null}; }
+const ttArrow=v=>v==null?'':(v>=0?'<span class="ttup" aria-hidden="true">▲</span>':'<span class="ttdn" aria-hidden="true">▼</span>');
+const ttPct=v=>v==null?'–':(v>=0?'+':'−')+nf1.format(Math.abs(v)*100)+'%';
+function ttChart(L){ const W=760,H=300,ml=64,mr=72,mt=22,mb=58, iw=W-ml-mr, ih=H-mt-mb, n=L.length;
+  const ST0=ttStats(L); const vals=L.flatMap(x=>[x.th,x.mt]).concat(ST0.fc!=null?[ST0.fc]:[]).filter(v=>v!=null); let lo=Math.min(...vals), hi=Math.max(...vals); const pad=(hi-lo)*.12||hi*.05; lo-=pad; hi+=pad;
+  const st=Math.pow(10,Math.floor(Math.log10((hi-lo)/4))); const step=[1,2,2.5,5,10].map(k=>k*st).find(k=>(hi-lo)/k<=5)||st*10; lo=Math.floor(lo/step)*step; hi=Math.ceil(hi/step)*step;
+  const X=i=>ml+(n<2?iw/2:i*iw/(n-1)), Y=v=>mt+ih-(v-lo)/(hi-lo)*ih;
+  let s='';
+  for(let v=lo;v<=hi+1e-9;v+=step){ s+='<line class="ttgrid" x1="'+ml+'" x2="'+(W-mr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text class="ttax" x="'+(ml-8)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+fmt(v)+'</text>'; }
+  const path=(k,cond)=>{ let d='',pen=false; L.forEach((x,i)=>{ const v=x[k]; if(v==null||!cond(x)){pen=false;return;} d+=(pen?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1); pen=true; }); return d; };
+  s+='<path class="ttmt" d="'+path('mt',()=>true)+'"/>';
+  s+='<path class="ttth" d="'+path('th',x=>!x.cur)+'"/>';
+  { const ST=ttStats(L); if(ST.fc!=null&&ST.end){ const ei=L.indexOf(ST.end), ki=L.indexOf(ST.cur); if(ei>ki){ s+='<path class="ttfc" d="M'+X(ki)+' '+Y(ST.cur.th)+'L'+X(ei)+' '+Y(ST.fc)+'"/><circle class="ttfcd" cx="'+X(ei)+'" cy="'+Y(ST.fc)+'" r="4"/>'; } } }
+  const ci=L.findIndex(x=>x.cur); if(ci>0&&L[ci-1].th!=null) s+='<path class="ttth ttcurl" d="M'+X(ci-1)+' '+Y(L[ci-1].th)+'L'+X(ci)+' '+Y(L[ci].th)+'"/>';
+  L.forEach((x,i)=>{ if(x.mt!=null) s+='<circle class="ttmtd" cx="'+X(i)+'" cy="'+Y(x.mt)+'" r="3"/>';
+    if(x.th!=null) s+='<circle class="ttthd'+(x.cur?' cur':'')+'" cx="'+X(i)+'" cy="'+Y(x.th)+'" r="'+(x.cur?5:4)+'"/>';
+    s+='<text class="ttax" x="'+X(i)+'" y="'+(H-mb+18)+'" text-anchor="middle">'+x.lab+'</text>';
+    if(x.mt!=null&&x.th!=null){ const ok=x.th>=x.mt; s+='<text class="'+(ok?'ttok':'ttno')+'" x="'+X(i)+'" y="'+(H-mb+36)+'" text-anchor="middle">'+(ok?'✓':'✗')+'</text>'; } });
+  // nhãn trực tiếp ở cuối
+  const li=[...L.keys()].reverse(); const iTH=li.find(i=>L[i].th!=null), iMT=li.find(i=>L[i].mt!=null);
+  let yTH=iTH!=null?Y(L[iTH].th):null, yMT=iMT!=null?Y(L[iMT].mt):null; if(yTH!=null&&yMT!=null&&Math.abs(yTH-yMT)<14){ if(yTH<yMT){yTH-=7;yMT+=7;}else{yTH+=7;yMT-=7;} }
+  if(yTH!=null) s+='<text class="ttlbl" x="'+(X(iTH)+10)+'" y="'+(yTH+4)+'">TH</text>';
+  if(yMT!=null) s+='<text class="ttlbl" x="'+(X(iMT)+10)+'" y="'+(yMT+4)+'">MT</text>';
+  if(ST0.fc!=null&&ST0.end&&L.indexOf(ST0.end)>L.indexOf(ST0.cur)){ let yF=Y(ST0.fc); if(yMT!=null&&Math.abs(yF-yMT)<14) yF=yF>yMT?yMT+14:yMT-14; s+='<text class="ttlbl ttfcl" x="'+(X(L.indexOf(ST0.end))+10)+'" y="'+(yF+4)+'">Dự kiến</text>'; }
+  s+='<line class="ttx" id="ttX" x1="0" x2="0" y1="'+mt+'" y2="'+(mt+ih)+'" style="display:none"/>';
+  s+='<rect class="tthit" x="'+ml+'" y="'+mt+'" width="'+iw+'" height="'+(ih+mb)+'"/>';
+  return {svg:'<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="DPD0 theo tháng: thực hiện và mục tiêu">'+s+'</svg>', X, W, ml, mr, n}; }
+function ttTipHTML(L,i){ const x=L[i], pv=L[i-1]; let h='<b>'+x.lab+(x.cur?' (đến '+esc(META.asof||'')+')':'')+'</b>';
+  h+='<div><i class="sw th"></i>TH <span class="num">'+(x.th==null?'chưa có':fmt(x.th))+'</span></div>';
+  if(x.mt!=null) h+='<div><i class="sw mt"></i>MT <span class="num">'+fmt(x.mt)+'</span></div>';
+  if(x.mt!=null&&x.th!=null) h+='<div>'+(x.th>=x.mt?'✓ Đạt':'✗ Hụt')+' · %HT <span class="num">'+pct0(x.th/x.mt)+'</span></div>';
+  { const ST=ttStats(L); if(x===ST.end&&ST.fc!=null) h+='<div><i class="sw fc"></i>Dự kiến <span class="num">'+fmt(ST.fc)+'</span> ('+pct0(ST.fcPct)+' đích)</div>'; }
+  if(pv&&pv.th&&x.th!=null) h+='<div class="t-muted">So '+pv.lab+': '+ttArrow(x.th/pv.th-1)+' '+ttPct(x.th/pv.th-1)+'</div>';
+  return h; }
+function ttSpark(L){ const v=L.map(x=>x.th).filter(x=>x!=null); if(v.length<2) return ''; const lo=Math.min(...v), hi=Math.max(...v)||1, w=120, h=30;
+  const pts=L.map((x,i)=>x.th==null?null:[(i/(L.length-1))*w,h-3-((x.th-lo)/((hi-lo)||1))*(h-6)]).filter(Boolean);
+  const last=pts[pts.length-1];
+  return '<svg class="ttsp" viewBox="0 0 '+w+' '+h+'" aria-hidden="true"><polyline points="'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')+'"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="2.5"/></svg>'; }
+function renderTT(){ const box=$('ttBox'); const D=ttData();
+  if(!D){ box.innerHTML='<div class="panel"><p class="t-muted">Chưa có dữ liệu sheet "Tăng trưởng" (file Chi tiết digital ho).</p></div>'; return; }
+  const e=(isPgdUser()&&sel<0&&POINTS.length)?POINTS[0]:ent(); const L=ttSeries(D,e);
+  if(!L){ box.innerHTML='<div class="panel"><p class="t-muted">Chưa có số tăng trưởng cho '+esc(short(e))+'.</p></div>'; return; }
+  const S=ttStats(L), cur=S.cur;
+  const kp=(lab,val,sub)=>'<div class="ttk"><span class="tkl">'+lab+'</span><b class="num">'+val+'</b><span class="tks">'+sub+'</span></div>';
+  let h='<div class="ttks">'+
+    kp('DPD0 '+(cur.cur?'hiện tại':cur.lab), fmt(cur.th), cur.cur?'đến '+esc(META.asof||'')+(cur.mt!=null?' · MT '+fmt(cur.mt):''):(cur.mt!=null?'MT '+fmt(cur.mt):''))+
+    kp('Tăng từ cuối năm', ttArrow(S.ytd)+' '+ttPct(S.ytd), S.dec?'so '+S.dec.lab+' ('+(S.ytdAbs>=0?'+':'−')+fmt(Math.abs(S.ytdAbs))+')':'–')+
+    kp('So cùng kỳ', ttArrow(S.yoy)+' '+ttPct(S.yoy), S.yoyM?'so '+S.yoyM.lab+' ('+fmt(S.yoyM.th)+')':'chưa có số cùng kỳ')+
+    kp('Tháng đạt MT', S.n?S.ok+'/'+S.n:'–', S.n?'từ T1 đến '+L.filter(x=>x.y===cur.y&&!x.cur&&x.mt!=null&&x.th!=null).slice(-1)[0].lab:'')+
+    kp('Năng lực 3 tháng', S.pace!=null?(S.pace>=0?'+':'−')+fmt(Math.abs(S.pace))+'<small>/tháng</small>':'–', S.pace!=null?'bình quân '+S.paceFrom.lab+' → '+S.paceTo.lab+(S.needM>0?' · cần '+fmt(S.needM)+'/tháng':''):'')+
+    kp('Đích '+(S.end?S.end.lab:'cuối năm'), S.end?fmt(S.end.mt):'–', S.end?(S.need>0?'cần thêm '+fmt(S.need)+' ('+ttPct(S.needPct)+')':'đã vượt đích')+(S.fc!=null?'<br>dự kiến '+fmt(S.fc)+' · '+(S.fcPct>=1?'<span class="ttup">✓</span> ':'<span class="ttdn">✗</span> ')+pct0(S.fcPct)+' đích':''):'')+'</div>'+
+    (S.fc!=null&&S.end?'<p class="ttnote">Nếu giữ nhịp 3 tháng gần nhất (+'+fmt(S.pace)+'/tháng), đến '+S.end.lab+' DPD0 dự kiến <b>'+fmt(S.fc)+'</b>, '+(S.fcPct>=1?'<b class="tg">vượt đích '+fmt(S.fc-S.end.mt)+'</b>.':'<b class="tr">còn hụt '+fmt(S.end.mt-S.fc)+'</b> so với đích '+fmt(S.end.mt)+'. Cần tăng khoảng '+fmt(S.needM)+'/tháng'+(S.ratio?', gấp '+nf1.format(S.ratio)+' lần nhịp hiện tại':'')+'.')+'</p>':'');
+  const C=ttChart(L);
+  if(isPgdUser()){ const R=D.ent[REGION]; if(R){ const ix=D.months.map((m,i)=>i).filter(i=>R.mt[i]!=null); const cy=cur.y;
+      const iE=ix.filter(i=>D.months[i].y===cy).pop(), iC=D.months.findIndex(m=>m.m===cur.m&&m.y===cy);
+      if(iE!=null) h+='<div class="ttreg"><span>Đích DPD0 toàn khu vực</span><b class="num">'+D.months[iE].lab+': '+fmt(R.mt[iE])+'</b>'+(iC>=0&&R.mt[iC]!=null&&iC!==iE?'<span class="t-muted">MT '+D.months[iC].lab+': '+fmt(R.mt[iC])+'</span>':'')+'<span class="t-muted">PGD mình góp '+(S.end?pct1(S.end.mt/R.mt[iE]):'–')+' đích khu vực</span></div>'; } }
+  h+='<div class="panel"><div class="ph"><h2>DPD0 '+esc(short(e))+' · '+L[0].lab+' → '+L[L.length-1].lab+'</h2></div>'+
+     '<div class="ttscroll"><div class="ttwrap" id="ttWrap">'+C.svg+'<div class="tttip" id="ttTip" hidden></div></div></div>'+
+     '<div class="legend"><span><i class="sw th"></i>Thực hiện (TH)</span><span><i class="sw mt"></i>Mục tiêu (MT)</span>'+(S.fc!=null?'<span><i class="sw fc"></i>Dự kiến theo năng lực 3 tháng</span>':'')+'<span>✓ đạt MT · ✗ hụt MT</span>'+(cur.cur?'<span>Điểm rỗng = số đến '+esc(META.asof||'')+'</span>':'')+'</div></div>';
+  if(canRank()&&!isPgdUser()){
+    const rows=POINTS.map((p,i)=>{ const l=ttSeries(D,p); return l?{p,i,l,s:ttStats(l)}:null; }).filter(Boolean).sort((a,b)=>(b.s.ytd??-9)-(a.s.ytd??-9));
+    const ref=rows[0]?rows[0].l.filter(x=>x.y===rows[0].s.cur.y&&!x.cur&&x.mt!=null&&x.th!=null):[];
+    h+='<div class="panel"><div class="ph"><h2>Tăng trưởng DPD0 theo PGD</h2><span class="t-muted" style="font-size:12px">Xếp theo mức tăng từ cuối năm · bấm để xem chi tiết</span></div><div class="scrollx"><table class="tttbl"><thead><tr><th>PGD</th><th>Xu hướng</th><th class="r">DPD0 hiện tại</th><th class="r">Tăng từ cuối năm</th><th class="r">So cùng kỳ</th><th class="r">Năng lực 3T/tháng</th><th class="r">Cần/tháng</th><th class="r">Dự kiến '+(rows[0]&&rows[0].s.end?rows[0].s.end.lab:'T12')+'</th><th>Đạt MT '+(ref.length?'T1–T'+ref[ref.length-1].m:'')+'</th></tr></thead><tbody>'+
+      rows.map(o=>{ const yr=o.l.filter(x=>x.y===o.s.cur.y&&!x.cur&&x.mt!=null&&x.th!=null);
+        return '<tr data-i="'+o.i+'"'+(sel===o.i?' class="on"':'')+'><td><b>'+esc(short(o.p))+'</b></td><td>'+ttSpark(o.l)+'</td><td class="r num">'+fmt(o.s.cur.th)+'</td><td class="r num">'+ttArrow(o.s.ytd)+' '+ttPct(o.s.ytd)+'</td><td class="r num">'+ttArrow(o.s.yoy)+' '+ttPct(o.s.yoy)+'</td><td class="r num">'+(o.s.pace==null?'–':(o.s.pace>=0?'+':'−')+fmt(Math.abs(o.s.pace)))+'</td><td class="r num">'+(o.s.end?(o.s.need>0?fmt(o.s.needM):'✓ đã vượt'):'–')+'</td><td class="r num">'+(o.s.fc==null?'–':(o.s.fcPct>=1?'<span class="ttup">✓</span> ':'<span class="ttdn">✗</span> ')+pct0(o.s.fcPct))+'</td><td><span class="ttdots">'+
+          yr.map(x=>'<i class="'+(x.th>=x.mt?'ok':'no')+'" title="'+x.lab+': '+(x.th>=x.mt?'đạt':'hụt')+' ('+pct0(x.th/x.mt)+')"></i>').join('')+'</span> <span class="num">'+o.s.ok+'/'+o.s.n+'</span></td></tr>'; }).join('')+
+      '</tbody></table></div><div class="legend"><span><i class="ttdots"><i class="ok"></i></i> tháng đạt MT</span><span><i class="ttdots"><i class="no"></i></i> tháng hụt MT</span></div></div>'; }
+  box.innerHTML=h;
+  const wrap=$('ttWrap'), svg=wrap.querySelector('svg'), tip=$('ttTip'), xl=svg.querySelector('#ttX');
+  const at=ev=>{ const r=svg.getBoundingClientRect(), x=(ev.clientX-r.left)/r.width*C.W; let i=Math.round((x-C.ml)/((C.W-C.ml-C.mr)/Math.max(1,C.n-1))); return Math.max(0,Math.min(C.n-1,i)); };
+  svg.addEventListener('pointermove',ev=>{ const i=at(ev), r=svg.getBoundingClientRect(), wr=wrap.getBoundingClientRect(); xl.style.display=''; xl.setAttribute('x1',C.X(i)); xl.setAttribute('x2',C.X(i));
+    tip.innerHTML=ttTipHTML(L,i); tip.hidden=false; const px=C.X(i)/C.W*r.width+(r.left-wr.left); const tw=tip.offsetWidth; tip.style.left=Math.max(4,Math.min(wr.width-tw-4,px+(px>wr.width/2?-tw-14:14)))+'px'; tip.style.top='8px'; });
+  svg.addEventListener('pointerleave',()=>{ tip.hidden=true; xl.style.display='none'; });
+  box.querySelectorAll('.tttbl tbody tr').forEach(tr=>tr.addEventListener('click',()=>{ select(+tr.dataset.i); window.scrollTo({top:0,behavior:'smooth'}); }));
+}
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }
-function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
+function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
 function show(v){ const changed=view!==v; view=v;
   document.querySelectorAll('.navbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   document.querySelectorAll('.bn').forEach(b=>b.setAttribute('aria-current',(b.dataset.grp||'').split(' ').includes(v)?'page':'false'));
@@ -812,7 +922,7 @@ function boot(SRC, meta){ const prev=sel>=0?POINTS[sel]:null; loadData(SRC, meta
   const rv=$('rawPick').value; $('rawPick').innerHTML=Object.entries(TB).map(([k,t])=>'<option value="'+esc(k)+'">'+esc(t.name)+'</option>').join(''); if(rv&&TB[rv]) $('rawPick').value=rv;
   deriveAll(); booted=true; applyRole(); rdCheck();
   if(USER&&USER.role==='pgd'&&sel<0&&POINTS.length) sel=0; $('pick').value=String(sel); }
-const VIEWS=['tq','hs','xh','cb','dn','gn','kn','pt','dt','mb','no','kt','raw','nk'];
+const VIEWS=['tq','hs','xh','cb','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
 let start='tq'; try{ const h=location.hash.slice(1); const s=localStorage.getItem('kpi55-view'); if(VIEWS.includes(h)) start=h; else if(VIEWS.includes(s)) start=s; }catch(e){}
 function startView(){ const q=new URLSearchParams(location.search).get('pgd');
   if(q){ const i=POINTS.findIndex(n=>matchPgd(n,q)); if(i>=0){ sel=i; $('pick').value=String(i); start='hs'; } }

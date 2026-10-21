@@ -182,7 +182,7 @@ function chooser(where){ const host=document.querySelector('[data-chooser="'+whe
 
 /* ---------- TỔNG QUAN ---------- */
 const GPAGE=['dn','gn','dt','mb','kn'];
-const PAGES={no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
+const PAGES={no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',ck:'Cam kết chỉ tiêu',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
 const sc=s=>s[1]==='solid'?'crit':s[1];
 const wide=()=>window.matchMedia('(min-width:1024px)').matches;
 const openG=new Set([0,1]);
@@ -897,9 +897,111 @@ function renderTT(){ const box=$('ttBox'); const D=ttData();
   svg.addEventListener('pointerleave',()=>{ tip.hidden=true; xl.style.display='none'; });
   box.querySelectorAll('.tttbl tbody tr').forEach(tr=>tr.addEventListener('click',()=>{ select(+tr.dataset.i); window.scrollTo({top:0,behavior:'smooth'}); }));
 }
+/* ---------- v10: Cam kết chỉ tiêu (NET, GN NET, KHM, RFW) ---------- */
+const CK={rows:null, log:[], month:'', loading:false, err:'', editing:{}};
+const ckNfT=new Intl.NumberFormat('vi-VN',{maximumFractionDigits:2});
+const ckTy=v=>v==null?'–':ckNfT.format(v/1000)+' tỷ', ckTr=v=>v==null?'–':nf0.format(Math.round(v))+' tr';
+const ckAu=v=>v==null?'–':(Math.abs(v)>=1000?ckTy(v):ckTr(v));
+const ckP2=v=>v==null?'–':nf2.format(v*100)+'%';
+const CKK=[
+  {k:'net',f:'NET',name:'Tăng NET',unit:'tr',auto:1,fmt:ckAu},
+  {k:'gnn',f:'GNN',name:'GN NET',unit:'tr',auto:1,fmt:ckAu},
+  {k:'khm',f:'KHM',name:'KH mới',unit:'khách',fmt:v=>v==null?'–':nf0.format(Math.round(v))+' khách'},
+  {k:'rfw',f:'RFW',name:'%RFW',unit:'%',low:1,fmt:ckP2}];
+function ckDays(){ const p=String(META.asof||'').split('/').map(Number); const d=p[0], m=p[1], y=p[2];
+  if(!d||!m||!y){ const n=new Date(); return {dd:n.getDate(),dim:new Date(n.getFullYear(),n.getMonth()+1,0).getDate(),key:''+n.getFullYear()+String(n.getMonth()+1).padStart(2,'0'),mm:n.getMonth()+1}; }
+  return {dd:d,dim:new Date(y,m,0).getDate(),key:''+y+String(m).padStart(2,'0'),mm:m}; }
+function ckParse(s,o){ s=String(s||'').trim(); const isTy=/t[ỷy]/i.test(s); s=s.replace('%','').replace(/\s|tỷ|ty|tr/gi,''); if(!s) return null; const neg=/^[-−]/.test(s); s=s.replace(/^[-−]/,'');
+  if(o.auto&&isTy){ const v=+s.replace(',','.'); return isFinite(v)?(neg?-1:1)*v*1000:null; }
+  if(o.low){ const v=+s.replace(',','.'); return isFinite(v)?(neg?-1:1)*v/100:null; }
+  const v=+s.replace(/\./g,'').replace(',','.'); return isFinite(v)?(neg?-v:v):null; }
+const ckShow=(v,o)=>v==null||v===''?'':(o.low?nf2.format(v*100):nf0.format(Math.round(v)));
+function ckFeedback(o,c,v,LEFT){
+  if(c==null) return {cls:'',t:'Nhập số cam kết đến cuối tháng.'};
+  if(o.low){ if(v.mt!=null&&c<=v.mt) return {cls:'good',t:'Cam kết <b>'+ckP2(c)+'</b>, dưới trần '+ckP2(v.mt)+'. Cần kéo RFW giảm <b>'+nf2.format(Math.max(0,(v.th||0)-c)*100)+' điểm</b> so với hiện tại ('+ckP2(v.th)+').'};
+    return {cls:'warn',t:'Cam kết <b>'+ckP2(c)+'</b> vẫn <b>vượt trần '+nf2.format((c-(v.mt||0))*100)+' điểm</b> (trần '+ckP2(v.mt)+'). Cần ghi rõ lý do.',need:1}; }
+  const r=v.mt?c/v.mt:null, perDay=LEFT?(c-(v.th||0))/LEFT:null, per=o.auto?ckAu(perDay):nf0.format(Math.round(perDay||0))+' '+o.unit;
+  let t='Cam kết = <b>'+pct0(r)+' MT</b>. '+(c-(v.th||0)>0?'Cần thêm <b>'+o.fmt(c-(v.th||0))+'</b>, khoảng <b>'+per+'/ngày</b> trong '+LEFT+' ngày còn lại.':'Hiện tại đã có '+o.fmt(v.th)+', <b>đã vượt số cam kết</b>; nên đặt cao hơn.');
+  if(v.db!=null&&c<v.db) t+=' Lưu ý: thấp hơn dự báo hiện tại ('+o.fmt(v.db)+').';
+  if(r!=null&&r<1) return {cls:'warn',t:t+' <b>Thấp hơn MT</b>, cần ghi rõ lý do.',need:1};
+  return {cls:'good',t}; }
+function ckTrack(o,c,v,D){ if(c==null||v.th==null) return null; const LEFT=D.dim-D.dd, DONE=D.dd/D.dim;
+  if(o.low){ const ok=v.th<=c; return {ok,pct:null,t:ok?'Đang '+ckP2(v.th)+', <b>đã trong mức cam kết</b> ('+ckP2(c)+').':'Đang '+ckP2(v.th)+', <b>còn cao hơn cam kết '+nf2.format((v.th-c)*100)+' điểm</b>.'}; }
+  const neg=v.th<0, pct=c>0&&!neg?v.th/c:null, exp=c*DONE, ok=v.db!=null?v.db>=c:v.th>=exp, per=LEFT?(c-v.th)/LEFT:null;
+  return {ok,pct,neg,t:(neg?'<b>Đang âm</b> ':'Đã đạt <b>'+(pct==null?'–':pct0(pct))+'</b> cam kết ')+'('+o.fmt(v.th)+' / '+o.fmt(c)+'). '+(v.db!=null?'Dự báo cuối tháng '+o.fmt(v.db)+'. ':'Theo nhịp ngày phải có ~'+o.fmt(exp)+'. ')+(ok?'<b>Đúng nhịp.</b>':'<b>Chậm nhịp</b>, cần '+(o.auto?ckAu(per):nf0.format(Math.round(per||0))+' '+o.unit)+'/ngày.')}; }
+function ckSeenKey(){ return 'kpi55-ck-seen-'+((USER&&USER.email)||''); }
+function ckUnseen(){ let s=''; try{ s=localStorage.getItem(ckSeenKey())||''; }catch(e){} return (CK.log||[]).filter(l=>String(l.t)>s).length; }
+function ckBadge(){ const b=document.querySelector('.navbtn[data-v="ck"] .ckb'); if(!b) return; const n=USER&&USER.role==='admin'?ckUnseen():0; b.textContent=n; b.hidden=!n; }
+async function ckLoad(force){ if(CK.loading||(!force&&CK.rows)) return; CK.loading=true; CK.err='';
+  try{ const j=await window.kpiApi('ckGet',{month:ckDays().key}); CK.rows=j.rows||[]; CK.log=j.log||[]; CK.month=j.month||''; }
+  catch(e){ CK.err=e.message; CK.rows=CK.rows||[]; }
+  CK.loading=false; ckBadge(); if(view==='ck') renderCK(); }
+function ckPrefetch(){ if(USER&&USER.role==='admin'&&window.kpiApi) ckLoad(); }
+const ckRowOf=p=>(CK.rows||[]).find(r=>String(r.PGD).trim()===p);
+function ckChText(l){ let a=[]; try{ a=JSON.parse(l.ch); }catch(e){ return esc(l.ch); }
+  return a.map(x=>{ const o=CKK.find(k=>k.f===x.k); return o?esc(o.name)+': '+o.fmt(x.from)+' → '+o.fmt(x.to):''; }).join(' · '); }
+function ckTime(t){ const d=new Date(t); return isNaN(d)?esc(t):String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' '+d.getDate()+'/'+(d.getMonth()+1); }
+function renderCK(){ const box=$('ckBox'); if(!box) return;
+  if(CK.rows==null){ box.innerHTML='<div class="panel"><p class="t-muted">Đang tải cam kết…</p></div>'; ckLoad(); return; }
+  const D=ckDays(), LEFT=D.dim-D.dd;
+  const head='<div class="ckhead"><div><b>Cam kết chỉ tiêu tháng '+D.mm+'</b><span class="t-muted"> · số thực tế đến '+esc(META.asof||'–')+' · còn '+LEFT+' ngày</span></div><button type="button" class="btn" id="ckRe">Tải lại</button></div>'+(CK.err?'<p class="ckerr">'+esc(CK.err)+'</p>':'');
+  const adminSum=USER&&USER.role==='admin'&&sel<0;
+  if(adminSum) box.innerHTML=head+ckAdminHTML(D); else { const e=isPgdUser()?myPgd():(sel>=0?POINTS[sel]:null); box.innerHTML=head+(e?ckFormHTML(e,D):'<div class="panel"><p class="t-muted">Chọn PGD ở ô "Đang xem" để nhập cam kết.</p></div>'); if(e) ckWire(e,D); }
+  const re=$('ckRe'); if(re) re.onclick=()=>{ CK.rows=null; renderCK(); };
+  if(adminSum){ try{ const t=(CK.log[0]||{}).t; if(t) localStorage.setItem(ckSeenKey(),String(t)); }catch(e){} setTimeout(ckBadge,50);
+    box.querySelectorAll('.cktbl tbody tr[data-i]').forEach(tr=>tr.addEventListener('click',()=>select(+tr.dataset.i))); } }
+function ckFormHTML(e,D){ const r=ckRowOf(e)||{}, ed=!!CK.editing[e], locked=!!ckRowOf(e)&&!ed, LEFT=D.dim-D.dd;
+  return '<div class="panel ckp"><div class="ph"><h2>Cam kết của '+esc(short(e))+'</h2><span class="ckbadge '+(ckRowOf(e)?'ok':'no')+'">'+(ckRowOf(e)?'Đã nộp lúc '+ckTime(r.ThoiGian)+(+r.SoLanSua?' · sửa '+r.SoLanSua+' lần':''):'Chưa nộp')+'</span></div>'+
+    '<div class="ckgrid">'+CKK.map(o=>{ const v=kv(o.k,e), c=ckRowOf(e)?num(r[o.f]):null;
+      const facts=o.low?[['Trần (MT)',ckP2(v.mt)],['Hiện tại',ckP2(v.th)],['T-1',ckP2(v.t1)],['Vượt trần',v.th!=null&&v.mt!=null?nf2.format((v.th-v.mt)*100)+' đ':'–']]
+        :[['MT',o.fmt(v.mt)],['Hiện tại',o.fmt(v.th)],['Dự báo',v.db!=null?o.fmt(v.db):'–'],['T-1',o.fmt(v.t1)]];
+      const qs=o.low?[['Bằng trần',v.mt]]:[['Bằng MT',v.mt]].concat(v.db!=null&&v.mt!=null&&v.db>v.mt?[['Bằng dự báo',v.db]]:[]).concat(v.mt!=null?[['110% MT',v.mt*1.1]]:[]);
+      const tr=locked?ckTrack(o,c,v,D):null;
+      return '<div class="ckc'+(locked?' locked':'')+'" data-k="'+o.k+'"><div class="ckkh"><b>'+o.name+'</b><span>'+(o.low?'càng thấp càng tốt':o.auto?'nhập theo triệu · từ 1.000 tr hiện ra tỷ':'đơn vị: '+o.unit)+'</span></div>'+
+        '<div class="ckfacts">'+facts.map(f=>'<div>'+f[0]+'<b class="num">'+f[1]+'</b></div>').join('')+'</div>'+
+        '<div class="ckin"><input inputmode="decimal" aria-label="Cam kết '+o.name+'" placeholder="'+(o.low?'VD: '+(v.mt!=null?nf2.format(v.mt*100):'2,5'):'VD: '+ckShow(v.mt,o)+(o.auto?' (triệu)':''))+'" value="'+ckShow(c,o)+'"'+(locked?' disabled':'')+'><span>'+o.unit+'</span></div>'+
+        (locked?'':'<div class="ckq">'+qs.filter(q=>q[1]!=null).map(q=>'<button type="button" data-v="'+q[1]+'">'+q[0]+'</button>').join('')+'</div>')+
+        (tr?'<div class="cktrk '+(tr.ok?'good':'crit')+'"><span class="tl">Theo dõi đến '+esc(META.asof||'')+'</span>'+(tr.pct!=null?'<span class="ckbar"><i style="width:'+Math.max(0,Math.min(100,tr.pct*100))+'%"></i><b style="left:'+(D.dd/D.dim*100)+'%"></b></span>':'')+'<span>'+tr.t+'</span></div>':'')+
+        '<div class="ckfb'+(locked?' hide':'')+'"></div><div class="ckwhy"><textarea placeholder="Lý do cam kết '+(o.low?'vượt trần':'thấp hơn MT')+'…"'+(locked?' disabled':'')+'>'+esc(r['LyDo'+o.f]||'')+'</textarea></div></div>'; }).join('')+'</div>'+
+    '<div><label class="cklb" for="ckAct">Hành động chính để đạt cam kết</label><textarea id="ckAct" placeholder="VD: gọi 20 khách sắp tất toán mời tái vay; mỗi ngày 2 hồ sơ GN mới…"'+(locked?' disabled':'')+'>'+esc(r.HanhDong||'')+'</textarea></div>'+
+    '<div class="ckact">'+(locked?'<button type="button" class="btn" id="ckEdit">Sửa cam kết</button><span class="t-muted">Sửa rồi gửi lại, anh Tuấn sẽ được báo số cũ → số mới.</span>':'<button type="button" class="btn primary" id="ckSend">Gửi cam kết</button>'+(ed?'<button type="button" class="btn" id="ckCancel">Huỷ sửa</button>':'')+'<span class="t-muted" id="ckMsg"></span>')+'</div></div>'; }
+function ckWire(e,D){ const box=$('ckBox'), LEFT=D.dim-D.dd;
+  const check=()=>{ const s=$('ckSend'); if(!s) return; let ok=true; const miss=[];
+    box.querySelectorAll('.ckc').forEach(el=>{ const o=CKK.find(x=>x.k===el.dataset.k); const c=ckParse(el.querySelector('input').value,o);
+      if(c==null){ ok=false; miss.push(o.name); return; } const w=el.querySelector('.ckwhy'); if(w.classList.contains('show')&&!w.querySelector('textarea').value.trim()){ ok=false; miss.push('lý do '+o.name); } });
+    s.disabled=!ok; $('ckMsg').textContent=ok?'':'Còn thiếu: '+miss.join(', '); };
+  box.querySelectorAll('.ckc').forEach(el=>{ const o=CKK.find(x=>x.k===el.dataset.k), v=kv(o.k,e), inp=el.querySelector('input'), fb=el.querySelector('.ckfb'), w=el.querySelector('.ckwhy'), locked=el.classList.contains('locked');
+    const upd=()=>{ const c=ckParse(inp.value,o); const f=ckFeedback(o,c,v,LEFT); fb.className='ckfb '+f.cls+(locked?' hide':''); fb.innerHTML=(o.auto&&c!=null?'Bạn nhập: <b>'+ckAu(c)+'</b>. ':'')+f.t; w.classList.toggle('show',!!f.need||(locked&&!!w.querySelector('textarea').value.trim())); check(); };
+    inp.addEventListener('input',upd); w.querySelector('textarea').addEventListener('input',check);
+    el.querySelectorAll('.ckq button').forEach(b=>b.onclick=()=>{ inp.value=ckShow(+b.dataset.v,o); upd(); }); upd(); });
+  const ed=$('ckEdit'); if(ed) ed.onclick=()=>{ CK.editing[e]=1; renderCK(); };
+  const cc=$('ckCancel'); if(cc) cc.onclick=()=>{ delete CK.editing[e]; renderCK(); };
+  const sd=$('ckSend'); if(sd) sd.onclick=async()=>{ const ck={act:$('ckAct').value.trim()};
+    box.querySelectorAll('.ckc').forEach(el=>{ const o=CKK.find(x=>x.k===el.dataset.k); ck[o.f]=ckParse(el.querySelector('input').value,o); const w=el.querySelector('.ckwhy'); ck['why'+o.f]=w.classList.contains('show')?w.querySelector('textarea').value.trim():''; });
+    sd.disabled=true; $('ckMsg').textContent='Đang gửi…';
+    try{ const j=await window.kpiApi('ckSave',{month:D.key,pgd:e,ck}); CK.rows=j.rows||CK.rows; if(j.log) CK.log=j.log; delete CK.editing[e]; toast('Đã lưu cam kết'); renderCK(); }
+    catch(err){ $('ckMsg').textContent=err.message; sd.disabled=false; } };
+  check(); }
+function ckAdminHTML(D){ const sent=POINTS.filter(p=>ckRowOf(p)), RG=REGION;
+  const sum=f=>sent.reduce((a,p)=>a+(num(ckRowOf(p)[f])||0),0);
+  const chip=(t,b,s)=>'<div class="ckchip"><span>'+t+'</span><b class="num">'+b+'</b><small>'+s+'</small></div>';
+  const un=ckUnseen();
+  let h='';
+  if(CK.log&&CK.log.length) h+='<div class="panel cknoti"><div class="ph"><h2>🔔 Thông báo sửa cam kết</h2>'+(un?'<span class="ckbadge new">'+un+' mới</span>':'')+'</div>'+CK.log.slice(0,10).map((l,i)=>'<div class="ckni'+(i<un?' new':'')+'"><b>'+esc(short(String(l.pgd)))+'</b> · '+esc(l.name||l.email)+' sửa lúc '+ckTime(l.t)+': '+ckChText(l)+'</div>').join('')+'</div>';
+  h+='<div class="ckchips">'+chip('Đã nộp',sent.length+'/'+POINTS.length,POINTS.length-sent.length?'còn '+(POINTS.length-sent.length)+' PGD chưa nộp':'đủ '+POINTS.length+' PGD')+
+    CKK.filter(o=>!o.low).map(o=>{ const mt=kv(o.k,RG).mt; return chip('Tổng cam kết '+o.name, sent.length?o.fmt(sum(o.f)):'–', mt!=null?'MT khu vực '+o.fmt(mt)+(sent.length?' · '+pct0(sum(o.f)/mt):''):''); }).join('')+'</div>';
+  const cls=(c,mt,low)=>c==null||!mt?'':low?(c<=mt?'good':'crit'):(c/mt>=1?'good':c/mt>=.9?'warn':'crit');
+  h+='<div class="panel"><div class="ph"><h2>Cam kết theo PGD</h2><span class="t-muted" style="font-size:12px">Bấm vào dòng để mở cam kết của PGD đó</span></div><div class="scrollx"><table class="cktbl"><thead><tr><th class="l">PGD</th><th class="l">Trạng thái</th>'+CKK.map(o=>'<th class="g">'+o.name+' cam kết</th><th>Đạt đến nay</th>').join('')+'<th class="l g">Hành động chính</th></tr></thead><tbody>'+
+    POINTS.map((p,i)=>{ const r=ckRowOf(p);
+      return '<tr data-i="'+i+'"><td class="l"><b>'+esc(short(p))+'</b></td><td class="l">'+(r?'<span class="pill good">Đã nộp</span><small>'+ckTime(r.ThoiGian)+(+r.SoLanSua?' · sửa '+r.SoLanSua+' lần':'')+'</small>':'<span class="pill crit">Chưa nộp</span>')+'</td>'+
+        CKK.map(o=>{ const v=kv(o.k,p), c=r?num(r[o.f]):null, tr=c==null?null:ckTrack(o,c,v,D);
+          return '<td class="g">'+(c==null?'–':o.fmt(c)+' <span class="pill '+cls(c,v.mt,o.low)+'">'+(o.low?(c<=v.mt?'≤ trần':'vượt trần'):pct0(v.mt?c/v.mt:null)+' MT')+'</span>')+(r&&r['LyDo'+o.f]?'<small title="'+esc(r['LyDo'+o.f])+'">có lý do</small>':'')+'</td><td>'+(tr?'<span class="pill '+(tr.ok?'good':'crit')+'" title="'+esc(tr.t.replace(/<[^>]+>/g,''))+'">'+(tr.neg?'ÂM':tr.pct!=null?pct0(tr.pct):(tr.ok?'đạt':'chưa'))+(tr.ok?' ✓':' ✗')+'</span>':'')+'</td>'; }).join('')+
+        '<td class="l g ckactc">'+(r&&r.HanhDong?esc(r.HanhDong):'<span class="t-muted">–</span>')+'</td></tr>'; }).join('')+'</tbody></table></div></div>';
+  return h; }
+
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }
-function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
+function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
 function show(v){ const changed=view!==v; view=v;
   document.querySelectorAll('.navbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   document.querySelectorAll('.bn').forEach(b=>b.setAttribute('aria-current',(b.dataset.grp||'').split(' ').includes(v)?'page':'false'));
@@ -920,9 +1022,9 @@ function boot(SRC, meta){ const prev=sel>=0?POINTS[sel]:null; loadData(SRC, meta
   $('pick').innerHTML='<option value="-1">Toàn khu vực ('+POINTS.length+' PGD)</option>'+POINTS.map((n,i)=>'<option value="'+i+'">'+esc(short(n))+'</option>').join('');
   $('pick').value=String(sel);
   const rv=$('rawPick').value; $('rawPick').innerHTML=Object.entries(TB).map(([k,t])=>'<option value="'+esc(k)+'">'+esc(t.name)+'</option>').join(''); if(rv&&TB[rv]) $('rawPick').value=rv;
-  deriveAll(); booted=true; applyRole(); rdCheck();
+  deriveAll(); booted=true; applyRole(); rdCheck(); try{ ckPrefetch(); }catch(e){}
   if(USER&&USER.role==='pgd'&&sel<0&&POINTS.length) sel=0; $('pick').value=String(sel); }
-const VIEWS=['tq','hs','xh','cb','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
+const VIEWS=['tq','hs','ck','xh','cb','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
 let start='tq'; try{ const h=location.hash.slice(1); const s=localStorage.getItem('kpi55-view'); if(VIEWS.includes(h)) start=h; else if(VIEWS.includes(s)) start=s; }catch(e){}
 function startView(){ const q=new URLSearchParams(location.search).get('pgd');
   if(q){ const i=POINTS.findIndex(n=>matchPgd(n,q)); if(i>=0){ sel=i; $('pick').value=String(i); start='hs'; } }

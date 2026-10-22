@@ -898,7 +898,7 @@ function renderTT(){ const box=$('ttBox'); const D=ttData();
   box.querySelectorAll('.tttbl tbody tr').forEach(tr=>tr.addEventListener('click',()=>{ select(+tr.dataset.i); window.scrollTo({top:0,behavior:'smooth'}); }));
 }
 /* ---------- v10: Cam kết chỉ tiêu (NET, GN NET, KHM, RFW) ---------- */
-const CK={rows:null, log:[], month:'', loading:false, err:'', editing:{}};
+const CK={rows:null, log:[], month:'', loading:false, err:'', editing:{}, ci:{}, ciDay:'', open:{}};
 const ckNfT=new Intl.NumberFormat('vi-VN',{maximumFractionDigits:2});
 const ckTy=v=>v==null?'–':ckNfT.format(v/1000)+' tỷ', ckTr=v=>v==null?'–':nf0.format(Math.round(v))+' tr';
 const ckAu=v=>v==null?'–':(Math.abs(v)>=1000?ckTy(v):ckTr(v));
@@ -933,10 +933,11 @@ function ckSeenKey(){ return 'kpi55-ck-seen-'+((USER&&USER.email)||''); }
 function ckUnseen(){ let s=''; try{ s=localStorage.getItem(ckSeenKey())||''; }catch(e){} return (CK.log||[]).filter(l=>String(l.t)>s).length; }
 function ckBadge(){ const b=document.querySelector('.navbtn[data-v="ck"] .ckb'); if(!b) return; const n=USER&&USER.role==='admin'?ckUnseen():0; b.textContent=n; b.hidden=!n; }
 async function ckLoad(force){ if(CK.loading||(!force&&CK.rows)) return; CK.loading=true; CK.err='';
-  try{ const j=await window.kpiApi('ckGet',{month:ckDays().key}); CK.rows=j.rows||[]; CK.log=j.log||[]; CK.month=j.month||''; }
+  try{ const j=await window.kpiApi('ckGet',{month:ckDays().key}); ckSet(j); }
   catch(e){ CK.err=e.message; CK.rows=CK.rows||[]; }
-  CK.loading=false; ckBadge(); if(view==='ck') renderCK(); }
-function ckPrefetch(){ if(USER&&USER.role==='admin'&&window.kpiApi) ckLoad(); }
+  CK.loading=false; ckBadge(); if(view==='ck') renderCK(); if(CK.popWait){ CK.popWait=false; try{ dnPopup(); }catch(e){} } }
+function ckSet(j){ CK.rows=j.rows||[]; if(j.log) CK.log=j.log; CK.month=j.month||''; CK.ci=j.ci||{}; CK.ciDay=j.ciDay||''; }
+function ckPrefetch(){ if(USER&&window.kpiApi) ckLoad(); }
 const ckRowOf=p=>(CK.rows||[]).find(r=>String(r.PGD).trim()===p);
 function ckChText(l){ let a=[]; try{ a=JSON.parse(l.ch); }catch(e){ return esc(l.ch); }
   return a.map(x=>{ const o=CKK.find(k=>k.f===x.k); return o?esc(o.name)+': '+o.fmt(x.from)+' → '+o.fmt(x.to):''; }).join(' · '); }
@@ -948,12 +949,12 @@ function renderCK(){ const box=$('ckBox'); if(!box) return;
   const adminSum=USER&&USER.role==='admin'&&sel<0;
   if(adminSum) box.innerHTML=head+ckAdminHTML(D); else { const e=isPgdUser()?myPgd():(sel>=0?POINTS[sel]:null); box.innerHTML=head+(e?ckFormHTML(e,D):'<div class="panel"><p class="t-muted">Chọn PGD ở ô "Đang xem" để nhập cam kết.</p></div>'); if(e) ckWire(e,D); }
   const re=$('ckRe'); if(re) re.onclick=()=>{ CK.rows=null; renderCK(); };
-  if(adminSum){ try{ const t=(CK.log[0]||{}).t; if(t) localStorage.setItem(ckSeenKey(),String(t)); }catch(e){} setTimeout(ckBadge,50);
-    box.querySelectorAll('.cktbl tbody tr[data-i]').forEach(tr=>tr.addEventListener('click',()=>select(+tr.dataset.i))); } }
+  if(adminSum){ try{ const t=(CK.log[0]||{}).t; if(t) localStorage.setItem(ckSeenKey(),String(t)); }catch(e){} setTimeout(ckBadge,50); ckAdminWire(D); } }
 function ckFormHTML(e,D){ const r=ckRowOf(e)||{}, ed=!!CK.editing[e], locked=!!ckRowOf(e)&&!ed, LEFT=D.dim-D.dd;
-  return '<div class="panel ckp"><div class="ph"><h2>Cam kết của '+esc(short(e))+'</h2><span class="ckbadge '+(ckRowOf(e)?'ok':'no')+'">'+(ckRowOf(e)?'Đã nộp lúc '+ckTime(r.ThoiGian)+(+r.SoLanSua?' · sửa '+r.SoLanSua+' lần':''):'Chưa nộp')+'</span></div>'+
+  const rv=ckRowOf(e)?(r.Duyet==='back'?'<div class="ckrv back"><b>↩ '+esc(r.NguoiDuyet||'Admin')+' đề nghị xem lại cam kết</b>“'+esc(r.GopY)+'”'+(locked?'<span>Bấm “Sửa cam kết”, chỉnh rồi gửi lại.</span>':'')+'</div>':r.Duyet==='ok'?'<div class="ckrv ok"><b>✓ Cam kết đã được duyệt</b>'+(r.GopY?'Góp ý: “'+esc(r.GopY)+'”':'')+'</div>':(r.GopY?'<div class="ckrv wait"><b>Đã gửi lại · chờ duyệt</b>Góp ý trước: “'+esc(r.GopY)+'”</div>':'')):'';
+  return '<div class="panel ckp">'+rv+'<div class="ph"><h2>Cam kết của '+esc(short(e))+'</h2><span class="ckbadge '+(ckRowOf(e)?'ok':'no')+'">'+(ckRowOf(e)?'Đã nộp lúc '+ckTime(r.ThoiGian)+(+r.SoLanSua?' · sửa '+r.SoLanSua+' lần':''):'Chưa nộp')+'</span></div>'+
     '<div class="ckgrid">'+CKK.map(o=>{ const v=kv(o.k,e), c=ckRowOf(e)?num(r[o.f]):null;
-      const facts=o.low?[['Trần (MT)',ckP2(v.mt)],['Hiện tại',ckP2(v.th)],['T-1',ckP2(v.t1)],['Vượt trần',v.th!=null&&v.mt!=null?nf2.format((v.th-v.mt)*100)+' đ':'–']]
+      const facts=o.low?[['Trần (MT)',ckP2(v.mt)],['Hiện tại',ckP2(v.th)],['RFW tiền',ckAu(cell('RFW',e,'RFW TH'))],['Trần tiền',ckAu(cell('RFW',e,'RFW MT'))]]
         :[['MT',o.fmt(v.mt)],['Hiện tại',o.fmt(v.th)],['Dự báo',v.db!=null?o.fmt(v.db):'–'],['T-1',o.fmt(v.t1)]];
       const qs=o.low?[['Bằng trần',v.mt]]:[['Bằng MT',v.mt]].concat(v.db!=null&&v.mt!=null&&v.db>v.mt?[['Bằng dự báo',v.db]]:[]).concat(v.mt!=null?[['110% MT',v.mt*1.1]]:[]);
       const tr=locked?ckTrack(o,c,v,D):null;
@@ -979,26 +980,73 @@ function ckWire(e,D){ const box=$('ckBox'), LEFT=D.dim-D.dd;
   const sd=$('ckSend'); if(sd) sd.onclick=async()=>{ const ck={act:$('ckAct').value.trim()};
     box.querySelectorAll('.ckc').forEach(el=>{ const o=CKK.find(x=>x.k===el.dataset.k); ck[o.f]=ckParse(el.querySelector('input').value,o); const w=el.querySelector('.ckwhy'); ck['why'+o.f]=w.classList.contains('show')?w.querySelector('textarea').value.trim():''; });
     sd.disabled=true; $('ckMsg').textContent='Đang gửi…';
-    try{ const j=await window.kpiApi('ckSave',{month:D.key,pgd:e,ck}); CK.rows=j.rows||CK.rows; if(j.log) CK.log=j.log; delete CK.editing[e]; toast('Đã lưu cam kết'); renderCK(); }
+    try{ const j=await window.kpiApi('ckSave',{month:D.key,pgd:e,ck}); ckSet(j); delete CK.editing[e]; toast('Đã lưu cam kết'); renderCK(); }
     catch(err){ $('ckMsg').textContent=err.message; sd.disabled=false; } };
   check(); }
-function ckAdminHTML(D){ const sent=POINTS.filter(p=>ckRowOf(p)), RG=REGION;
-  const sum=f=>sent.reduce((a,p)=>a+(num(ckRowOf(p)[f])||0),0);
-  const chip=(t,b,s)=>'<div class="ckchip"><span>'+t+'</span><b class="num">'+b+'</b><small>'+s+'</small></div>';
-  const un=ckUnseen();
+const ckApvPill=r=>r.Duyet==='ok'?'<span class="pill good">Đã duyệt</span>':r.Duyet==='back'?'<span class="pill crit">Đã trả lại</span>':'<span class="pill ckw">Chờ duyệt'+(r.GopY?' · đã sửa':'')+'</span>';
+const ckCiPill=p=>{ const c=(CK.ci||{})[p], s=c&&c.st; return s==='done'?'<span class="pill good">Hôm qua: đã làm ✓</span>':s==='part'?'<span class="pill warn">Hôm qua: một phần</span>':s==='no'?'<span class="pill crit">Hôm qua: chưa làm</span>':'<span class="pill ckw">Chưa báo việc</span>'; };
+function ckTodo(t){ let a=String(t||'').split(/\n+/).map(x=>x.replace(/^[\s\-•]+/,'').trim()).filter(x=>x.length>3);
+  if(a.length<2) a=String(t||'').split(/;\s*|,(?=\s*[A-ZĐ])/).map(x=>x.replace(/^[\s\-•]+/,'').trim()).filter(x=>x.length>3);
+  a=a.map(x=>x.replace(/\s+\.$/,'').replace(/\s+/g,' '));
+  return a.slice(0,3).map(x=>x.length>110?x.slice(0,107).replace(/\s+\S*$/,'')+'…':x); }
+function ckRfwAmt(p){ return {th:cell('RFW',p,'RFW TH'), mt:cell('RFW',p,'RFW MT')}; }
+function ckAdminHTML(D){ const L=POINTS.map((p,i)=>{ const r=ckRowOf(p); const ks=CKK.map(o=>{ const v=kv(o.k,p), c=r?num(r[o.f]):null, tr=c==null?null:ckTrack(o,c,v,D), low=c!=null&&v.mt!=null&&(o.low?c>v.mt:c<v.mt); return {o,v,c,tr,low}; });
+    return {p,i,r,ks,late:ks.filter(k=>k.tr&&!k.tr.ok).length,lows:ks.filter(k=>k.low).length}; });
+  const sent=L.filter(x=>x.r), LEFT=D.dim-D.dd, RG=REGION;
   let h='';
-  if(CK.log&&CK.log.length) h+='<div class="panel cknoti"><div class="ph"><h2>🔔 Thông báo sửa cam kết</h2>'+(un?'<span class="ckbadge new">'+un+' mới</span>':'')+'</div>'+CK.log.slice(0,10).map((l,i)=>'<div class="ckni'+(i<un?' new':'')+'"><b>'+esc(short(String(l.pgd)))+'</b> · '+esc(l.name||l.email)+' sửa lúc '+ckTime(l.t)+': '+ckChText(l)+'</div>').join('')+'</div>';
-  h+='<div class="ckchips">'+chip('Đã nộp',sent.length+'/'+POINTS.length,POINTS.length-sent.length?'còn '+(POINTS.length-sent.length)+' PGD chưa nộp':'đủ '+POINTS.length+' PGD')+
-    CKK.filter(o=>!o.low).map(o=>{ const mt=kv(o.k,RG).mt; return chip('Tổng cam kết '+o.name, sent.length?o.fmt(sum(o.f)):'–', mt!=null?'MT khu vực '+o.fmt(mt)+(sent.length?' · '+pct0(sum(o.f)/mt):''):''); }).join('')+'</div>';
-  const cls=(c,mt,low)=>c==null||!mt?'':low?(c<=mt?'good':'crit'):(c/mt>=1?'good':c/mt>=.9?'warn':'crit');
-  h+='<div class="panel"><div class="ph"><h2>Cam kết theo PGD</h2><span class="t-muted" style="font-size:12px">Bấm vào dòng để mở cam kết của PGD đó</span></div><div class="scrollx"><table class="cktbl"><thead><tr><th class="l">PGD</th><th class="l">Trạng thái</th>'+CKK.map(o=>'<th class="g">'+o.name+' cam kết</th><th>Đạt đến nay</th>').join('')+'<th class="l g">Hành động chính</th></tr></thead><tbody>'+
-    POINTS.map((p,i)=>{ const r=ckRowOf(p);
-      return '<tr data-i="'+i+'"><td class="l"><b>'+esc(short(p))+'</b></td><td class="l">'+(r?'<span class="pill good">Đã nộp</span><small>'+ckTime(r.ThoiGian)+(+r.SoLanSua?' · sửa '+r.SoLanSua+' lần':'')+'</small>':'<span class="pill crit">Chưa nộp</span>')+'</td>'+
-        CKK.map(o=>{ const v=kv(o.k,p), c=r?num(r[o.f]):null, tr=c==null?null:ckTrack(o,c,v,D);
-          return '<td class="g">'+(c==null?'–':o.fmt(c)+' <span class="pill '+cls(c,v.mt,o.low)+'">'+(o.low?(c<=v.mt?'≤ trần':'vượt trần'):pct0(v.mt?c/v.mt:null)+' MT')+'</span>')+(r&&r['LyDo'+o.f]?'<small title="'+esc(r['LyDo'+o.f])+'">có lý do</small>':'')+'</td><td>'+(tr?'<span class="pill '+(tr.ok?'good':'crit')+'" title="'+esc(tr.t.replace(/<[^>]+>/g,''))+'">'+(tr.neg?'ÂM':tr.pct!=null?pct0(tr.pct):(tr.ok?'đạt':'chưa'))+(tr.ok?' ✓':' ✗')+'</span>':'')+'</td>'; }).join('')+
-        '<td class="l g ckactc">'+(r&&r.HanhDong?esc(r.HanhDong):'<span class="t-muted">–</span>')+'</td></tr>'; }).join('')+'</tbody></table></div></div>';
+  const DN=typeof dnData==='function'?dnData():null;
+  if(DN){ const left=DN.nd-DN.today; if(left<5) h+='<div class="cknotice"><span>📄 <b>File nợ cần thu chỉ có tới '+DN.nd+'/'+DN.mon+'</b> (còn '+Math.max(0,left)+' ngày). Tải file mới để popup của TP không bị trống phần nợ.</span><button type="button" class="btn" id="ckDnGo">Tải file nợ</button></div>'; }
+  const un=ckUnseen();
+  if(CK.log&&CK.log.length) h+='<div class="panel cknoti"><div class="ph"><h2>🔔 Thông báo sửa cam kết</h2>'+(un?'<span class="ckbadge new">'+un+' mới</span>':'')+'</div>'+CK.log.slice(0,6).map((l,i)=>'<div class="ckni'+(i<un?' new':'')+'"><b>'+esc(short(String(l.pgd)))+'</b> · '+esc(l.name||l.email)+' sửa lúc '+ckTime(l.t)+': '+ckChText(l)+'</div>').join('')+'</div>';
+  const wait=sent.filter(x=>x.r.Duyet!=='ok'&&x.r.Duyet!=='back').length, back=sent.filter(x=>x.r.Duyet==='back').length, rep=sent.filter(x=>(CK.ci||{})[x.p]).length;
+  h+='<div class="ckhero"><div><small>Cam kết chỉ tiêu · tháng '+D.mm+'</small><h1>'+sent.length+'/'+L.length+' PGD đã cam kết</h1><p>Số thực tế đến '+esc(META.asof||'–')+' · còn '+LEFT+' ngày · '+sent.reduce((a,x)=>a+x.late,0)+'/'+(sent.length*4)+' cam kết đang chậm nhịp</p></div>'+
+    '<div class="cksub"><div><b>'+wait+'</b><span>chờ anh duyệt</span></div><div><b>'+back+'</b><span>đã trả lại</span></div><div><b>'+rep+'/'+sent.length+'</b><span>TP đã báo việc hôm qua</span></div></div></div>';
+  const onPace=CKK.map((o,i)=>sent.filter(x=>x.ks[i].tr&&x.ks[i].tr.ok).length);
+  h+='<div class="ckkpis">'+CKK.map((o,i)=>{ const rv=kv(o.k,RG), mt=rv.mt; let big,vs,bw=null;
+    if(o.low){ const avg=sent.reduce((a,x)=>a+x.ks[i].c,0)/(sent.length||1), am=ckRfwAmt(RG); big='TB '+ckP2(avg); vs='Hiện tại <b>'+ckP2(rv.th)+'</b> · trần '+ckP2(mt)+'<br>RFW tiền <b>'+ckAu(am.th)+'</b> / trần '+ckAu(am.mt); }
+    else { const sum=sent.reduce((a,x)=>a+x.ks[i].c,0); big=o.fmt(sum); bw=mt?sum/mt:null; vs='= <b>'+pct0(bw)+'</b> MT khu vực ('+o.fmt(mt)+')'; }
+    return '<div class="ckkc"><div class="t"><b>'+o.name+'</b><span>tổng cam kết</span></div><div class="big num">'+big+'</div><div class="vs">'+vs+'</div>'+(bw!=null?'<div class="ckbar2"><i style="width:'+Math.min(100,bw*100/1.3)+'%;background:'+(bw>=1?'var(--good)':'var(--warn)')+'"></i><b style="left:'+(100/1.3)+'%"></b></div>':'')+
+      '<div class="pace"><span>Đúng nhịp <b>'+onPace[i]+'/'+sent.length+'</b> PGD</span><span class="ckdots">'+sent.map(x=>'<i class="'+(x.ks[i].tr&&x.ks[i].tr.ok?'ok':'no')+'" title="'+esc(short(x.p))+'"></i>').join('')+'</span></div></div>'; }).join('')+'</div>';
+  const ord=r=>!r?3:r.Duyet==='back'?1:r.Duyet==='ok'?2:0;
+  const rows=L.slice().sort((a,b)=>(ord(a.r)-ord(b.r))||(b.late-a.late)||(b.lows-a.lows));
+  h+='<div class="panel"><div class="ph"><h2>Cam kết theo PGD</h2><span class="t-muted" style="font-size:12.5px">Chờ duyệt xếp trước · bấm dòng để xem hành động và duyệt</span></div><div class="cktb"><div class="cktr hd"><div>PGD</div>'+CKK.map(o=>'<div>'+o.name+'</div>').join('')+'<div></div></div>'+
+    rows.map(x=>{ const op=!!CK.open[x.p];
+      if(!x.r) return '<div class="cktr"><div class="pn"><b>'+esc(short(x.p))+'</b><small><span class="pill crit">Chưa nộp</span></small></div>'+CKK.map(()=>'<div class="ckcell">–</div>').join('')+'<div></div></div>';
+      return '<div class="cktr'+(op?' open':'')+'" data-p="'+esc(x.p)+'"><div class="pn"><b>'+esc(short(x.p))+'</b><small>'+esc(x.r.Ten||'')+' · '+ckTime(x.r.ThoiGian)+(+x.r.SoLanSua?' · sửa '+x.r.SoLanSua+' lần':'')+'</small><small>'+ckApvPill(x.r)+ckCiPill(x.p)+'</small></div>'+
+        x.ks.map(k=>{ let m; if(k.o.low){ const am=ckRfwAmt(x.p); m=(k.low?'<span class="lo">vượt trần '+ckP2(k.v.mt)+'</span>':'≤ trần '+ckP2(k.v.mt))+'<br>TH <b>'+ckP2(k.v.th)+'</b> · RFW tiền <b>'+ckAu(am.th)+'</b> / trần '+ckAu(am.mt); }
+          else m=(k.low?'<span class="lo">'+pct0(k.v.mt?k.c/k.v.mt:null)+' MT · dưới MT</span>':pct0(k.v.mt?k.c/k.v.mt:null)+' MT')+(k.tr?' · '+(k.tr.neg?'đang âm '+k.o.fmt(k.v.th):'đạt '+(k.tr.pct!=null?pct0(k.tr.pct):'–'))+(k.tr.ok?'':' · chậm nhịp'):'');
+          return '<div class="ckcell" data-l="'+k.o.name+'"><div class="v num">'+(k.tr?'<i class="ckdot '+(k.tr.ok?'ok':'no')+'"></i>':'')+k.o.fmt(k.c)+'</div><div class="m">'+m+'</div></div>'; }).join('')+
+        '<div class="chev">›</div></div><div class="ckdet'+(op?' show':'')+'" data-d="'+esc(x.p)+'"><div><h4>Hành động chính</h4><p>'+esc(x.r.HanhDong||'–')+'</p></div><div><h4>Lý do</h4><ul>'+(CKK.filter(o=>x.r['LyDo'+o.f]).map(o=>'<li><b>'+o.name+'</b>'+esc(x.r['LyDo'+o.f])+'</li>').join('')||'<li class="t-muted">Không có</li>')+'</ul></div>'+
+        '<div class="ckapv"><h4>Duyệt cam kết</h4><div>'+ckApvPill(x.r)+(x.r.GopY?'<p class="t-muted" style="margin-top:4px">Góp ý: '+esc(x.r.GopY)+'</p>':'')+'</div><textarea placeholder="Góp ý cho TP (bắt buộc khi trả lại)…"></textarea><div class="row"><button type="button" class="btn ckok" data-a="ok">✓ Duyệt</button><button type="button" class="btn ckbk" data-a="back">↩ Trả lại</button><button type="button" class="btn" data-a="form" data-i="'+x.i+'">Mở form</button></div><span class="ckmsg t-muted"></span></div></div>'; }).join('')+
+    '</div><div class="legend"><span><i class="ckdot ok"></i> đúng nhịp</span><span><i class="ckdot no"></i> chậm nhịp</span><span><b style="color:var(--warn)">dưới MT</b> = cam kết thấp hơn mục tiêu</span></div></div>';
   return h; }
-
+function ckAdminWire(D){ const box=$('ckBox');
+  const dg=$('ckDnGo'); if(dg) dg.onclick=()=>show('no');
+  box.querySelectorAll('.cktr[data-p]').forEach(r=>r.addEventListener('click',()=>{ const p=r.dataset.p, d=box.querySelector('.ckdet[data-d="'+CSS.escape(p)+'"]'); const o=!d.classList.contains('show'); d.classList.toggle('show',o); r.classList.toggle('open',o); if(o) CK.open[p]=1; else delete CK.open[p]; }));
+  box.querySelectorAll('.ckdet').forEach(d=>d.querySelectorAll('[data-a]').forEach(b=>b.addEventListener('click',async ev=>{ ev.stopPropagation(); const p=d.dataset.d, a=b.dataset.a, ta=d.querySelector('textarea'), msg=d.querySelector('.ckmsg');
+    if(a==='form'){ select(+b.dataset.i); return; }
+    if(a==='back'&&!ta.value.trim()){ ta.focus(); msg.textContent='Cần ghi góp ý để TP biết sửa gì.'; return; }
+    d.querySelectorAll('[data-a]').forEach(x=>x.disabled=true); msg.textContent='Đang lưu…';
+    try{ const j=await window.kpiApi('ckReview',{month:D.key,pgd:p,apv:a,note:ta.value.trim()}); ckSet(j); toast(a==='ok'?'Đã duyệt cam kết':'Đã trả lại cam kết'); renderCK(); }
+    catch(err){ msg.textContent=err.message; d.querySelectorAll('[data-a]').forEach(x=>x.disabled=false); } }))); }
+/* popup đăng nhập của TP: cam kết + việc hôm nay */
+function ckPopHTML(e){ const r=ckRowOf(e), D=ckDays(), LEFT=D.dim-D.dd, nm=String((r&&r.Ten)||(USER&&USER.name)||'').trim().split(/\s+/);
+  const call=(nm.some(x=>/^thị$/i.test(x))?'chị':nm.some(x=>/^văn$/i.test(x))?'anh':'anh/chị')+' '+(nm[nm.length-1]||'');
+  const WD=['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'], now=new Date();
+  let h='<div class="ckph"><small>'+WD[now.getDay()]+' · '+now.getDate()+'/'+(now.getMonth()+1)+'</small><b>Chào '+esc(call)+' 👋</b><span>'+esc(short(e))+' · số thực tế đến '+esc(META.asof||'–')+' · còn '+LEFT+' ngày</span></div>';
+  if(!r) return h+'<div class="ckps"><div class="ckrv wait"><b>Bạn chưa nộp cam kết tháng '+D.mm+'</b>Nhập 4 chỉ tiêu NET, GN NET, KH mới, %RFW để khu vực theo dõi và nhắc nhịp mỗi ngày. Mất khoảng 2 phút.<button type="button" class="btn primary" data-ck="form">Nộp cam kết ngay</button></div></div>';
+  if(r.Duyet==='back') h+='<div class="ckps"><div class="ckrv back"><b>↩ '+esc(r.NguoiDuyet||'Admin')+' đề nghị xem lại cam kết</b>“'+esc(r.GopY)+'”<button type="button" class="btn primary" data-ck="form">Sửa cam kết</button></div></div>';
+  const L=CKK.map(o=>{ const v=kv(o.k,e), c=num(r[o.f]), tr=ckTrack(o,c,v,D); return {o,tr}; }).filter(x=>x.tr), ok=L.filter(x=>x.tr.ok).length;
+  if(L.length&&ok===L.length) h+='<div class="ckps"><div class="ckrv ok">🎉 <b>Tuyệt vời!</b> Cả '+L.length+' cam kết đều đang đúng nhịp. Giữ phong độ nhé!</div></div>';
+  const td=ckTodo(r.HanhDong), ci=(CK.ci||{})[e];
+  if(td.length) h+='<div class="ckps"><div class="cksh"><b>Việc hôm nay</b><span>từ hành động bạn đã cam kết</span></div><ul class="cktodo">'+td.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul><div class="cksh"><b style="font-size:13px">Hôm qua bạn làm được chưa?</b></div><div class="ckci">'+
+    [['done','✓ Đã làm'],['part','Một phần'],['no','Chưa làm']].map(([k,l])=>'<button type="button" class="btn'+(ci&&ci.st===k?' sel':'')+'" data-ci="'+k+'">'+l+'</button>').join('')+'</div>'+(ci?'<span class="ckthx">Đã ghi nhận, cảm ơn '+esc(call)+'!</span>':'<span class="ckthx"></span>')+'</div>';
+  h+='<div class="ckps"><div class="cksh"><b>Cam kết của bạn hôm nay</b><span>'+ok+'/'+L.length+' đúng nhịp</span></div><div class="ckkl">'+L.slice().sort((a,b)=>a.tr.ok-b.tr.ok).map(x=>'<div class="ckkr '+(x.tr.ok?'ok':'no')+'"><i></i><b>'+x.o.name+'</b><span>'+x.tr.t+'</span></div>').join('')+'</div></div>';
+  return h; }
+function ckPopWire(m,e,close){ m.querySelectorAll('[data-ck=form]').forEach(b=>b.onclick=()=>{ close(); show('ck'); });
+  m.querySelectorAll('[data-ci]').forEach(b=>b.onclick=async()=>{ const st=b.dataset.ci; m.querySelectorAll('[data-ci]').forEach(x=>{ x.disabled=true; x.classList.toggle('sel',x===b); }); const t=m.querySelector('.ckthx');
+    try{ const j=await window.kpiApi('ckCheckin',{pgd:e,st}); ckSet(j); if(t) t.textContent='Đã ghi nhận, cảm ơn!'; }catch(err){ if(t) t.textContent=err.message; }
+    m.querySelectorAll('[data-ci]').forEach(x=>x.disabled=false); }); }
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }
 function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
@@ -1210,22 +1258,30 @@ function bNO(e){ const D=dnData(); if(!D) return 'Chưa có dữ liệu DN cần
   if(e===REGION){ const top=D.rows.map(r=>({r,y:dnSum(D,r,W)})).filter(z=>z.y.hot.length).sort((a,b)=>b.y.s-a.y.s); if(top.length) h+='PGD có ngày cao điểm: '+top.map(z=>'<b>'+esc(short(z.r.n))+'</b> ('+z.y.hot.map(d=>dnDL(D,d)).join(', ')+')').join(' · '); }
   return h; }
 /* cửa sổ cảnh báo nợ hiện ngay sau khi đăng nhập (mỗi người, mỗi ngày một lần) */
-function dnPopup(force){ const D=dnData(); if(!D) return; const e=dnE(), o=dnEnt(D,e)||D.reg, W=dnWin(D), x=dnSum(D,o,W); if(!x.s) return;
-  const key='kpi55-dnpop-'+((USER&&USER.email)||'')+'-'+D.yr+'-'+D.mon+'-'+D.today;
+function dnPopup(force){ const pgdU=isPgdUser();
+  if(pgdU&&CK.rows==null){ CK.popWait=true; ckLoad(); return; }
+  const D=dnData(), e=dnE(), o=D?(dnEnt(D,e)||D.reg):null, W=D?dnWin(D):[], x=D?dnSum(D,o,W):{s:0,hot:[]};
+  if(!pgdU&&!x.s) return;
+  const now=new Date(), key='kpi55-dnpop-'+((USER&&USER.email)||'')+'-'+now.getFullYear()+'-'+(now.getMonth()+1)+'-'+now.getDate();
   if(!force){ try{ if(localStorage.getItem(key)) return; }catch(err){} }
   let m=$('dnPop'); if(!m){ m=document.createElement('div'); m.id='dnPop'; m.className='dnpop'; m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true'); document.body.appendChild(m); }
-  const mx=Math.max(...W.map(d=>dnV(o,d)||0),1), isReg=e===REGION;
-  const tops=isReg?D.rows.map(r=>({r,y:dnSum(D,r,W)})).filter(z=>z.y.hot.length).sort((a,b)=>b.y.s-a.y.s).slice(0,5):[];
-  m.innerHTML='<div class="dnpbox"><div class="dnph"><span class="dnpi">⚠️</span><div><b>Cảnh báo nợ · 5 ngày tới</b><small>'+esc(isReg?'Toàn khu vực':short(e))+' · '+dnDL(D,W[0])+'–'+dnDL(D,W[4])+'</small></div></div>'+
+  const isReg=e===REGION, mx=Math.max(...W.map(d=>dnV(o,d)||0),1);
+  const tops=D&&isReg?D.rows.map(r=>({r,y:dnSum(D,r,W)})).filter(z=>z.y.hot.length).sort((a,b)=>b.y.s-a.y.s).slice(0,5):[];
+  const debt=!D||!x.s?'':'<div class="dnph"><span class="dnpi">⚠️</span><div><b>'+(pgdU?'Nợ cần thu 5 ngày tới':'Cảnh báo nợ · 5 ngày tới')+'</b><small>'+esc(isReg?'Toàn khu vực':short(e))+' · '+dnDL(D,W[0])+'–'+dnDL(D,W[4])+'</small></div></div>'+
     '<div class="dnpbig num">'+fmt(x.s)+' <small>triệu cần thu</small></div>'+
     '<div class="dndays sm">'+W.map(d=>{ const v=dnV(o,d); return '<div><b class="num">'+dnF(v)+'</b><i class="'+dnLv(v,o.avg)+'" style="height:'+Math.max(4,(v||0)/mx*100)+'%"></i><span>'+dnDL(D,d)+'</span></div>'; }).join('')+'</div>'+
     (x.hot.length?'<p class="dnpn">Ngày cao điểm: <b>'+x.hot.map(d=>dnDL(D,d)+' ('+fmt(dnV(o,d))+' tr)').join(', ')+'</b></p>':'')+
     (tops.length?'<div class="dnpl"><p>PGD có ngày cao điểm</p>'+tops.map(z=>'<div><span>'+esc(short(z.r.n))+'</span><b class="num">'+fmt(z.y.s)+' tr</b><small>'+z.y.hot.map(d=>dnDL(D,d)).join(', ')+'</small></div>').join('')+'</div>':'')+
-    '<p class="dnpt">Nhắc khách trước 1–2 ngày, ưu tiên ngày cao điểm.</p>'+
-    '<div class="dnpa"><button type="button" class="btn" id="dnpCopy">Sao chép</button><button type="button" class="btn" id="dnpGo">Xem chi tiết</button><button type="button" class="btn primary" id="dnpOk">Đã nắm</button></div></div>';
+    '<p class="dnpt">Nhắc khách trước 1–2 ngày, ưu tiên ngày cao điểm.</p>';
+  const ck=pgdU?ckPopHTML(e):'';
+  if(!ck&&!debt) return;
+  m.innerHTML='<div class="dnpbox'+(pgdU?' ckwide':'')+'">'+ck+(debt?'<div class="ckps last">'+debt+'</div>':'')+
+    '<div class="dnpa">'+(debt?'<button type="button" class="btn" id="dnpCopy">Sao chép</button><button type="button" class="btn" id="dnpGo">Xem nợ</button>':'')+(pgdU?'<button type="button" class="btn" id="dnpCk">Xem cam kết</button>':'')+'<button type="button" class="btn primary" id="dnpOk">Đã nắm</button></div></div>';
   const close=()=>{ m.hidden=true; try{ localStorage.setItem(key,'1'); }catch(err){} };
-  m.hidden=false; $('dnpOk').onclick=close; $('dnpGo').onclick=()=>{ close(); show('no'); }; $('dnpCopy').onclick=()=>copyText(reportNO());
-  m.onclick=ev=>{ if(ev.target===m) close(); }; $('dnpOk').focus(); }
+  m.hidden=false; $('dnpOk').onclick=close;
+  if($('dnpGo')) $('dnpGo').onclick=()=>{ close(); show('no'); }; if($('dnpCopy')) $('dnpCopy').onclick=()=>copyText(reportNO()); if($('dnpCk')) $('dnpCk').onclick=()=>{ close(); show('ck'); };
+  if(pgdU) ckPopWire(m,e,close);
+  m.onclick=ev=>{ if(ev.target===m) close(); }; try{ $('dnpOk').focus({preventScroll:true}); }catch(err){} const bx=m.querySelector('.dnpbox'); if(bx) bx.scrollTop=0; }
 /* ---------- v10: nhắc nhập form Marketing PGD (12 form/ngày) theo %HT dự báo và so cùng kỳ T-1 ---------- */
 const FORM_DAY=12;
 function monthInfo(){ const m=String(META.asof||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(!m) return null; const d=+m[1], last=new Date(+m[3],+m[2],0).getDate(); return {d:Math.max(1,d), last, left:Math.max(0,last-d)}; }

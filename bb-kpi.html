@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Biên bản KPI · KPI 5.5</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EEF0F3;--ink:#13243D;--mut:#6B7A90;--line:#DDE2E8;--navy:#13243D;--gold:#C9A46A;--gold2:#F1D9A8;--ui:"Be Vietnam Pro",system-ui,sans-serif;--doc:"Times New Roman",Tinos,serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:14px}
+button{font:inherit;cursor:pointer}
+.demo{background:var(--navy);color:var(--gold2);text-align:center;font-size:12.5px;padding:7px 12px}.demo b{color:#fff}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 20px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.top h1{font-size:17px;margin:0;font-weight:800}.top h1 span{color:var(--gold)}.sp{flex:1}
+.pbtn{background:var(--navy);color:#fff;border:0;border-radius:999px;padding:9px 18px;font-weight:700}
+.gbtn{background:#fff;color:var(--navy);border:1px solid var(--navy);border-radius:999px;padding:8px 16px;font-weight:700}
+.lay{display:grid;grid-template-columns:320px 1fr;gap:18px;max-width:1280px;margin:0 auto;padding:18px 20px 60px;align-items:start}
+.side{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;position:sticky;top:70px;display:flex;flex-direction:column;gap:11px;max-height:calc(100vh - 90px);overflow:auto}
+.side h3{margin:4px 0 0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+.f label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:4px}
+.f select,.f input,.f textarea{width:100%;font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.f textarea{min-height:64px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;color:var(--mut)}
+.chips button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.hint{font-size:12px;color:var(--mut);line-height:1.5;background:#F6F7F9;border-radius:10px;padding:10px}
+/* ===== Văn bản A4 – Nghị định 30/2020/NĐ-CP ===== */
+.paper{background:#fff;width:210mm;max-width:100%;min-height:297mm;margin:0 auto;padding:20mm 15mm 20mm 30mm;box-shadow:0 12px 40px -14px rgba(19,36,61,.3);font-family:var(--doc);font-size:13pt;line-height:1.35;color:#000;text-align:justify}
+.hdr{display:grid;grid-template-columns:41% 59%;text-align:center;line-height:1.3}
+.hdr .l{font-size:12.5pt}.hdr .r{font-size:12.5pt}
+.hdr .org{text-transform:uppercase;white-space:nowrap;font-size:11pt}
+.hdr .unit{font-weight:700;text-transform:uppercase}
+.hdr .rule{display:block;width:34%;height:0;border-top:1px solid #000;margin:3px auto 6px}
+.hdr .qh{font-weight:700;font-size:12pt;white-space:nowrap}
+.hdr .tn{font-weight:700;font-size:13.5pt}
+.hdr .r .rule{width:62%}
+.hdr .so{font-size:13pt}
+.hdr .dd{font-style:italic;font-size:13pt}
+.ttl{text-align:center;margin:14px 0 0;font-size:14pt;font-weight:700}
+.sub{text-align:center;font-weight:700;font-size:13.5pt;margin:2px 0 0}
+.sub+.rule{display:block;width:22%;border-top:1px solid #000;margin:4px auto 10px}
+.cc{font-style:italic;margin:0 0 2px;text-indent:1cm}
+p{margin:4px 0;text-indent:1cm}
+p.ni{text-indent:0}
+.h1{font-weight:700;margin:7px 0 2px;text-indent:0;font-size:13pt}
+.h2{font-weight:700;margin:8px 0 3px;text-indent:1cm}
+.h3{font-style:italic;font-weight:700;margin:6px 0 2px;text-indent:1cm}
+.dl{margin:2px 0 4px;padding:0;list-style:none}
+.dl li{text-indent:1cm;margin:2px 0}
+.dl li::before{content:"- "}
+table.t{width:100%;border-collapse:collapse;font-size:12pt;line-height:1.35;margin:4px 0 6px;text-align:left}
+table.t th,table.t td{border:.75pt solid #000;padding:4px 5px;vertical-align:middle}
+table.t th{font-weight:700;text-align:center}
+table.t td.n{text-align:right;white-space:nowrap}
+table.t td.c{text-align:center}
+table.t tr.u td{font-style:italic}
+.dvt{text-align:right;font-style:italic;font-size:12pt;margin:0;text-indent:0}
+.sig{display:grid;grid-template-columns:1fr 1fr;text-align:center;margin-top:8px;line-height:1.35;break-inside:avoid}
+.sig b{display:block;text-transform:uppercase;font-size:13pt}
+.sig i{display:block;font-size:12.5pt}
+.sig .nm{display:block;font-weight:700;margin-top:36pt;min-height:16pt}
+.sig .full{grid-column:1/-1;margin-top:18px}
+.nn{margin-top:22px;font-size:11pt;line-height:1.35;text-align:left}
+.nn b{font-style:italic;font-size:12pt}
+.nn div{text-indent:0}
+/* chỗ sửa trên màn hình */
+[contenteditable]{outline:none;border-radius:2px}
+[contenteditable]:hover{background:#FFF7E3}
+[contenteditable]:focus{background:#FFF1CC;box-shadow:0 0 0 2px #F1D9A8}
+[contenteditable]:empty::before{content:attr(data-ph);color:#98A3B3;font-style:italic}
+.rowtools{display:flex;gap:6px;margin:2px 0 6px}
+.rowtools button{font-family:var(--ui);font-size:11.5px;border:1px dashed #B8C2D0;background:#fff;color:var(--mut);border-radius:8px;padding:3px 8px}
+.del{font-family:var(--ui);border:0;background:none;color:#C0392B;font-size:12px}
+.tag{font-family:var(--ui);font-size:10.5px;font-weight:700;color:#8A6A2E;background:#FBF3E2;border-radius:5px;padding:1px 5px;margin-left:4px;vertical-align:middle}
+@media screen and (max-width:980px){.lay{grid-template-columns:1fr}.side{position:static;max-height:none}.paper{padding:10mm 7mm;min-height:0;font-size:12pt}.hdr{grid-template-columns:1fr;gap:8px}}
+@page{size:A4;margin:15mm 15mm 12mm 30mm;@bottom-center{content:counter(page) "/" counter(pages);font-family:"Times New Roman",serif;font-size:11pt}}
+@page:first{@bottom-center{content:none}}
+@media print{
+ body{background:#fff}.demo,.top,.side,.rowtools,.del,.np,.tag{display:none!important}
+ .lay{display:block;padding:0;max-width:none}
+ .paper{box-shadow:none;width:auto;min-height:0;margin:0;padding:0}
+ [contenteditable]:empty{display:none}
+ [contenteditable]{background:none!important;box-shadow:none!important}
+ table.t thead{display:table-header-group}table.t tr{break-inside:avoid}.h1,.h2,.h3{break-after:avoid}
+}
+.hr{width:100%;border:0;background:none;font:inherit;cursor:pointer;text-align:left;color:inherit;display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line)}.hr span{color:var(--mut)}
+.rb{display:inline-flex;gap:4px}.rb button{font-family:var(--ui);font-size:11.5px;font-weight:700;border:1px solid #CBD3DD;background:#fff;color:#6B7A90;border-radius:7px;padding:3px 8px}
+.rb button.on{background:#1F9D6B;border-color:#1F9D6B;color:#fff}.rb button.on.no{background:#D2463A;border-color:#D2463A}
+.res{font-weight:700}.res.ok{color:#1A7F55}.res.no{color:#C0392B}.res:empty{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#13243D;color:#fff;font-family:var(--ui);font-size:13px;padding:10px 16px;border-radius:12px;opacity:0;transition:.3s;pointer-events:none;z-index:50;max-width:90vw}#toast.on{opacity:1;transform:translate(-50%,0)}
+@media print{.res.ok,.res.no{color:#000}#toast{display:none}}
+@media screen{.hdr .org,.hdr .qh{white-space:normal}}.lay{grid-template-columns:280px minmax(0,1fr)!important;padding:14px 12px 40px!important}main{min-width:0}.paper{max-width:100%}.demo{display:none}.top{top:0}.top h1{display:none}body{background:#EEF0F3}.lay{padding-top:14px}</style></head><body>
+<div class="demo">Bản demo · Số KPI và cam kết là <b>số thật ngày 20/10/2026</b> · Ô nền vàng là chỗ sửa được, ô trống sẽ không in ra · Bấm <b>In biên bản</b> để xem bản A4</div>
+<div class="top"><h1>KPI Khu vực <span>5.5</span> · Biên bản làm việc</h1><span class="sp"></span>
+<button class="gbtn" type="button" id="saveBB">Lưu biên bản</button>
+<button class="pbtn" type="button" onclick="window.print()">In biên bản</button></div>
+<div class="lay">
+<aside class="side" id="side">
+ <h3>Buổi làm việc</h3>
+ <div class="f"><label>PGD</label><select id="pgd"></select></div>
+ <div class="f"><label>Nội dung</label><div class="chips" id="kind"><button class="on" data-k="Đánh giá kết quả thực hiện chỉ tiêu kinh doanh">Định kỳ KPI</button><button data-k="Kiểm tra, giám sát hoạt động phòng giao dịch">Kiểm tra</button><button data-k="Làm việc về các chỉ tiêu chưa đạt kế hoạch">Chỉ tiêu chưa đạt</button></div></div>
+ <div class="two"><div class="f"><label>Ngày</label><input type="date" id="day"></div><div class="f"><label>Số biên bản</label><input id="so" value="01"></div></div>
+ <div class="two"><div class="f"><label>Bắt đầu</label><input type="time" id="t1" value="08:30"></div><div class="f"><label>Kết thúc</label><input type="time" id="t2" value="10:00"></div></div>
+ <h3>Thành phần</h3>
+ <div class="two"><div class="f"><label>Chủ trì (KV)</label><input id="ct" value="Tuấn"></div><div class="f"><label>Chức vụ</label><input id="ctcv" value="Quản lý Khu vực"></div></div>
+ <div class="two"><div class="f"><label>Trưởng PGD</label><input id="tp"></div><div class="f"><label>Thư ký</label><input id="tk" placeholder="Người ghi biên bản"></div></div>
+ <div class="f"><label>Nhân viên PGD tham dự (mỗi dòng: Họ tên – Chức vụ)</label><textarea id="nv" placeholder="Nguyễn Văn A – Chuyên viên kinh doanh"></textarea></div>
+ <h3>Đầu văn bản</h3>
+ <div class="f"><label>Tên công ty</label><input id="org" value="CÔNG TY CỔ PHẦN KINH DOANH F88"></div>
+ <div class="two"><div class="f"><label>Đơn vị</label><input id="unit" value="KHU VỰC 5.5"></div><div class="f"><label>Địa danh</label><input id="place"></div></div>
+ <div class="f"><label>Phần đưa vào biên bản</label><div class="chips" id="parts"><button class="on" data-p="hd">Giải pháp TP</button></div></div>
+ <h3>Biên bản đã lưu của PGD</h3><div id="hist"></div>
+ <div class="hint">Hệ thống tự điền: số liệu chỉ tiêu, đánh giá, cam kết và giải pháp TP đã nộp (đã chuẩn hóa câu chữ), đề xuất giao việc. Anh chỉ cần bổ sung nguyên nhân, kết luận và ý kiến.</div>
+</aside>
+<div id="toast"></div><main><article class="paper" id="paper"></article></main>
+</div>
+<script>
+const API=(()=>{ try{ return window.parent!==window&&window.parent.BBAPI; }catch(e){ return null; } })();
+if(!API){ document.body.innerHTML='<p style="font:15px system-ui;padding:24px">Mở biên bản từ mục <b>Biên bản làm việc</b> trong dashboard KPI 5.5.</p>'; throw new Error('no parent'); }
+const DATA=API.data();
+const $=id=>document.getElementById(id), esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const [AD,AM,AY]=DATA.asof.split('/').map(Number), NDAY=new Date(AY,AM,0).getDate(), PACE=AD/NDAY;
+const nf=(v,dg)=>v==null||isNaN(v)?'–':Number(v).toLocaleString('vi-VN',{minimumFractionDigits:dg||0,maximumFractionDigits:dg||0});
+const pc=v=>v==null||isNaN(v)?'–':(v*100).toLocaleString('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+const K=[['net',DATA.names.net,'Triệu đồng'],['gnn',DATA.names.gnn,'Triệu đồng'],['khm','Khách hàng mới','Khách hàng'],['rfw','Tỷ lệ RFW (tối đa)','%']];
+const lc=s=>/^[A-ZĐ]{2}/.test(s)?s:s.charAt(0).toLowerCase()+s.slice(1);
+const CKK={net:'NET',gnn:'GNN',khm:'KHM',rfw:'RFW'};
+function val(k,v){ return k==='rfw'?pc(v):nf(v); }
+function stat(k,o){ if(k==='rfw'){ const r=o.th/o.mt; return r<=1?'ok':r<=1.3?'warn':'bad'; } const r=o.mt?o.th/(o.mt*PACE):1; return r>=1?'ok':r>=.85?'warn':'bad'; }
+const SL={ok:'Đạt tiến độ',warn:'Chậm tiến độ',bad:'Không đạt tiến độ'};
+/* chuẩn hóa câu chữ TP gõ: bỏ gạch đầu dòng, gộp khoảng trắng, viết hoa đầu câu, thêm dấu chấm */
+const ABBR=[[/\bhđ\b/gi,'hợp đồng'],[/\bzao\b/gi,'Zalo'],[/\bkh\b/g,'khách hàng'],[/\bKH\b/g,'khách hàng'],[/\btr\b/g,'triệu'],[/\bM\b/g,' triệu'],[/\bnv\b/gi,'nhân viên'],[/\bđt\b/gi,'điện thoại']];
+function clean(s){ let x=String(s||'').replace(/^\s*[-•+*·]+\s*/,'').replace(/\s+/g,' ').replace(/\s+([,.;:%])/g,'$1').trim(); if(!x) return '';
+  
+  x=x.charAt(0).toUpperCase()+x.slice(1); if(!/[.!?]$/.test(x)) x+='.'; return x.replace(/\s*\.\s*\.$/,'.'); }
+const lines=s=>String(s||'').split(/\n+|;\s*(?=\S)/).map(clean).filter(Boolean);
+let pgd=API.pgd()||DATA.pgds[0], kind='Đánh giá kết quả thực hiện chỉ tiêu kinh doanh', parts=new Set(['hd']);
+$('pgd').innerHTML=DATA.pgds.map(p=>'<option>'+esc(p)+'</option>').join('');
+const td=new Date(); $('day').value=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
+function setPgd(){ $('so').value=nextSo(pgd); setTimeout(histList,0); if(!LOADED[pgd]) loadHist(pgd); const c=DATA.ck[pgd]; $('tp').value=(c&&c.Ten)||''; $('place').value=pgd.startsWith('KTM')?'Quảng Ngãi':'Gia Lai'; }
+$('pgd').onchange=e=>{ pgd=e.target.value; setPgd(); draw(); };
+$('side').addEventListener('input',e=>{ if(e.target.id!=='pgd') draw(); });
+$('kind').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; kind=b.dataset.k; [...$('kind').children].forEach(x=>x.classList.toggle('on',x===b)); draw(); };
+$('parts').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; const p=b.dataset.p; parts.has(p)?parts.delete(p):parts.add(p); b.classList.toggle('on'); draw(); };
+const hm=v=>{ const [h,m]=(v||'').split(':'); return h?(+h)+' giờ '+m:'…'; };
+function draw(){
+  const d=DATA.d[pgd], c=DATA.ck[pgd]||null, code=pgd.split(' ')[0], name=pgd.split(' ').slice(1).join(' ');
+  const [y,m,dd]=$('day').value.split('-'); const tp=$('tp').value.trim(), ct=$('ct').value.trim(), tk=$('tk').value.trim();
+  const unit=$('unit').value.trim(), so=$('so').value.trim(), place=$('place').value.trim(), uL=unit.charAt(0)+unit.slice(1).toLowerCase();
+  const ev=K.map(([k,lb,u])=>({k,lb:lb.replace(' (tối đa)',''),u,o:d[k],s:stat(k,d[k])})), weak=ev.filter(x=>x.s!=='ok');
+  let h='<div class="hdr"><div class="l"><div class="org">'+esc($('org').value)+'</div><div class="unit">'+esc(unit)+'</div><span class="rule"></span><div class="so">Số: '+esc(so)+'/BB-'+esc(unit.replace(/^KHU VỰC\s*/i,'KV').replace(/\s/g,''))+'</div></div>'+
+   '<div class="r"><div class="qh">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div><div class="tn">Độc lập - Tự do - Hạnh phúc</div><span class="rule"></span><div class="dd">'+esc(place)+', ngày '+dd+' tháng '+m+' năm '+y+'</div></div></div>';
+  h+='<div class="ttl">BIÊN BẢN LÀM VIỆC</div><div class="sub">V/v '+esc(kind.charAt(0).toLowerCase()+kind.slice(1))+' tháng '+AM+'/'+AY+'</div><span class="rule"></span>';
+  const ppl=[(ct?'Ông/Bà '+ct+' – '+$('ctcv').value+' (chủ trì)':''),(tp?'Ông/Bà '+tp+' – Trưởng PGD':'')];
+  $('nv').value.split('\n').map(x=>x.trim()).filter(Boolean).forEach(x=>ppl.push('Ông/Bà '+x));
+  if(tk) ppl.push('Ông/Bà '+tk+' – Thư ký');
+  h+='<p>Hồi '+hm($('t1').value)+' ngày '+dd+'/'+m+'/'+y+', tại PGD '+esc(code)+' – '+esc(name)+', thành phần gồm: '+esc(ppl.filter(Boolean).join('; '))+'.</p>';
+  const hasCk=!!c;
+  let N=1; const prev=lastBB(pgd);
+  h+='<p class="h1">'+(N++)+'. Kết quả chỉ tiêu (lũy kế đến '+DATA.asof+', thời gian đạt '+Math.round(PACE*100)+'%)</p>';
+  h+='<table class="t"><thead><tr><th>Chỉ tiêu <i style="font-weight:400">(ĐVT: triệu đồng)</i></th><th style="width:15%">Kế hoạch</th><th style="width:15%">Thực hiện</th><th style="width:11%">Tỷ lệ</th>'+(hasCk?'<th style="width:15%">TP cam kết</th>':'')+'<th style="width:17%">Đánh giá</th></tr></thead><tbody>';
+  ev.forEach(x=>{ const o=x.o; const rate=x.k==='rfw'?'–':(o.th<0||!o.mt?'–':pc(o.th/o.mt));
+    h+='<tr><td>'+x.lb+(x.k==='khm'?' (KH)':x.k==='rfw'?' (tối đa)':'')+'</td><td class="n">'+val(x.k,o.mt)+'</td><td class="n">'+val(x.k,o.th)+'</td><td class="n">'+rate+'</td>'+(hasCk?'<td class="n">'+(c[CKK[x.k]]!=null?val(x.k,c[CKK[x.k]]):'–')+'</td>':'')+'<td class="c">'+({ok:'Đạt',warn:'Chậm',bad:'Không đạt'})[x.s]+'</td></tr>'; });
+  h+='</tbody></table>';
+  if(prev){ h+='<p class="h1">'+(N++)+'. Kiểm tra nhiệm vụ đã giao (biên bản số '+esc(prev.so)+' ngày '+esc(prev.d)+')</p><table class="t"><thead><tr><th style="width:7%">TT</th><th>Nhiệm vụ</th><th style="width:15%">Thời hạn</th><th style="width:24%">Kết quả</th></tr></thead><tbody>'+
+    prev.jobs.map((j,i)=>{ const st=CHK[prev.id+'_'+i]||''; return '<tr><td class="c">'+(i+1)+'</td><td>'+esc(j[0])+'</td><td class="c">'+esc(j[2])+'</td><td class="c"><span class="res '+st+'">'+(st==='ok'?'Hoàn thành':st==='no'?'Chưa hoàn thành':'')+'</span><span class="np rb"><button type="button" class="'+(st==='ok'?'on':'')+'" data-ck="'+prev.id+'_'+i+'" data-v="ok">Xong</button><button type="button" class="'+(st==='no'?'on no':'')+'" data-ck="'+prev.id+'_'+i+'" data-v="no">Chưa xong</button></span></td></tr>'; }).join('')+'</tbody></table>'; }
+  h+='<p class="h1">'+(N++)+'. Tồn tại, nguyên nhân</p><ul class="dl">'+(weak.length?weak.map(x=>{ const o=x.o;
+     const s=x.k==='rfw'?x.lb+' '+pc(o.th)+', vượt mức '+pc(o.mt)+'.':x.k==='net'&&o.th<0?x.lb+' âm '+nf(-o.th)+' triệu đồng.':x.lb+' mới đạt '+pc(o.th/o.mt)+' kế hoạch.';
+     return '<li>'+s+' <span contenteditable data-ph="Nguyên nhân…"></span></li>'; }).join(''):'<li>Các chỉ tiêu đạt tiến độ.</li>')+'</ul>';
+  if(parts.has('hd')){ const EXT=p=>API.ext(p);
+    if(EXT){ const ex=EXT(pgd); h+='<p class="h1">'+(N++)+'. Hành động PGD triển khai</p><ul class="dl" contenteditable>'+(ex.groups.length?ex.groups.map(g=>'<li><b>'+esc(g.n)+'</b>: '+esc(g.items.map(a=>a.id+' '+a.s).join('; '))+'.</li>').join(''):'<li>PGD chưa chọn hành động chuẩn.</li>')+(ex.note?'<li>Khác: '+esc(ex.note)+'</li>':'')+'</ul>'; }
+    else { const hd=c?lines(c.HanhDong).slice(0,4):[]; h+='<p class="h1">'+(N++)+'. Giải pháp PGD cam kết</p><ul class="dl" contenteditable>'+(hd.length?hd.map(x=>'<li>'+esc(x)+'</li>').join(''):'<li></li>')+'</ul>'; } }
+  h+='<p class="h1">'+(N++)+'. Kết luận, giao nhiệm vụ</p>';
+  h+='<table class="t" id="jobs"><thead><tr><th style="width:7%">TT</th><th>Nhiệm vụ</th><th style="width:22%">Thực hiện</th><th style="width:15%">Thời hạn</th><th class="np" style="width:22px"></th></tr></thead><tbody>';
+  const def=weak.map(x=>{ const t=c&&c[CKK[x.k]]!=null?val(x.k,c[CKK[x.k]]):val(x.k,x.o.mt);
+    return [x.k==='rfw'?'Đưa RFW về dưới '+t:'Đạt '+lc(x.lb)+' '+t+(x.k==='khm'?' KH':' triệu đồng'),tp||'Trưởng PGD',NDAY+'/'+AM]; });
+  const carry=prev?prev.jobs.filter((j,i)=>CHK[prev.id+'_'+i]==='no').map(j=>[j[0]+' (chuyển từ biên bản số '+prev.so+')',j[1],'']):[];
+  const jr=carry.concat(def); (jr.length?jr:[['',tp||'Trưởng PGD','']]).forEach((r,i)=>h+=jobRow(i+1,r)); h+='</tbody></table><div class="rowtools"><button type="button" id="addj">+ Thêm nhiệm vụ</button></div>';
+  h+='<p><span contenteditable data-ph="Ý kiến khác (nếu có)"></span></p>';
+  h+='<p>Biên bản kết thúc hồi '+hm($('t2').value)+' cùng ngày, các bên thống nhất nội dung trên và lập thành 02 bản, mỗi bên giữ 01 bản.</p>';
+  h+='<div class="sig"><div><b>Đại diện PGD</b><i>(Ký, ghi rõ họ tên)</i><span class="nm">'+esc(tp)+'</span></div><div><b>Đại diện '+esc(uL)+'</b><i>(Ký, ghi rõ họ tên)</i><span class="nm">'+esc(ct)+'</span></div></div>';
+  $('paper').innerHTML=h;
+  $('addj').onclick=()=>{ const tb=$('jobs').tBodies[0]; tb.insertAdjacentHTML('beforeend',jobRow(tb.rows.length+1,['','',''])); };
+}
+function jobRow(i,r){ return '<tr><td class="c">'+i+'</td><td contenteditable data-ph="Nhiệm vụ">'+esc(r[0])+'</td><td contenteditable data-ph="Người thực hiện">'+esc(r[1])+'</td><td class="c" contenteditable data-ph="Hạn">'+esc(r[2])+'</td><td class="c np"><button class="del" type="button" title="Xóa dòng" onclick="const t=this.closest(\'tbody\');this.closest(\'tr\').remove();[...t.rows].forEach((x,k)=>x.cells[0].textContent=k+1)">✕</button></td></tr>'; }
+const HIST={}; const LOADED={};
+const CHK={};
+function lastBB(p){ const a=(HIST[p]||[]).filter(b=>b.type==='kpi'); return a[a.length-1]||null; }
+async function loadHist(p){ try{ const j=await API.list(p); HIST[p]=(j.rows||[]).map(b=>({id:b.id,type:b.type,so:b.so,d:b.ngay,jobs:b.jobs||[],title:b.title})); }catch(e){ HIST[p]=HIST[p]||[]; } LOADED[p]=1; if(p===pgd){ $('so').value=nextSo(p); histList(); draw(); } }
+function nextSo(p){ const a=(HIST[p]||[]); return String(a.length+1).padStart(2,'0'); }
+function histList(){ if(!LOADED[pgd]){ $('hist').innerHTML='<p class="hint" style="margin:0">Đang tải…</p>'; return; } const a=(HIST[pgd]||[]).slice().reverse(); $('hist').innerHTML=a.length?a.map(b=>'<button type="button" class="hr" data-open="'+esc(b.id)+'"><b>Số '+esc(b.so)+'</b><span>'+esc(b.d)+' · '+(b.type==='lv'?'làm việc':'KPI')+' · In lại</span></button>').join(''):'<p class="hint" style="margin:0">Chưa có biên bản nào với PGD này.</p>'; }
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-ck]'); if(!b) return; const k=b.dataset.ck; CHK[k]=CHK[k]===b.dataset.v?'':b.dataset.v; draw(); });
+$('saveBB').onclick=async()=>{ const b=$('saveBB'); const rows=[...$('jobs').tBodies[0].rows].map(r=>[r.cells[1].innerText.trim(),r.cells[2].innerText.trim(),r.cells[3].innerText.trim()]).filter(r=>r[0]);
+  const [y,m,dd]=$('day').value.split('-'); const so=$('so').value.trim();
+  const clone=$('paper').cloneNode(true); clone.querySelectorAll('.np,.rowtools,.del').forEach(x=>x.remove()); clone.querySelectorAll('[contenteditable]').forEach(x=>x.removeAttribute('contenteditable'));
+  b.disabled=true; b.textContent='Đang lưu…';
+  try{ const j=await API.save({type:'kpi',pgd,so:so+'/BB-'+$('unit').value.trim().replace(/^KHU VỰC\s*/i,'KV').replace(/\s/g,''),ngay:dd+'/'+m+'/'+y,title:'Biên bản KPI '+kind,jobs:rows,html:clone.innerHTML});
+    HIST[pgd]=(j.rows||[]).map(b=>({id:b.id,type:b.type,so:b.so,d:b.ngay,jobs:b.jobs||[],title:b.title})); $('so').value=nextSo(pgd); histList(); draw();
+    const t=$('toast'); t.textContent='Đã lưu biên bản. Lần sau lập biên bản KPI với PGD này sẽ tự kiểm tra '+rows.length+' nhiệm vụ vừa giao.'; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),3500); }
+  catch(e){ alert('Chưa lưu được: '+e.message); } b.disabled=false; b.textContent='Lưu biên bản'; };
+document.addEventListener('click',async e=>{ const o=e.target.closest('[data-open]'); if(!o) return; o.disabled=true;
+  try{ const j=await API.get(o.dataset.open); const r=(j.rows||[])[0]; if(r&&r.html){ const w=window.open('','_blank'); if(!w){ alert('Trình duyệt chặn cửa sổ mới, hãy cho phép cửa sổ bật lên.'); return; }
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Biên bản '+esc(r.so)+'</title><style>'+document.querySelector('style').textContent+'</style></head><body style="background:#fff"><article class="paper" style="box-shadow:none;margin:0 auto">'+r.html+'</article><script>setTimeout(()=>print(),400)<\/script></body></html>'); w.document.close(); } }
+  catch(err){ alert(err.message); } o.disabled=false; });
+window.openPgd=p=>{ pgd=p; $('pgd').value=p; setPgd(); draw(); };
+setPgd(); draw();
+</script></body></html>

@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lập biên bản làm việc · KPI 5.5</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EEF0F3;--ink:#13243D;--mut:#6B7A90;--line:#DDE2E8;--navy:#13243D;--gold:#C9A46A;--gold2:#F1D9A8;--ui:"Be Vietnam Pro",system-ui,sans-serif;--doc:"Times New Roman",Tinos,serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:14px}
+button{font:inherit;cursor:pointer}
+.demo{background:var(--navy);color:var(--gold2);text-align:center;font-size:12.5px;padding:7px 12px}.demo b{color:#fff}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 20px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.top h1{font-size:17px;margin:0;font-weight:800}.top h1 span{color:var(--gold)}.sp{flex:1}
+.pbtn{background:var(--navy);color:#fff;border:0;border-radius:999px;padding:9px 18px;font-weight:700}
+.gbtn{background:#fff;color:var(--navy);border:1px solid var(--navy);border-radius:999px;padding:8px 16px;font-weight:700}
+.lay{display:grid;grid-template-columns:320px 1fr;gap:18px;max-width:1280px;margin:0 auto;padding:18px 20px 60px;align-items:start}
+.side{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;position:sticky;top:70px;display:flex;flex-direction:column;gap:11px;max-height:calc(100vh - 90px);overflow:auto}
+.side h3{margin:4px 0 0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+.f label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:4px}
+.f select,.f input,.f textarea{width:100%;font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.f textarea{min-height:64px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;color:var(--mut)}
+.chips button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.hint{font-size:12px;color:var(--mut);line-height:1.5;background:#F6F7F9;border-radius:10px;padding:10px}
+/* ===== Văn bản A4 – Nghị định 30/2020/NĐ-CP ===== */
+.paper{background:#fff;width:210mm;max-width:100%;min-height:297mm;margin:0 auto;padding:20mm 15mm 20mm 30mm;box-shadow:0 12px 40px -14px rgba(19,36,61,.3);font-family:var(--doc);font-size:13pt;line-height:1.35;color:#000;text-align:justify}
+.hdr{display:grid;grid-template-columns:41% 59%;text-align:center;line-height:1.3}
+.hdr .l{font-size:12.5pt}.hdr .r{font-size:12.5pt}
+.hdr .org{text-transform:uppercase;white-space:nowrap;font-size:11pt}
+.hdr .unit{font-weight:700;text-transform:uppercase}
+.hdr .rule{display:block;width:34%;height:0;border-top:1px solid #000;margin:3px auto 6px}
+.hdr .qh{font-weight:700;font-size:12pt;white-space:nowrap}
+.hdr .tn{font-weight:700;font-size:13.5pt}
+.hdr .r .rule{width:62%}
+.hdr .so{font-size:13pt}
+.hdr .dd{font-style:italic;font-size:13pt}
+.ttl{text-align:center;margin:14px 0 0;font-size:14pt;font-weight:700}
+.sub{text-align:center;font-weight:700;font-size:13.5pt;margin:2px 0 0}
+.sub+.rule{display:block;width:22%;border-top:1px solid #000;margin:4px auto 10px}
+.cc{font-style:italic;margin:0 0 2px;text-indent:1cm}
+p{margin:4px 0;text-indent:1cm}
+p.ni{text-indent:0}
+.h1{font-weight:700;margin:7px 0 2px;text-indent:0;font-size:13pt}
+.h2{font-weight:700;margin:8px 0 3px;text-indent:1cm}
+.h3{font-style:italic;font-weight:700;margin:6px 0 2px;text-indent:1cm}
+.dl{margin:2px 0 4px;padding:0;list-style:none}
+.dl li{text-indent:1cm;margin:2px 0}
+.dl li::before{content:"- "}
+table.t{width:100%;border-collapse:collapse;font-size:12pt;line-height:1.35;margin:4px 0 6px;text-align:left}
+table.t th,table.t td{border:.75pt solid #000;padding:4px 5px;vertical-align:middle}
+table.t th{font-weight:700;text-align:center}
+table.t td.n{text-align:right;white-space:nowrap}
+table.t td.c{text-align:center}
+table.t tr.u td{font-style:italic}
+.dvt{text-align:right;font-style:italic;font-size:12pt;margin:0;text-indent:0}
+.sig{display:grid;grid-template-columns:1fr 1fr;text-align:center;margin-top:8px;line-height:1.35;break-inside:avoid}
+.sig b{display:block;text-transform:uppercase;font-size:13pt}
+.sig i{display:block;font-size:12.5pt}
+.sig .nm{display:block;font-weight:700;margin-top:36pt;min-height:16pt}
+.sig .full{grid-column:1/-1;margin-top:18px}
+.nn{margin-top:22px;font-size:11pt;line-height:1.35;text-align:left}
+.nn b{font-style:italic;font-size:12pt}
+.nn div{text-indent:0}
+/* chỗ sửa trên màn hình */
+[contenteditable]{outline:none;border-radius:2px}
+[contenteditable]:hover{background:#FFF7E3}
+[contenteditable]:focus{background:#FFF1CC;box-shadow:0 0 0 2px #F1D9A8}
+[contenteditable]:empty::before{content:attr(data-ph);color:#98A3B3;font-style:italic}
+.rowtools{display:flex;gap:6px;margin:2px 0 6px}
+.rowtools button{font-family:var(--ui);font-size:11.5px;border:1px dashed #B8C2D0;background:#fff;color:var(--mut);border-radius:8px;padding:3px 8px}
+.del{font-family:var(--ui);border:0;background:none;color:#C0392B;font-size:12px}
+.tag{font-family:var(--ui);font-size:10.5px;font-weight:700;color:#8A6A2E;background:#FBF3E2;border-radius:5px;padding:1px 5px;margin-left:4px;vertical-align:middle}
+@media screen and (max-width:980px){.lay{grid-template-columns:1fr}.side{position:static;max-height:none}.paper{padding:10mm 7mm;min-height:0;font-size:12pt}.hdr{grid-template-columns:1fr;gap:8px}}
+@page{size:A4;margin:15mm 15mm 12mm 30mm;@bottom-center{content:counter(page) "/" counter(pages);font-family:"Times New Roman",serif;font-size:11pt}}
+@page:first{@bottom-center{content:none}}
+@media print{
+ body{background:#fff}.demo,.top,.side,.rowtools,.del,.np,.tag{display:none!important}
+ .lay{display:block;padding:0;max-width:none}
+ .paper{box-shadow:none;width:auto;min-height:0;margin:0;padding:0}
+ [contenteditable]:empty{display:none}
+ [contenteditable]{background:none!important;box-shadow:none!important}
+ table.t thead{display:table-header-group}table.t tr{break-inside:avoid}.h1,.h2,.h3{break-after:avoid}
+}
+.hr{width:100%;border:0;background:none;font:inherit;cursor:pointer;text-align:left;color:inherit;display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line)}.hr span{color:var(--mut)}
+.rb{display:inline-flex;gap:4px}.rb button{font-family:var(--ui);font-size:11.5px;font-weight:700;border:1px solid #CBD3DD;background:#fff;color:#6B7A90;border-radius:7px;padding:3px 8px}
+.rb button.on{background:#1F9D6B;border-color:#1F9D6B;color:#fff}.rb button.on.no{background:#D2463A;border-color:#D2463A}
+.res{font-weight:700}.res.ok{color:#1A7F55}.res.no{color:#C0392B}.res:empty{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#13243D;color:#fff;font-family:var(--ui);font-size:13px;padding:10px 16px;border-radius:12px;opacity:0;transition:.3s;pointer-events:none;z-index:50;max-width:90vw}#toast.on{opacity:1;transform:translate(-50%,0)}
+@media print{.res.ok,.res.no{color:#000}#toast{display:none}}
+
+.h1{font-weight:700;margin:9px 0 3px;text-indent:0;font-size:13pt}
+.box p{text-indent:1cm}
+.steps{margin:2px 0 2px 1cm;padding-left:22px}.steps li{text-indent:0;margin:1px 0}
+.sig3{grid-template-columns:repeat(3,1fr)}
+.tpl{display:flex;flex-direction:column;gap:6px}
+.tpl button{display:flex;gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-size:13px;font-weight:600;color:var(--ink)}
+.tpl button i{font-style:normal;font-size:16px}
+.tpl button.on{border-color:var(--navy);background:#EEF3F8;box-shadow:inset 3px 0 0 var(--navy)}
+.hr{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line)}.hr span{color:var(--mut)}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#13243D;color:#fff;font-family:var(--ui);font-size:13px;padding:10px 16px;border-radius:12px;opacity:0;transition:.3s;pointer-events:none;z-index:50}#toast.on{opacity:1;transform:translate(-50%,0)}
+.emb .demo{display:none}.emb .top{top:0}.emb .top h1{display:none}
+@media print{#toast{display:none}p:has(>span[contenteditable]:empty:only-child){display:none}}
+@media screen{.hdr .org,.hdr .qh{white-space:normal}}.lay{grid-template-columns:280px minmax(0,1fr)!important;padding:14px 12px 40px!important}main{min-width:0}.paper{max-width:100%}.demo{display:none}.top{top:0}.top h1{display:none}body{background:#EEF0F3}.lay{padding-top:14px}</style></head><body>
+<div class="demo">Bản demo · Form lập biên bản làm việc cho các vấn đề ngoài chỉ tiêu · Ô nền vàng là chỗ sửa được, ô trống không in ra</div>
+<div class="top"><h1>KPI Khu vực <span>5.5</span> · Lập biên bản làm việc</h1><span class="sp"></span>
+<button class="gbtn" type="button" id="saveBB">Lưu biên bản</button>
+<button class="pbtn" type="button" onclick="window.print()">In biên bản</button></div>
+<div class="lay">
+<aside class="side" id="side">
+ <h3>Nội dung làm việc</h3>
+ <div class="tpl" id="tpl"></div>
+ <h3>Thông tin</h3>
+ <div class="f"><label>PGD</label><select id="pgd"></select></div>
+ <div class="two"><div class="f"><label>Ngày</label><input type="date" id="day"></div><div class="f"><label>Số biên bản</label><input id="so" value="01"></div></div>
+ <div class="two"><div class="f"><label>Bắt đầu</label><input type="time" id="t1" value="14:00"></div><div class="f"><label>Kết thúc</label><input type="time" id="t2" value="15:00"></div></div>
+ <h3>Thành phần</h3>
+ <div class="two"><div class="f"><label>Chủ trì</label><input id="ct" value="Tuấn"></div><div class="f"><label>Chức vụ</label><input id="ctcv" value="Quản lý Khu vực"></div></div>
+ <div class="two"><div class="f"><label>Trưởng PGD</label><input id="tp"></div><div class="f"><label>Thư ký</label><input id="tk" placeholder="Người ghi biên bản"></div></div>
+ <div class="f"><label>Người liên quan (mỗi dòng: Họ tên – Chức vụ)</label><textarea id="nv" placeholder="Nguyễn Văn A – Chuyên viên kinh doanh"></textarea></div>
+ <h3>Đầu văn bản</h3>
+ <div class="f"><label>Tên công ty</label><input id="org" value="CÔNG TY CỔ PHẦN KINH DOANH F88"></div>
+ <div class="two"><div class="f"><label>Đơn vị</label><input id="unit" value="KHU VỰC 5.5"></div><div class="f"><label>Địa danh</label><input id="place"></div></div>
+ <h3>Biên bản đã lưu của PGD</h3><div id="hist"></div>
+</aside>
+<div id="toast"></div>
+<main><article class="paper" id="paper"></article></main>
+</div>
+<script>
+const API=(()=>{ try{ return window.parent!==window&&window.parent.BBAPI; }catch(e){ return null; } })();
+if(!API){ document.body.innerHTML='<p style="font:15px system-ui;padding:24px">Mở biên bản từ mục <b>Biên bản làm việc</b> trong dashboard KPI 5.5.</p>'; throw new Error('no parent'); }
+const DATA=API.data();
+const $=id=>document.getElementById(id), esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* ===== Mẫu biên bản theo loại vấn đề ===== */
+const TPL={
+ mt:{i:'🤝',n:'Mâu thuẫn nội bộ',vv:'xử lý mâu thuẫn nội bộ',
+   cur:'Mô tả sự việc: giữa ai với ai, về việc gì, xảy ra khi nào, ảnh hưởng thế nào đến công việc…',
+   gt:'Ghi ý kiến, giải trình của từng bên…',
+   steps:['Các bên trình bày sự việc; Trưởng PGD và Khu vực đã nghe đầy đủ ý kiến.','Thống nhất phân công công việc, phân chia khách hàng và ghi nhận doanh số rõ ràng.','Các bên cam kết hợp tác, không để ảnh hưởng đến công việc và khách hàng.','Nếu tái diễn, Khu vực báo cáo Hành chính nhân sự xử lý theo nội quy.'],
+   jobs:[['Công bố phân công công việc, phân chia khách hàng mới','Trưởng PGD',3],['Theo dõi, báo cáo tình hình phối hợp của các bên','Trưởng PGD',14]]},
+ qt:{i:'📋',n:'Sai quy trình nghiệp vụ',vv:'sai quy trình nghiệp vụ',
+   cur:'Mô tả sai phạm: quy trình nào, hồ sơ/khách hàng nào, phát hiện khi nào, hậu quả (nếu có)…',
+   gt:'Ghi giải trình của nhân sự liên quan…',
+   steps:['Nhân sự liên quan nộp bản giải trình bằng văn bản.','Trưởng PGD đào tạo lại quy trình cho toàn PGD, có ký xác nhận.','Rà soát các hồ sơ tương tự trong tháng.','Xử lý theo quy định nếu phát sinh thiệt hại.'],
+   jobs:[['Nộp bản giải trình','Nhân sự liên quan',1],['Đào tạo lại quy trình cho toàn PGD','Trưởng PGD',3],['Rà soát hồ sơ tương tự, báo cáo kết quả','Trưởng PGD',7]]},
+ kl:{i:'⏰',n:'Kỷ luật lao động',vv:'vi phạm kỷ luật lao động',
+   cur:'Mô tả vi phạm: giờ giấc, đồng phục, thái độ, nội quy… thời gian, số lần…',
+   gt:'Ghi giải trình của nhân sự vi phạm…',
+   steps:['Nhắc nhở, ghi nhận vi phạm lần này vào biên bản.','Nhân sự vi phạm cam kết không tái phạm.','Nếu tái phạm, lập biên bản vi phạm và báo Hành chính nhân sự xử lý theo nội quy.'],
+   jobs:[['Theo dõi chấm công, tác phong hằng ngày','Trưởng PGD',14]]},
+ kn:{i:'📞',n:'Khiếu nại khách hàng',vv:'xử lý khiếu nại khách hàng',
+   cur:'Khách hàng (tên, số hợp đồng) khiếu nại về việc gì, thời gian, kênh tiếp nhận…',
+   gt:'Ghi ý kiến của nhân sự phụ trách khách hàng…',
+   steps:['Liên hệ khách hàng trong 24 giờ, ghi nhận đầy đủ nội dung.','Xác minh với nhân sự liên quan và hồ sơ.','Phản hồi khách hàng, báo cáo kết quả về Khu vực.','Rút kinh nghiệm chung toàn PGD.'],
+   jobs:[['Liên hệ, phản hồi khách hàng','Trưởng PGD',1],['Báo cáo kết quả xử lý về Khu vực','Trưởng PGD',3]]},
+ sl:{i:'📝',n:'Ghi nhận sai sự thật',vv:'ghi nhận thông tin sai sự thật',
+   cur:'Mô tả: note/báo cáo nào, của ai, nội dung ghi nhận và thực tế khác nhau thế nào…',
+   gt:'Ghi giải trình của nhân sự liên quan…',
+   steps:['Nhân sự liên quan giải trình bằng văn bản.','Rà soát toàn bộ ghi nhận của nhân sự trong 30 ngày gần nhất.','Báo cáo Khu vực và Hành chính nhân sự để xử lý theo quy định.'],
+   jobs:[['Nộp bản giải trình','Nhân sự liên quan',1],['Rà soát ghi nhận 30 ngày, báo cáo kết quả','Trưởng PGD',5]]},
+ ns:{i:'👥',n:'Thiếu hụt nhân sự',vv:'tình hình nhân sự',
+   cur:'PGD đang thiếu bao nhiêu nhân sự, vị trí nào, từ khi nào, ảnh hưởng…',
+   gt:'Ghi ý kiến của Trưởng PGD…',
+   steps:['Gửi đề xuất tuyển dụng bổ sung về Hành chính nhân sự.','Phân công lại công việc tạm thời, ưu tiên các việc trọng tâm.','Báo cáo tiến độ tuyển dụng tại buổi họp tuần.'],
+   jobs:[['Gửi đề xuất tuyển dụng','Trưởng PGD',2],['Phân công lại công việc tạm thời','Trưởng PGD',1]]},
+ kh:{i:'✏️',n:'Vấn đề khác',vv:'',
+   cur:'Mô tả sự việc…',gt:'Ghi ý kiến của các bên…',steps:[''],jobs:[['','Trưởng PGD',7]]}};
+let pgd=API.pgd()||DATA.pgds[0], tk='mt';
+const ST={}; /* nội dung đã gõ theo PGD + loại */
+const key=()=>pgd+'|'+tk;
+$('tpl').innerHTML=Object.keys(TPL).map(k=>'<button type="button" data-k="'+k+'"><i>'+TPL[k].i+'</i>'+TPL[k].n+'</button>').join('');
+$('pgd').innerHTML=DATA.pgds.map(p=>'<option>'+esc(p)+'</option>').join('');
+const td=new Date(); $('day').value=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');
+function addDays(n){ const [y,m,d]=$('day').value.split('-').map(Number); const t=new Date(y,m-1,d+Number(n)); return String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0'); }
+const HIST={}, LOADED={}; const nextSo=p=>String((HIST[p]||[]).length+1).padStart(2,'0');
+async function loadHist(p){ try{ const j=await API.list(p); HIST[p]=(j.rows||[]).map(b=>({id:b.id,type:b.type,so:b.so,d:b.ngay,n:b.title})); }catch(e){ HIST[p]=HIST[p]||[]; } LOADED[p]=1; if(p===pgd){ $('so').value=nextSo(p); hist(); draw(); } }
+function setPgd(){ if(!LOADED[pgd]) loadHist(pgd); $('tp').value=((DATA.ck||{})[pgd]||{}).Ten||''; $('place').value=pgd.startsWith('KTM')?'Quảng Ngãi':'Gia Lai'; $('so').value=nextSo(pgd); hist(); }
+function hist(){ if(!LOADED[pgd]){ $('hist').innerHTML='<p class="hint" style="margin:0">Đang tải…</p>'; return; } const a=(HIST[pgd]||[]).slice().reverse(); $('hist').innerHTML=a.length?a.map(b=>'<button type="button" class="hr" data-open="'+esc(b.id)+'"><b>Số '+esc(b.so)+'</b><span>'+esc(b.d)+' · '+esc(b.n)+' · In lại</span></button>').join(''):'<p class="hint" style="margin:0">Chưa có biên bản nào với PGD này.</p>'; }
+function state(){ const T=TPL[tk]; if(!ST[key()]) ST[key()]={cur:'',gt:'',why:'',steps:T.steps.join('\n'),jobs:T.jobs.map(j=>[j[0],j[1]==='Trưởng PGD'?($('tp').value.trim()||j[1]):j[1],addDays(j[2])])}; return ST[key()]; }
+const hm=v=>{ const [h,m]=(v||'').split(':'); return h?(+h)+' giờ '+m:'…'; };
+function draw(){
+  [...$('tpl').children].forEach(b=>b.classList.toggle('on',b.dataset.k===tk));
+  const T=TPL[tk], S=state(), name=pgd.split(' ').slice(1).join(' '), code=pgd.split(' ')[0];
+  const [y,m,dd]=$('day').value.split('-'); const tp=$('tp').value.trim(), ct=$('ct').value.trim(), tkk=$('tk').value.trim(), unit=$('unit').value.trim(), uL=unit.charAt(0)+unit.slice(1).toLowerCase();
+  const rel=$('nv').value.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>{ const [a,b]=x.split(/\s+[–-]\s+/); return {n:a,c:b||''}; });
+  let h='<div class="hdr"><div class="l"><div class="org">'+esc($('org').value)+'</div><div class="unit">'+esc(unit)+'</div><span class="rule"></span><div class="so">Số: '+esc($('so').value)+'/BB-'+esc(unit.replace(/^KHU VỰC\s*/i,'KV').replace(/\s/g,''))+'</div></div>'+
+   '<div class="r"><div class="qh">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div><div class="tn">Độc lập - Tự do - Hạnh phúc</div><span class="rule"></span><div class="dd">'+esc($('place').value)+', ngày '+dd+' tháng '+m+' năm '+y+'</div></div></div>';
+  h+='<div class="ttl">BIÊN BẢN LÀM VIỆC</div><div class="sub">V/v <span contenteditable data-s="vv" data-ph="nội dung làm việc">'+esc(S.vv!=null?S.vv:T.vv)+'</span> tại PGD '+esc(name)+'</div><span class="rule"></span>';
+  const ppl=[ct?'Ông/Bà '+ct+' – '+$('ctcv').value+' (chủ trì)':'', tp?'Ông/Bà '+tp+' – Trưởng PGD':''].concat(rel.map(r=>'Ông/Bà '+r.n+(r.c?' – '+r.c:'')),tkk?['Ông/Bà '+tkk+' – Thư ký']:[]).filter(Boolean);
+  h+='<p>Hồi '+hm($('t1').value)+' ngày '+dd+'/'+m+'/'+y+', tại PGD '+esc(code)+' – '+esc(name)+', thành phần gồm: '+esc(ppl.join('; '))+'.</p>';
+  h+='<p class="h1">1. Nội dung sự việc</p><p><span contenteditable data-s="cur" data-ph="'+esc(T.cur)+'">'+esc(S.cur)+'</span></p>';
+  h+='<p class="h1">2. Ý kiến, giải trình của các bên</p><p><span contenteditable data-s="gt" data-ph="'+esc(T.gt)+'">'+esc(S.gt)+'</span></p>';
+  h+='<p class="h1">3. Nguyên nhân</p><p><span contenteditable data-s="why" data-ph="Nêu nguyên nhân…">'+esc(S.why)+'</span></p>';
+  h+='<p class="h1">4. Kết luận, hướng xử lý</p><ol class="steps" contenteditable data-s="steps">'+S.steps.split('\n').map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>';
+  h+='<p class="h1">5. Giao nhiệm vụ</p><table class="t" id="jobs"><thead><tr><th style="width:7%">TT</th><th>Nhiệm vụ</th><th style="width:24%">Người thực hiện</th><th style="width:15%">Thời hạn</th><th class="np" style="width:22px"></th></tr></thead><tbody>'+
+     S.jobs.map((j,i)=>'<tr><td class="c">'+(i+1)+'</td><td contenteditable data-j="'+i+'" data-c="0" data-ph="Nhiệm vụ">'+esc(j[0])+'</td><td contenteditable data-j="'+i+'" data-c="1" data-ph="Người thực hiện">'+esc(j[1])+'</td><td class="c" contenteditable data-j="'+i+'" data-c="2" data-ph="Hạn">'+esc(j[2])+'</td><td class="c np"><button class="del" type="button" data-rmj="'+i+'">✕</button></td></tr>').join('')+
+     '</tbody></table><div class="rowtools"><button type="button" id="addj">+ Thêm nhiệm vụ</button></div>';
+  h+='<p>Biên bản kết thúc hồi '+hm($('t2').value)+' cùng ngày, đã được đọc lại cho các thành phần tham dự cùng nghe, thống nhất và ký tên. Biên bản lập thành 02 bản, mỗi bên giữ 01 bản.</p>';
+  const sig=[['Người liên quan',rel.map(r=>r.n).join(', ')],['Trưởng PGD',tp],['Đại diện '+uL,ct]].filter((x,i)=>i>0||rel.length);
+  h+='<div class="sig'+(sig.length===3?' sig3':'')+'">'+sig.map(x=>'<div><b>'+esc(x[0])+'</b><i>(Ký, ghi rõ họ tên)</i><span class="nm">'+esc(x[1])+'</span></div>').join('')+'</div>';
+  if(tkk) h+='<div class="sig" style="grid-template-columns:1fr"><div><b>Thư ký</b><i>(Ký, ghi rõ họ tên)</i><span class="nm">'+esc(tkk)+'</span></div></div>';
+  $('paper').innerHTML=h;
+  $('addj').onclick=()=>{ S.jobs.push(['',tp||'Trưởng PGD',addDays(7)]); draw(); };
+}
+document.addEventListener('input',e=>{ const S=state(); const s=e.target.closest('[data-s]'); if(s){ const f=s.dataset.s; S[f]=f==='steps'?[...s.querySelectorAll('li')].map(x=>x.innerText.trim()).filter(Boolean).join('\n'):s.innerText.trim(); return; }
+  const j=e.target.closest('[data-j]'); if(j){ S.jobs[+j.dataset.j][+j.dataset.c]=j.innerText.trim(); } });
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-k]'); if(b){ tk=b.dataset.k; draw(); return; }
+  const r=e.target.closest('[data-rmj]'); if(r){ state().jobs.splice(+r.dataset.rmj,1); draw(); } });
+$('pgd').onchange=e=>{ pgd=e.target.value; setPgd(); draw(); };
+$('side').addEventListener('input',e=>{ if(e.target.id!=='pgd') draw(); });
+$('saveBB').onclick=async()=>{ const b=$('saveBB'); const [y,m,dd]=$('day').value.split('-'); const S=state();
+  const clone=$('paper').cloneNode(true); clone.querySelectorAll('.np,.rowtools,.del').forEach(x=>x.remove()); clone.querySelectorAll('[contenteditable]').forEach(x=>{ if(!x.textContent.trim()) x.remove(); else x.removeAttribute('contenteditable'); });
+  b.disabled=true; b.textContent='Đang lưu…';
+  try{ const j=await API.save({type:'lv',pgd,so:$('so').value.trim()+'/BB-'+$('unit').value.trim().replace(/^KHU VỰC\s*/i,'KV').replace(/\s/g,''),ngay:dd+'/'+m+'/'+y,title:TPL[tk].n,jobs:S.jobs.filter(x=>x[0]),html:clone.innerHTML});
+    HIST[pgd]=(j.rows||[]).map(b=>({id:b.id,type:b.type,so:b.so,d:b.ngay,n:b.title})); $('so').value=nextSo(pgd); hist(); draw();
+    const t=$('toast'); t.textContent='Đã lưu biên bản.'; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),3000); }
+  catch(e){ alert('Chưa lưu được: '+e.message); } b.disabled=false; b.textContent='Lưu biên bản'; };
+document.addEventListener('click',async e=>{ const o=e.target.closest('[data-open]'); if(!o) return; o.disabled=true;
+  try{ const j=await API.get(o.dataset.open); const r=(j.rows||[])[0]; if(r&&r.html){ const w=window.open('','_blank'); if(!w){ alert('Trình duyệt chặn cửa sổ mới, hãy cho phép cửa sổ bật lên.'); return; }
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Biên bản '+esc(r.so)+'</title><style>'+document.querySelector('style').textContent+'</style></head><body style="background:#fff"><article class="paper" style="box-shadow:none;margin:0 auto">'+r.html+'</article><script>setTimeout(()=>print(),400)<\/script></body></html>'); w.document.close(); } }
+  catch(err){ alert(err.message); } o.disabled=false; });
+window.openPgd=p=>{ pgd=p; $('pgd').value=p; setPgd(); draw(); };
+setPgd(); draw();
+</script></body></html>

@@ -182,7 +182,7 @@ function chooser(where){ const host=document.querySelector('[data-chooser="'+whe
 
 /* ---------- TỔNG QUAN ---------- */
 const GPAGE=['dn','gn','dt','mb','kn'];
-const PAGES={no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',ck:'Cam kết chỉ tiêu',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
+const PAGES={no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',ck:'Cam kết chỉ tiêu',hd:'Hành động chuẩn',bb:'Biên bản làm việc',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
 const sc=s=>s[1]==='solid'?'crit':s[1];
 const wide=()=>window.matchMedia('(min-width:1024px)').matches;
 const openG=new Set([0,1]);
@@ -578,11 +578,11 @@ function renderKT(){ const out=[], Rg=REGION;
 function snapshotRows(){ const rows=[]; [REGION,...POINTS].forEach(n=>K.forEach(d=>{ const v=kv(d.k,n); if(v.th==null&&v.mt==null) return; rows.push([d.k,d.label,n,v.t1,v.mt,v.th,v.ht,v.vs]); })); return rows; }
 function applyRole(){ const pgd=USER&&USER.role==='pgd', adm=!USER||USER.role==='admin';
   document.querySelectorAll('.navbtn[data-v="xh"]').forEach(b=>b.hidden=pgd);
-  document.querySelectorAll('.navbtn[data-v="kt"],.navbtn[data-v="raw"],.navbtn[data-v="nk"]').forEach(b=>b.hidden=!adm);
+  document.querySelectorAll('.navbtn[data-v="kt"],.navbtn[data-v="raw"],.navbtn[data-v="nk"],.navbtn[data-v="bb"]').forEach(b=>b.hidden=!adm);
   document.querySelectorAll('.navg').forEach(g=>g.hidden=![...g.querySelectorAll('.navbtn')].some(b=>!b.hidden));
   document.querySelectorAll('.navbtn[data-v="cb"]').forEach(b=>b.hidden=!rdOk());
   document.querySelectorAll('.navg').forEach(g=>g.hidden=![...g.querySelectorAll('.navbtn')].some(b=>!b.hidden));
-  if(pgd&&view==='xh') view='hs'; if(!adm&&(view==='kt'||view==='raw'||view==='nk')) view='tq'; if(view==='cb'&&!rdOk()) view='tq'; }
+  if(pgd&&view==='xh') view='hs'; if(!adm&&(view==='kt'||view==='raw'||view==='nk'||view==='bb')) view='tq'; if(view==='cb'&&!rdOk()) view='tq'; }
 
 
 /* ---------- v4: thẻ chỉ số, biểu đồ dọc cho điện thoại, thanh chọn PGD ---------- */
@@ -937,7 +937,7 @@ async function ckLoad(force){ if(CK.loading||(!force&&CK.rows)) return; CK.loadi
   catch(e){ CK.err=e.message; CK.rows=CK.rows||[]; }
   CK.loading=false; ckBadge(); if(view==='ck') renderCK(); if(CK.popWait){ CK.popWait=false; try{ dnPopup(); }catch(e){} } }
 function ckSet(j){ CK.rows=j.rows||[]; if(j.log) CK.log=j.log; CK.month=j.month||''; CK.ci=j.ci||{}; CK.ciDay=j.ciDay||''; }
-function ckPrefetch(){ if(USER&&window.kpiApi) ckLoad(); }
+function ckPrefetch(){ if(USER&&window.kpiApi){ ckLoad(); hdLoad(); } }
 const ckRowOf=p=>(CK.rows||[]).find(r=>String(r.PGD).trim()===p);
 function ckChText(l){ let a=[]; try{ a=JSON.parse(l.ch); }catch(e){ return esc(l.ch); }
   return a.map(x=>{ const o=CKK.find(k=>k.f===x.k); return o?esc(o.name)+': '+o.fmt(x.from)+' → '+o.fmt(x.to):''; }).join(' · '); }
@@ -964,7 +964,8 @@ function ckFormHTML(e,D){ const r=ckRowOf(e)||{}, ed=!!CK.editing[e], locked=!!c
         (locked?'':'<div class="ckq">'+qs.filter(q=>q[1]!=null).map(q=>'<button type="button" data-v="'+q[1]+'">'+q[0]+'</button>').join('')+'</div>')+
         (tr?'<div class="cktrk '+(tr.ok?'good':'crit')+'"><span class="tl">Theo dõi đến '+esc(META.asof||'')+'</span>'+(tr.pct!=null?'<span class="ckbar"><i style="width:'+Math.max(0,Math.min(100,tr.pct*100))+'%"></i><b style="left:'+(D.dd/D.dim*100)+'%"></b></span>':'')+'<span>'+tr.t+'</span></div>':'')+
         '<div class="ckfb'+(locked?' hide':'')+'"></div><div class="ckwhy"><textarea placeholder="Lý do cam kết '+(o.low?'vượt trần':'thấp hơn MT')+'…"'+(locked?' disabled':'')+'>'+esc(r['LyDo'+o.f]||'')+'</textarea></div></div>'; }).join('')+'</div>'+
-    '<div><label class="cklb" for="ckAct">Hành động chính để đạt cam kết</label><textarea id="ckAct" placeholder="VD: gọi 20 khách sắp tất toán mời tái vay; mỗi ngày 2 hồ sơ GN mới…"'+(locked?' disabled':'')+'>'+esc(r.HanhDong||'')+'</textarea></div>'+
+    hdPickHTML(e,locked)+
+    '<div><label class="cklb" for="ckAct">Ghi thêm việc riêng của PGD (không bắt buộc)</label><textarea id="ckAct" placeholder="Việc ngoài bộ hành động chuẩn…"'+(locked?' disabled':'')+'>'+esc(r.HanhDong||'')+'</textarea></div>'+
     '<div class="ckact">'+(locked?'<button type="button" class="btn" id="ckEdit">Sửa cam kết</button><span class="t-muted">Sửa rồi gửi lại, anh Tuấn sẽ được báo số cũ → số mới.</span>':'<button type="button" class="btn primary" id="ckSend">Gửi cam kết</button>'+(ed?'<button type="button" class="btn" id="ckCancel">Huỷ sửa</button>':'')+'<span class="t-muted" id="ckMsg"></span>')+'</div></div>'; }
 function ckWire(e,D){ const box=$('ckBox'), LEFT=D.dim-D.dd;
   const check=()=>{ const s=$('ckSend'); if(!s) return; let ok=true; const miss=[];
@@ -975,12 +976,13 @@ function ckWire(e,D){ const box=$('ckBox'), LEFT=D.dim-D.dd;
     const upd=()=>{ const c=ckParse(inp.value,o); const f=ckFeedback(o,c,v,LEFT); fb.className='ckfb '+f.cls+(locked?' hide':''); fb.innerHTML=(o.auto&&c!=null?'Bạn nhập: <b>'+ckAu(c)+'</b>. ':'')+f.t; w.classList.toggle('show',!!f.need||(locked&&!!w.querySelector('textarea').value.trim())); check(); };
     inp.addEventListener('input',upd); w.querySelector('textarea').addEventListener('input',check);
     el.querySelectorAll('.ckq button').forEach(b=>b.onclick=()=>{ inp.value=ckShow(+b.dataset.v,o); upd(); }); upd(); });
+  hdPickWire(box,e);
   const ed=$('ckEdit'); if(ed) ed.onclick=()=>{ CK.editing[e]=1; renderCK(); };
-  const cc=$('ckCancel'); if(cc) cc.onclick=()=>{ delete CK.editing[e]; renderCK(); };
+  const cc=$('ckCancel'); if(cc) cc.onclick=()=>{ delete CK.editing[e]; delete HD.sel[e]; renderCK(); };
   const sd=$('ckSend'); if(sd) sd.onclick=async()=>{ const ck={act:$('ckAct').value.trim()};
     box.querySelectorAll('.ckc').forEach(el=>{ const o=CKK.find(x=>x.k===el.dataset.k); ck[o.f]=ckParse(el.querySelector('input').value,o); const w=el.querySelector('.ckwhy'); ck['why'+o.f]=w.classList.contains('show')?w.querySelector('textarea').value.trim():''; });
     sd.disabled=true; $('ckMsg').textContent='Đang gửi…';
-    try{ const j=await window.kpiApi('ckSave',{month:D.key,pgd:e,ck}); ckSet(j); delete CK.editing[e]; toast('Đã lưu cam kết'); renderCK(); }
+    try{ const j=await window.kpiApi('ckSave',{month:D.key,pgd:e,ck}); ckSet(j); try{ await hdSavePick(e); }catch(x){ toast('Lưu hành động chưa được: '+x.message); } delete CK.editing[e]; toast('Đã lưu cam kết'); renderCK(); }
     catch(err){ $('ckMsg').textContent=err.message; sd.disabled=false; } };
   check(); }
 const ckApvPill=r=>r.Duyet==='ok'?'<span class="pill good">Đã duyệt</span>':r.Duyet==='back'?'<span class="pill crit">Đã trả lại</span>':'<span class="pill ckw">Chờ duyệt'+(r.GopY?' · đã sửa':'')+'</span>';
@@ -998,9 +1000,9 @@ function ckAdminHTML(D){ const L=POINTS.map((p,i)=>{ const r=ckRowOf(p); const k
   if(DN){ const left=DN.nd-DN.today; if(left<5) h+='<div class="cknotice"><span>📄 <b>File nợ cần thu chỉ có tới '+DN.nd+'/'+DN.mon+'</b> (còn '+Math.max(0,left)+' ngày). Tải file mới để popup của TP không bị trống phần nợ.</span><button type="button" class="btn" id="ckDnGo">Tải file nợ</button></div>'; }
   const un=ckUnseen();
   if(CK.log&&CK.log.length) h+='<div class="panel cknoti"><div class="ph"><h2>🔔 Thông báo sửa cam kết</h2>'+(un?'<span class="ckbadge new">'+un+' mới</span>':'')+'</div>'+CK.log.slice(0,6).map((l,i)=>'<div class="ckni'+(i<un?' new':'')+'"><b>'+esc(short(String(l.pgd)))+'</b> · '+esc(l.name||l.email)+' sửa lúc '+ckTime(l.t)+': '+ckChText(l)+'</div>').join('')+'</div>';
-  const wait=sent.filter(x=>x.r.Duyet!=='ok'&&x.r.Duyet!=='back').length, back=sent.filter(x=>x.r.Duyet==='back').length, rep=sent.filter(x=>(CK.ci||{})[x.p]).length;
+  const wait=sent.filter(x=>x.r.Duyet!=='ok'&&x.r.Duyet!=='back').length, back=sent.filter(x=>x.r.Duyet==='back').length, rep=sent.filter(x=>hdPicked(x.p).length).length;
   h+='<div class="ckhero"><div><small>Cam kết chỉ tiêu · tháng '+D.mm+'</small><h1>'+sent.length+'/'+L.length+' PGD đã cam kết</h1><p>Số thực tế đến '+esc(META.asof||'–')+' · còn '+LEFT+' ngày · '+sent.reduce((a,x)=>a+x.late,0)+'/'+(sent.length*4)+' cam kết đang chậm nhịp</p></div>'+
-    '<div class="cksub"><div><b>'+wait+'</b><span>chờ anh duyệt</span></div><div><b>'+back+'</b><span>đã trả lại</span></div><div><b>'+rep+'/'+sent.length+'</b><span>TP đã báo việc hôm qua</span></div></div></div>';
+    '<div class="cksub"><div><b>'+wait+'</b><span>chờ anh duyệt</span></div><div><b>'+back+'</b><span>đã trả lại</span></div><div><b>'+rep+'/'+sent.length+'</b><span>đã chọn hành động chuẩn</span></div></div></div>';
   const onPace=CKK.map((o,i)=>sent.filter(x=>x.ks[i].tr&&x.ks[i].tr.ok).length);
   h+='<div class="ckkpis">'+CKK.map((o,i)=>{ const rv=kv(o.k,RG), mt=rv.mt; let big,vs,bw=null;
     if(o.low){ const avg=sent.reduce((a,x)=>a+x.ks[i].c,0)/(sent.length||1), am=ckRfwAmt(RG); big='TB '+ckP2(avg); vs='Hiện tại <b>'+ckP2(rv.th)+'</b> · trần '+ckP2(mt)+'<br>RFW tiền <b>'+ckAu(am.th)+'</b> / trần '+ckAu(am.mt); }
@@ -1012,11 +1014,11 @@ function ckAdminHTML(D){ const L=POINTS.map((p,i)=>{ const r=ckRowOf(p); const k
   h+='<div class="panel"><div class="ph"><h2>Cam kết theo PGD</h2><span class="t-muted" style="font-size:12.5px">Chờ duyệt xếp trước · bấm dòng để xem hành động và duyệt</span></div><div class="cktb"><div class="cktr hd"><div>PGD</div>'+CKK.map(o=>'<div>'+o.name+'</div>').join('')+'<div></div></div>'+
     rows.map(x=>{ const op=!!CK.open[x.p];
       if(!x.r) return '<div class="cktr"><div class="pn"><b>'+esc(short(x.p))+'</b><small><span class="pill crit">Chưa nộp</span></small></div>'+CKK.map(()=>'<div class="ckcell">–</div>').join('')+'<div></div></div>';
-      return '<div class="cktr'+(op?' open':'')+'" data-p="'+esc(x.p)+'"><div class="pn"><b>'+esc(short(x.p))+'</b><small>'+esc(x.r.Ten||'')+' · '+ckTime(x.r.ThoiGian)+(+x.r.SoLanSua?' · sửa '+x.r.SoLanSua+' lần':'')+'</small><small>'+ckApvPill(x.r)+ckCiPill(x.p)+'</small></div>'+
+      return '<div class="cktr'+(op?' open':'')+'" data-p="'+esc(x.p)+'"><div class="pn"><b>'+esc(short(x.p))+'</b><small>'+esc(x.r.Ten||'')+' · '+ckTime(x.r.ThoiGian)+(+x.r.SoLanSua?' · sửa '+x.r.SoLanSua+' lần':'')+'</small><small>'+ckApvPill(x.r)+'<span class="pill '+(hdPicked(x.p).length?'good':'ckw')+'">'+(hdPicked(x.p).length?hdPicked(x.p).length+' hành động chuẩn':'Chưa chọn hành động')+'</span></small></div>'+
         x.ks.map(k=>{ let m; if(k.o.low){ const am=ckRfwAmt(x.p); m=(k.low?'<span class="lo">vượt trần '+ckP2(k.v.mt)+'</span>':'≤ trần '+ckP2(k.v.mt))+'<br>TH <b>'+ckP2(k.v.th)+'</b> · RFW tiền <b>'+ckAu(am.th)+'</b> / trần '+ckAu(am.mt); }
           else m=(k.low?'<span class="lo">'+pct0(k.v.mt?k.c/k.v.mt:null)+' MT · dưới MT</span>':pct0(k.v.mt?k.c/k.v.mt:null)+' MT')+(k.tr?' · '+(k.tr.neg?'đang âm '+k.o.fmt(k.v.th):'đạt '+(k.tr.pct!=null?pct0(k.tr.pct):'–'))+(k.tr.ok?'':' · chậm nhịp'):'');
           return '<div class="ckcell" data-l="'+k.o.name+'"><div class="v num">'+(k.tr?'<i class="ckdot '+(k.tr.ok?'ok':'no')+'"></i>':'')+k.o.fmt(k.c)+'</div><div class="m">'+m+'</div></div>'; }).join('')+
-        '<div class="chev">›</div></div><div class="ckdet'+(op?' show':'')+'" data-d="'+esc(x.p)+'"><div><h4>Hành động chính</h4><p>'+esc(x.r.HanhDong||'–')+'</p></div><div><h4>Lý do</h4><ul>'+(CKK.filter(o=>x.r['LyDo'+o.f]).map(o=>'<li><b>'+o.name+'</b>'+esc(x.r['LyDo'+o.f])+'</li>').join('')||'<li class="t-muted">Không có</li>')+'</ul></div>'+
+        '<div class="chev">›</div></div><div class="ckdet'+(op?' show':'')+'" data-d="'+esc(x.p)+'"><div><h4>Hành động chuẩn</h4>'+hdChosenHTML(x.p)+(x.r.HanhDong?'<h4 style="margin-top:8px">Ghi thêm</h4><p>'+esc(x.r.HanhDong)+'</p>':'')+'</div><div><h4>Lý do</h4><ul>'+(CKK.filter(o=>x.r['LyDo'+o.f]).map(o=>'<li><b>'+o.name+'</b>'+esc(x.r['LyDo'+o.f])+'</li>').join('')||'<li class="t-muted">Không có</li>')+'</ul></div>'+
         '<div class="ckapv"><h4>Duyệt cam kết</h4><div>'+ckApvPill(x.r)+(x.r.GopY?'<p class="t-muted" style="margin-top:4px">Góp ý: '+esc(x.r.GopY)+'</p>':'')+'</div><textarea placeholder="Góp ý cho TP (bắt buộc khi trả lại)…"></textarea><div class="row"><button type="button" class="btn ckok" data-a="ok">✓ Duyệt</button><button type="button" class="btn ckbk" data-a="back">↩ Trả lại</button><button type="button" class="btn" data-a="form" data-i="'+x.i+'">Mở form</button></div><span class="ckmsg t-muted"></span></div></div>'; }).join('')+
     '</div><div class="legend"><span><i class="ckdot ok"></i> đúng nhịp</span><span><i class="ckdot no"></i> chậm nhịp</span><span><b style="color:var(--warn)">dưới MT</b> = cam kết thấp hơn mục tiêu</span></div></div>';
   return h; }
@@ -1038,7 +1040,7 @@ function ckPopHTML(e){ const r=ckRowOf(e), D=ckDays(), LEFT=D.dim-D.dd, nm=Strin
   if(r.Duyet==='back') h+='<div class="ckps"><div class="ckrv back"><b>↩ '+esc(r.NguoiDuyet||'Admin')+' đề nghị xem lại cam kết</b>“'+esc(r.GopY)+'”<button type="button" class="btn primary" data-ck="form">Sửa cam kết</button></div></div>';
   const L=CKK.map(o=>{ const v=kv(o.k,e), c=num(r[o.f]), tr=ckTrack(o,c,v,D); return {o,tr}; }).filter(x=>x.tr), ok=L.filter(x=>x.tr.ok).length;
   if(L.length&&ok===L.length) h+='<div class="ckps"><div class="ckrv ok">🎉 <b>Tuyệt vời!</b> Cả '+L.length+' cam kết đều đang đúng nhịp. Giữ phong độ nhé!</div></div>';
-  const td=ckTodo(r.HanhDong), ci=(CK.ci||{})[e];
+  const td=[], ci=null;
   if(td.length) h+='<div class="ckps"><div class="cksh"><b>Việc hôm nay</b><span>từ hành động bạn đã cam kết</span></div><ul class="cktodo">'+td.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul><div class="cksh"><b style="font-size:13px">Hôm qua bạn làm được chưa?</b></div><div class="ckci">'+
     [['done','✓ Đã làm'],['part','Một phần'],['no','Chưa làm']].map(([k,l])=>'<button type="button" class="btn'+(ci&&ci.st===k?' sel':'')+'" data-ci="'+k+'">'+l+'</button>').join('')+'</div>'+(ci?'<span class="ckthx">Đã ghi nhận, cảm ơn '+esc(call)+'!</span>':'<span class="ckthx"></span>')+'</div>';
   h+='<div class="ckps"><div class="cksh"><b>Cam kết của bạn hôm nay</b><span>'+ok+'/'+L.length+' đúng nhịp</span></div><div class="ckkl">'+L.slice().sort((a,b)=>a.tr.ok-b.tr.ok).map(x=>'<div class="ckkr '+(x.tr.ok?'ok':'no')+'"><i></i><b>'+x.o.name+'</b><span>'+x.tr.t+'</span></div>').join('')+'</div></div>';
@@ -1047,9 +1049,118 @@ function ckPopWire(m,e,close){ m.querySelectorAll('[data-ck=form]').forEach(b=>b
   m.querySelectorAll('[data-ci]').forEach(b=>b.onclick=async()=>{ const st=b.dataset.ci; m.querySelectorAll('[data-ci]').forEach(x=>{ x.disabled=true; x.classList.toggle('sel',x===b); }); const t=m.querySelector('.ckthx');
     try{ const j=await window.kpiApi('ckCheckin',{pgd:e,st}); ckSet(j); if(t) t.textContent='Đã ghi nhận, cảm ơn!'; }catch(err){ if(t) t.textContent=err.message; }
     m.querySelectorAll('[data-ci]').forEach(x=>x.disabled=false); }); }
+/* ---------- v12: Bộ hành động chuẩn + Biên bản làm việc ---------- */
+const HD={groups:null, acts:[], picks:{}, loading:false, err:'', tab:'ad', lk:'all', q:'', edit:null, sel:{}};
+const HDK=[['net','Tăng NET'],['gnn','GN NET'],['khm','KH mới'],['rfw','%RFW']];
+const hdKN=k=>(HDK.find(x=>x[0]===k)||[k,k])[1];
+async function hdLoad(force){ if(HD.loading||(!force&&HD.groups)) return; HD.loading=true; HD.err='';
+  try{ hdSet(await window.kpiApi('hdGet',{month:ckDays().key})); }catch(e){ HD.err=e.message; HD.groups=HD.groups||[]; }
+  HD.loading=false; if(view==='hd'||view==='ck') render(); }
+function hdSet(j){ HD.groups=j.groups||[]; HD.acts=j.acts||[]; HD.picks=j.picks||{}; }
+const hdGrp=id=>HD.groups.find(g=>g.id===id)||{n:id,ks:[]};
+const hdLive=()=>HD.acts.filter(a=>!a.off);
+const hdPicked=p=>{ const x=HD.picks[p]; return x?x.codes:[]; };
+/* trạng thái chỉ tiêu theo nhịp tháng */
+function hdStat(k,p){ const v=kv(k,p), D=ckDays(), pace=D.dd/D.dim; if(!v||v.th==null||v.mt==null) return 'na';
+  if(k==='rfw'){ const r=v.th/v.mt; return r<=1?'ok':r<=1.3?'warn':'bad'; }
+  const r=v.mt?v.th/(v.mt*pace):1; return r>=1?'ok':r>=.85?'warn':'bad'; }
+const hdWeak=p=>HDK.map(x=>x[0]).filter(k=>{ const s=hdStat(k,p); return s==='warn'||s==='bad'; });
+function hdSuggest(k){ const gs=HD.groups.filter(g=>g.ks.includes(k)).sort((a,b)=>(a.ks[0]===k?0:1)-(b.ks[0]===k?0:1)); const out=[]; let i=0;
+  while(out.length<4&&i<6){ gs.forEach(g=>{ const a=hdLive().filter(x=>x.g===g.id)[i]; if(a&&out.length<4) out.push(a); }); i++; } return out; }
+/* ----- phần chọn hành động trong form Cam kết ----- */
+function hdPickHTML(e,locked){ if(!HD.groups){ hdLoad(); return '<div class="hdbox"><p class="t-muted">Đang tải bộ hành động chuẩn…</p></div>'; }
+  if(!HD.groups.length) return '<div class="hdbox"><p class="t-muted">'+(HD.err?esc(HD.err):'Chưa có bộ hành động chuẩn.')+'</p></div>';
+  const cur=HD.sel[e]||(HD.sel[e]=new Set(hdPicked(e))), weak=hdWeak(e);
+  let h='<div class="hdbox"><div class="hdhd"><b>Hành động chuẩn để đạt cam kết</b><span class="t-muted">Đã chọn <b class="hdcnt">'+cur.size+'</b> hành động'+(locked?'':' · chọn bao nhiêu cũng được')+'</span></div>';
+  if(weak.length) h+='<div class="hdsg"><b>Gợi ý theo số:</b> '+weak.map(k=>{ const s=hdStat(k,e), gs=HD.groups.filter(g=>g.ks.includes(k)).map(g=>g.n); return '<span class="pill '+(s==='bad'?'crit':'warn')+'">'+hdKN(k)+(s==='bad'?' báo động':' hụt nhịp')+'</span> nên đẩy <b>'+esc(gs.join(', '))+'</b>'; }).join('<br>')+'</div>';
+  const gs=HD.groups.slice().sort((a,b)=>(b.ks.some(k=>weak.includes(k))?1:0)-(a.ks.some(k=>weak.includes(k))?1:0));
+  const sug=new Set(weak.flatMap(k=>hdSuggest(k).map(a=>a.id)));
+  gs.forEach(g=>{ const L=hdLive().filter(a=>a.g===g.id); if(!L.length) return; const hot=g.ks.filter(k=>weak.includes(k)), all=L.every(a=>cur.has(a.id));
+    h+='<div class="hdg"><div class="hdgh"><b>'+esc(g.n)+'</b>'+(hot.length?'<span class="pill crit">hỗ trợ '+hot.map(hdKN).join(', ')+'</span>':'<span class="t-muted">'+g.ks.map(hdKN).join(', ')+'</span>')+(locked?'':'<button type="button" class="hdall" data-g="'+esc(g.id)+'">'+(all?'Bỏ chọn nhóm':'Chọn cả nhóm')+'</button>')+'</div>'+
+      L.map(a=>'<label class="hdi'+(cur.has(a.id)?' on':'')+'"><input type="checkbox" value="'+esc(a.id)+'"'+(cur.has(a.id)?' checked':'')+(locked?' disabled':'')+'><span class="hdid">'+esc(a.id)+'</span><span><b>'+esc(a.t)+'</b><small>'+esc(a.f)+(sug.has(a.id)?' · <em>gợi ý</em>':'')+'</small></span></label>').join('')+'</div>'; });
+  return h+'</div>'; }
+function hdPickWire(box,e){ const cur=HD.sel[e]; if(!cur) return; const cnt=()=>{ const c=box.querySelector('.hdcnt'); if(c) c.textContent=cur.size; };
+  box.querySelectorAll('.hdi input').forEach(i=>i.onchange=()=>{ i.checked?cur.add(i.value):cur.delete(i.value); i.closest('.hdi').classList.toggle('on',i.checked); cnt(); });
+  box.querySelectorAll('.hdall').forEach(b=>b.onclick=()=>{ const L=hdLive().filter(a=>a.g===b.dataset.g), all=L.every(a=>cur.has(a.id)); L.forEach(a=>all?cur.delete(a.id):cur.add(a.id));
+    b.closest('.hdg').querySelectorAll('.hdi input').forEach(i=>{ i.checked=cur.has(i.value); i.closest('.hdi').classList.toggle('on',i.checked); }); b.textContent=all?'Chọn cả nhóm':'Bỏ chọn nhóm'; cnt(); }); }
+async function hdSavePick(e){ const cur=HD.sel[e]; if(!cur) return; const j=await window.kpiApi('hdPick',{month:ckDays().key,pgd:e,codes:[...cur]}); hdSet(j); }
+function hdChosenHTML(p){ const ids=hdPicked(p); if(!ids.length) return '<p class="t-muted">Chưa chọn hành động chuẩn</p>';
+  return '<ul class="hdul">'+HD.groups.map(g=>{ const L=HD.acts.filter(a=>a.g===g.id&&ids.includes(a.id)); return L.length?'<li><b>'+esc(g.n)+':</b> '+L.map(a=>esc(a.id+' '+a.s)).join('; ')+'</li>':''; }).join('')+'</ul>'; }
+/* ----- màn Hành động chuẩn ----- */
+function renderHD(){ const box=$('hdBox'); if(!box) return;
+  if(!HD.groups){ box.innerHTML='<div class="panel"><p class="t-muted">Đang tải bộ hành động chuẩn…</p></div>'; hdLoad(); return; }
+  const adm=isAdm(); if(!adm&&HD.tab==='ad') HD.tab='lb';
+  let h='<div class="hdtabs">'+(adm?'<button type="button" data-t="ad" class="'+(HD.tab==='ad'?'on':'')+'">Theo dõi áp dụng</button>':'')+'<button type="button" data-t="lb" class="'+(HD.tab==='lb'?'on':'')+'">Thư viện hành động</button><button type="button" class="btn" id="hdRe">Tải lại</button></div>'+(HD.err?'<p class="ckerr">'+esc(HD.err)+'</p>':'');
+  h+=HD.tab==='ad'?hdAdminHTML():hdLibHTML(adm);
+  box.innerHTML=h;
+  box.querySelectorAll('.hdtabs [data-t]').forEach(b=>b.onclick=()=>{ HD.tab=b.dataset.t; renderHD(); });
+  $('hdRe').onclick=()=>{ HD.groups=null; HD.sel={}; renderHD(); };
+  if(HD.tab==='ad') hdAdminWire(box); else hdLibWire(box,adm); }
+function hdAdminHTML(){ if(!CK.rows) ckLoad();
+  const rows=POINTS.map(p=>({p,weak:hdWeak(p),ch:hdPicked(p)}));
+  const using=rows.filter(r=>r.ch.length).length, avg=rows.reduce((s,r)=>s+r.ch.length,0)/(rows.length||1);
+  const miss=rows.filter(r=>hdStat('rfw',r.p)==='bad'&&!r.ch.some(id=>{ const a=HD.acts.find(x=>x.id===id); return a&&hdGrp(a.g).ks.includes('rfw'); })).length;
+  const use={}; rows.forEach(r=>r.ch.forEach(id=>use[id]=(use[id]||0)+1)); const top=Object.entries(use).sort((a,b)=>b[1]-a[1])[0];
+  const gu={}; rows.forEach(r=>r.ch.forEach(id=>{ const a=HD.acts.find(x=>x.id===id); if(a) gu[a.g]=(gu[a.g]||0)+1; }));
+  let h='<div class="hdstats"><div><small>PGD đã chọn hành động</small><b>'+using+'/'+rows.length+'</b><span>tháng '+ckDays().mm+'</span></div><div><small>Số hành động TB mỗi PGD</small><b>'+nf1.format(avg)+'</b><span>đã chọn</span></div><div><small>%RFW báo động nhưng chưa chọn việc RFW, Thu nợ</small><b class="crit">'+miss+'</b><span>PGD cần nhắc</span></div><div><small>Hành động được chọn nhiều nhất</small><b>'+(top?esc(top[0]):'–')+'</b><span>'+(top?top[1]+' PGD':'')+'</span></div></div>';
+  h+='<div class="panel"><div class="ph"><h2>Áp dụng theo PGD</h2><span class="t-muted" style="font-size:12.5px">Dùng khi họp tuần · PGD hụt nhiều chỉ tiêu xếp trước</span></div><div class="hdtb">'+
+    rows.sort((a,b)=>b.weak.length-a.weak.length).map(r=>'<div class="hdtr"><div class="pn"><b>'+esc(short(r.p))+'</b></div><div class="hdw">'+(r.weak.map(k=>'<span class="pill '+(hdStat(k,r.p)==='bad'?'crit':'warn')+'">'+hdKN(k)+'</span>').join(' ')||'<span class="pill good">Đúng nhịp</span>')+'</div><div class="hdc">'+(r.ch.map(id=>'<span class="hdchip" title="'+esc((HD.acts.find(a=>a.id===id)||{}).t||'')+'">'+esc(id)+'</span>').join('')||'<span class="t-muted">Chưa chọn</span>')+'</div><div><button type="button" class="btn" data-bb="'+esc(r.p)+'">Lập biên bản</button></div></div>').join('')+'</div></div>';
+  h+='<div class="panel"><div class="ph"><h2>Nhóm hành động được dùng</h2></div><div class="hdgu">'+HD.groups.map(g=>'<div><span>'+esc(g.n)+'</span><b>'+(gu[g.id]||0)+' lượt</b></div>').join('')+'</div></div>';
+  return h; }
+function hdAdminWire(box){ box.querySelectorAll('[data-bb]').forEach(b=>b.onclick=()=>{ BB.pgd=b.dataset.bb; BB.mode='kpi'; show('bb'); }); }
+const HD_FREQ=['Hằng ngày','Liên tục trong ngày','2 lần/tuần','3 ngày/lần','Hằng tuần','Đầu tháng','Hằng tháng','Mỗi hồ sơ','Khi phát sinh','Khi cần'];
+function hdFormHTML(a){ const g=a?a.g:(HD.lk!=='all'?HD.lk:(HD.groups[0]||{}).id);
+  return '<div class="hdform"><h3>'+(a?'Sửa hành động '+esc(a.id):'Thêm hành động mới')+'</h3><div class="hdfg"><label>Nhóm<select id="hfG">'+HD.groups.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===g?' selected':'')+'>'+esc(x.n)+'</option>').join('')+'<option value="__new">+ Nhóm mới…</option></select></label>'+
+    '<label>Tần suất<select id="hfF">'+HD_FREQ.concat(a&&!HD_FREQ.includes(a.f)?[a.f]:[]).map(f=>'<option'+(a&&a.f===f?' selected':'')+'>'+esc(f)+'</option>').join('')+'</select></label>'+
+    '<label class="hdnew" hidden>Tên nhóm mới<input id="hfGN" placeholder="VD: Hội thảo"></label><label class="hdnew" hidden>Hỗ trợ chỉ tiêu<span class="hdks">'+HDK.map(([k,n])=>'<label><input type="checkbox" value="'+k+'">'+n+'</label>').join('')+'</span></label></div>'+
+    '<label class="hdfull">Nội dung hành động<textarea id="hfT" placeholder="Viết ngắn, bắt đầu bằng động từ, có số lượng hoặc tần suất">'+(a?esc(a.t):'')+'</textarea></label>'+
+    '<label class="hdfull">Viết tắt khi in biên bản (không bắt buộc)<input id="hfS" value="'+(a&&a.s!==a.t?esc(a.s):'')+'" placeholder="VD: home DPD 1 theo ưu tiên"></label>'+
+    '<div class="hdfb"><button type="button" class="btn primary" id="hfSave">'+(a?'Lưu thay đổi':'Thêm vào bộ chuẩn')+'</button><button type="button" class="btn" id="hfCancel">Huỷ</button><span class="t-muted" id="hfMsg">'+(a?'':'Mã tự đặt theo nhóm')+'</span></div></div>'; }
+function hdLibHTML(adm){ const q=HD.q.toLowerCase(), L=adm?HD.acts:hdLive(), cnt=g=>L.filter(a=>!a.off&&(g==='all'||a.g===g)).length;
+  let h='<div class="hdlib"><div class="hdside">'+[['all','Tất cả']].concat(HD.groups.map(g=>[g.id,g.n])).map(([k,n])=>'<button type="button" data-lk="'+esc(k)+'" class="'+(HD.lk===k?'on':'')+'"><span>'+esc(n)+'</span><em>'+cnt(k)+'</em></button>').join('')+'</div><div class="hdmain">';
+  h+='<div class="hdbar"><input id="hdQ" placeholder="Tìm hành động… (vd: Zalo, home, live)" value="'+esc(HD.q)+'">'+(adm?'<button type="button" class="btn primary" id="hdAdd">+ Thêm hành động</button>':'')+'</div>';
+  if(adm&&HD.edit==='new') h+=hdFormHTML(null);
+  HD.groups.filter(g=>HD.lk==='all'||HD.lk===g.id).forEach(g=>{ const A=L.filter(a=>a.g===g.id&&(!q||(a.id+' '+a.t).toLowerCase().includes(q))); if(!A.length&&q) return;
+    h+='<div class="panel hdgrp"><div class="ph"><h2>'+esc(g.n)+'</h2><span class="t-muted" style="font-size:12.5px">Hỗ trợ: '+g.ks.map(hdKN).join(', ')+'</span></div>'+(A.map(a=>adm&&HD.edit===a.id?hdFormHTML(a):
+      '<div class="hdrow'+(a.off?' off':'')+'"><span class="hdid">'+esc(a.id)+'</span><div><b>'+esc(a.t)+'</b>'+(a.off?' <span class="pill crit">Đã ẩn</span>':'')+'</div><span class="t-muted">'+esc(a.f)+'</span>'+(adm?'<span class="hdops"><button type="button" data-ed="'+esc(a.id)+'">Sửa</button><button type="button" data-off="'+esc(a.id)+'">'+(a.off?'Hiện lại':'Ẩn')+'</button></span>':'')+'</div>').join('')||'<p class="t-muted">Chưa có hành động.</p>')+'</div>'; });
+  return h+'</div></div>'; }
+function hdLibWire(box,adm){ box.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{ HD.lk=b.dataset.lk; renderHD(); });
+  const q=$('hdQ'); q.oninput=()=>{ HD.q=q.value; const p=q.selectionStart; renderHD(); const n=$('hdQ'); n.focus(); n.setSelectionRange(p,p); };
+  if(!adm) return;
+  $('hdAdd').onclick=()=>{ HD.edit='new'; renderHD(); const t=$('hfT'); if(t) t.focus(); };
+  box.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>{ HD.edit=b.dataset.ed; renderHD(); });
+  box.querySelectorAll('[data-off]').forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ hdSet(await window.kpiApi('hdLib',{act:{id:b.dataset.off,toggle:1}})); toast('Đã cập nhật'); }catch(e){ toast(e.message); } renderHD(); });
+  const fG=$('hfG'); if(!fG) return;
+  fG.onchange=()=>box.querySelectorAll('.hdnew').forEach(x=>x.hidden=fG.value!=='__new');
+  $('hfCancel').onclick=()=>{ HD.edit=null; renderHD(); };
+  $('hfSave').onclick=async()=>{ const t=$('hfT').value.trim().replace(/\s+/g,' '), msg=$('hfMsg'); if(t.length<6){ msg.textContent='Nhập nội dung hành động.'; return; }
+    const req={act:{id:HD.edit==='new'?'':HD.edit,g:fG.value,t,s:$('hfS').value.trim()||t,f:$('hfF').value}};
+    if(fG.value==='__new'){ const n=$('hfGN').value.trim(), ks=[...box.querySelectorAll('.hdks input:checked')].map(x=>x.value); if(!n||!ks.length){ msg.textContent='Nhập tên nhóm mới và chọn ít nhất 1 chỉ tiêu.'; return; }
+      req.grp={n,ks,p:n.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/gi,'d').split(/\s+/).map(w=>w[0]).join('')}; }
+    $('hfSave').disabled=true; msg.textContent='Đang lưu…';
+    try{ hdSet(await window.kpiApi('hdLib',req)); HD.edit=null; toast('Đã lưu bộ hành động'); renderHD(); }catch(e){ msg.textContent=e.message; $('hfSave').disabled=false; } }; }
+/* ----- Biên bản: khung nhúng (bb-kpi.html, bb-lv.html) ----- */
+const BB={mode:'kpi', pgd:null};
+window.BBAPI={
+  data(){ const d={}, ck={}; POINTS.forEach(p=>{ const o={}; HDK.forEach(([k])=>{ const v=kv(k,p)||{}; o[k]={mt:v.mt,th:v.th,db:v.db}; }); o.rfw.amt_th=cell('RFW',p,'RFW TH'); o.rfw.amt_mt=cell('RFW',p,'RFW MT'); d[p]=o;
+      const r=ckRowOf(p); if(r) ck[p]={NET:num(r.NET),GNN:num(r.GNN),KHM:num(r.KHM),RFW:num(r.RFW),LyDoNET:r.LyDoNET,HanhDong:r.HanhDong,Ten:r.Ten}; });
+    return {asof:META.asof||'', pgds:POINTS.slice(), d, ck, names:Object.fromEntries(HDK), me:(USER&&USER.name)||''}; },
+  pgd(){ return BB.pgd||(sel>=0?POINTS[sel]:POINTS[0]); },
+  ext(p){ const ids=hdPicked(p); return {groups:(HD.groups||[]).map(g=>({n:g.n,items:HD.acts.filter(a=>a.g===g.id&&ids.includes(a.id)).map(a=>({id:a.id,s:a.s}))})).filter(x=>x.items.length),note:''}; },
+  list:p=>window.kpiApi('bbList',{pgd:p}),
+  get:id=>window.kpiApi('bbList',{id}),
+  save:bb=>window.kpiApi('bbSave',{bb}),
+  toast:m=>toast(m)};
+function renderBB(){ const box=$('bbBox'); if(!box) return; if(!isAdm()){ box.innerHTML='<div class="panel"><p class="t-muted">Chỉ admin dùng được mục này.</p></div>'; return; }
+  if(!CK.rows){ ckLoad(); } if(!HD.groups){ hdLoad(); }
+  if(!box.querySelector('iframe')||box.dataset.mode!==BB.mode){ box.dataset.mode=BB.mode;
+    box.innerHTML='<div class="hdtabs"><button type="button" data-m="kpi" class="'+(BB.mode==='kpi'?'on':'')+'">Biên bản KPI</button><button type="button" data-m="lv" class="'+(BB.mode==='lv'?'on':'')+'">Lập biên bản làm việc</button></div><iframe class="bbf" title="Biên bản" src="'+(BB.mode==='kpi'?'bb-kpi.html':'bb-lv.html')+'?v=20261024bb"></iframe>';
+    box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ BB.mode=b.dataset.m; renderBB(); }); }
+  else { try{ const w=box.querySelector('iframe').contentWindow; if(w.openPgd&&BB.pgd) w.openPgd(BB.pgd); }catch(e){} } }
+
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }
-function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
+function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,hd:renderHD,bb:renderBB,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
 function show(v){ const changed=view!==v; view=v;
   document.querySelectorAll('.navbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   document.querySelectorAll('.bn').forEach(b=>b.setAttribute('aria-current',(b.dataset.grp||'').split(' ').includes(v)?'page':'false'));
@@ -1072,11 +1183,12 @@ function boot(SRC, meta){ const prev=sel>=0?POINTS[sel]:null; loadData(SRC, meta
   const rv=$('rawPick').value; $('rawPick').innerHTML=Object.entries(TB).map(([k,t])=>'<option value="'+esc(k)+'">'+esc(t.name)+'</option>').join(''); if(rv&&TB[rv]) $('rawPick').value=rv;
   deriveAll(); booted=true; applyRole(); rdCheck(); try{ ckPrefetch(); }catch(e){}
   if(USER&&USER.role==='pgd'&&sel<0&&POINTS.length) sel=0; $('pick').value=String(sel); }
-const VIEWS=['tq','hs','ck','xh','cb','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
+const VIEWS=['tq','hs','ck','hd','bb','xh','cb','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
 let start='tq'; try{ const h=location.hash.slice(1); const s=localStorage.getItem('kpi55-view'); if(VIEWS.includes(h)) start=h; else if(VIEWS.includes(s)) start=s; }catch(e){}
 function startView(){ const q=new URLSearchParams(location.search).get('pgd');
   if(q){ const i=POINTS.findIndex(n=>matchPgd(n,q)); if(i>=0){ sel=i; $('pick').value=String(i); start='hs'; } }
   if(USER&&USER.role==='pgd'&&(start==='xh'||start==='kt')) start='hs';
+  if(!(USER&&USER.role==='admin')&&start==='bb') start='tq';
   if(start==='cb'&&!rdOk()) start='tq';
   show(start); setTimeout(()=>{ try{ dnPopup(); }catch(err){} },400); }
 /* ---------- v8: Trợ lý báo cáo (bot dạng nút) ---------- */

@@ -182,7 +182,7 @@ function chooser(where){ const host=document.querySelector('[data-chooser="'+whe
 
 /* ---------- TỔNG QUAN ---------- */
 const GPAGE=['dn','gn','dt','mb','kn'];
-const PAGES={q4:'Bộ KPI Q4/2026',no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',ck:'Cam kết chỉ tiêu',hd:'Hành động chuẩn',bb:'Biên bản làm việc',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
+const PAGES={ht:'Họp tuần',q4:'Bộ KPI Q4/2026',no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',ck:'Cam kết chỉ tiêu',hd:'Hành động chuẩn',bb:'Biên bản làm việc',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
 const sc=s=>s[1]==='solid'?'crit':s[1];
 const wide=()=>window.matchMedia('(min-width:1024px)').matches;
 const openG=new Set([0,1]);
@@ -943,7 +943,7 @@ async function ckLoad(force){ if(CK.loading||(!force&&CK.rows)) return; CK.loadi
   catch(e){ CK.err=e.message; CK.rows=CK.rows||[]; }
   CK.loading=false; ckBadge(); if(view==='ck') renderCK(); if(CK.popWait){ CK.popWait=false; try{ dnPopup(); }catch(e){} } }
 function ckSet(j){ CK.rows=j.rows||[]; if(j.log) CK.log=j.log; CK.month=j.month||''; CK.ci=j.ci||{}; CK.ciDay=j.ciDay||''; }
-function ckPrefetch(){ if(USER&&window.kpiApi){ ckLoad(); hdLoad(); } }
+function ckPrefetch(){ if(USER&&window.kpiApi){ ckLoad(); hdLoad(); htLoad(); setTimeout(()=>{ htAutoSave(); },1200); } }
 const ckRowOf=p=>(CK.rows||[]).find(r=>String(r.PGD).trim()===p);
 function ckChText(l){ let a=[]; try{ a=JSON.parse(l.ch); }catch(e){ return esc(l.ch); }
   return a.map(x=>{ const o=CKK.find(k=>k.f===x.k); return o?esc(o.name)+': '+o.fmt(x.from)+' → '+o.fmt(x.to):''; }).join(' · '); }
@@ -1197,7 +1197,7 @@ const q4F=(u,v)=>v==null||isNaN(v)?'–':u==='pct'?pct2(v):u==='dec'?(Math.abs(v
 const q4Fs=(u,v)=>u==='dec'&&Math.abs(v)<1?nf2.format(v):u==='amt'?(Math.abs(v)>=1000?nf2.format(v/1000)+' tỷ':fmt(v)+' tr'):q4F(u,v);
 const q4Agg=(u,a,last)=>u==='pct'||last?a[2]:a.reduce((s,x)=>s+x,0);
 const q4Ym=s=>{ s=String(s); const m=s.match(/(\d{4})-(\d{1,2})/); if(m) return m[1]+'-'+m[2].padStart(2,'0'); const d=new Date(s); return isNaN(d)?s:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); };
-function q4Hist(k,n,i){ const ym='2026-'+(10+i); const r=HIST.find(x=>x[1]===k&&String(x[3]).trim()===n&&q4Ym(x[0])===ym); return r&&r[6]!==''&&r[6]!=null?Number(r[6]):null; }
+function q4Hist(k,n,i){ const ym='2026-'+(10+i); const r=HIST.find(x=>x[1]===k&&String(x[3]).trim()===n&&q4Ym(x[0])===ym); if(r&&r[6]!==''&&r[6]!=null) return Number(r[6]); const d=htMonthEnd(k,n,ym); return d?d.th:null; }
 function q4Th1(k,n,i){ const c=q4Mi(); if(!k||!KM[k]) return null; if(i===c){ try{ return kv(k,n).th; }catch(e){ return null; } } return i<c?q4Hist(k,n,i):null; }
 /* số thực hiện theo tab: tháng → số tháng đó (đang chạy lấy trực tiếp, đã qua lấy số đã chốt); Cả Q4 → lũy kế (tỷ lệ/dư nợ lấy số mới nhất) */
 function q4Act(k,n,t,u,last){ const c=q4Mi(); if(!k||!KM[k]||c<0) return null;
@@ -1253,9 +1253,8 @@ function renderQ4(){ const box=$('q4Box'); if(!box) return; const cur=q4Mi(); if
     cards='<h3 class="q4h">Chỉ tiêu chính</h3><div class="q4g q4g5">'+main.join('')+'</div><h3 class="q4h">Doanh thu · Bảo hiểm · MBBank · WO</h3><div class="q4g q4g5">'+rest.join('')+'</div>'; }
   else if(P) cards='<div class="q4g q4g5">'+Q4G.map(g=>q4Card(g[1],P[g[0]],q4Agg(g[3],P[g[0]]),g[3],g[2],g[4],0,e)).join('')+'</div>';
   else cards='<p class="t-muted">PGD này chưa có trong bộ KPI Q4.</p>';
-  const closed=[0,1,2].filter(i=>i<Math.min(cur,3)), unc=closed.filter(i=>!HIST.some(x=>x[1]==='net'&&q4Ym(x[0])==='2026-'+(10+i)));
-  const warn=unc.length?'<div class="q4warn">⚠️ Chưa chốt số T'+unc.map(i=>10+i).join(', T')+' nên lũy kế Q4 đang thiếu tháng đó.'+(isAdm()?' Admin bấm <b>Chốt tháng</b> khi có số cuối tháng.':'')+'</div>':
-    (cur===0||cur===1)&&q4D()&&q4D().d>=q4Dim(cur)-1?'<div class="q4warn">📌 Cuối tháng: khi có số ngày '+q4Dim(cur)+'/'+(10+cur)+', admin bấm <b>Chốt tháng</b> để giữ số T'+(10+cur)+' cho lũy kế Q4.</div>':'';
+  const closed=[0,1,2].filter(i=>i<Math.min(cur,3)), unc=closed.filter(i=>!HIST.some(x=>x[1]==='net'&&q4Ym(x[0])==='2026-'+(10+i))&&!htMonthEnd('net',REGION,'2026-'+(10+i)));
+  const warn=unc.length?'<div class="q4warn">⚠️ Chưa chốt số T'+unc.map(i=>10+i).join(', T')+' nên lũy kế Q4 đang thiếu tháng đó.'+(isAdm()?' Từ nay số mỗi ngày được tự lưu, tháng sau không cần bấm Chốt tháng.':'')+'</div>':'';
   const G=Q4G[q4G], rows=POINTS.filter(n=>Q4P.pgd[n]);
   const sel2='<select id="q4Sel">'+Q4G.map((g,i)=>'<option value="'+i+'"'+(i===q4G?' selected':'')+'>'+g[1]+'</option>').join('')+'</select>';
   const tot=[0,1,2].map(i=>Object.values(Q4P.pgd).reduce((s,p)=>s+p[G[0]][i],0)/(G[3]==='pct'?Object.keys(Q4P.pgd).length:1));
@@ -1276,9 +1275,120 @@ function renderQ4(){ const box=$('q4Box'); if(!box) return; const cur=q4Mi(); if
   box.querySelectorAll('tr.click').forEach(tr=>tr.addEventListener('click',()=>select(+tr.dataset.i)));
 }
 
+/* ---------- v14: Tự lưu số mỗi ngày + Họp tuần ---------- */
+const HT={rows:null, loading:false, err:'', wk:null, open:null, saved:''};
+const DAYK=['net','gnn','khm','rfw'];
+let DAY={};                                    // DAY[n][k] = [{d:'2026-10-26', th, mt}] tăng dần theo ngày
+const htIso=s=>{ const m=String(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m?m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'):''; };
+const htD=s=>{ const p=s.split('-').map(Number); return new Date(p[0],p[1]-1,p[2]); };
+const htFmt=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const htDM=s=>{ const p=s.split('-'); return +p[2]+'/'+(+p[1]); };
+function htSet(rows){ HT.rows=rows||[]; DAY={};
+  HT.rows.forEach(r=>{ const d=String(r[0]).slice(0,10), k=r[1], n=String(r[2]).trim(); if(r[3]===''||r[3]==null) return;
+    ((DAY[n]=DAY[n]||{})[k]=DAY[n][k]||[]).push({d,th:+r[3],mt:r[4]===''||r[4]==null?null:+r[4]}); });
+  Object.values(DAY).forEach(o=>Object.values(o).forEach(a=>a.sort((x,y)=>x.d<y.d?-1:1))); }
+async function htLoad(force){ if(HT.loading||(!force&&HT.rows)||!window.kpiApi) return; HT.loading=true; HT.err='';
+  const D=htIso(META.asof); let from=''; if(D){ const d=htD(D); d.setDate(1); d.setMonth(d.getMonth()-1); from=htFmt(d); }
+  try{ const j=await window.kpiApi('dayGet',{from}); htSet(j.rows); }catch(e){ HT.err=e.message; HT.rows=HT.rows||[]; }
+  HT.loading=false; if(view==='ht'||view==='q4') render(); }
+/* Tự lưu: admin / khu vực mở dashboard là số của ngày dữ liệu được lưu (mỗi ngày 1 lần, lưu lại thì ghi đè) */
+async function htAutoSave(){ if(!USER||USER.role==='pgd'||!window.kpiApi) return; const d=htIso(META.asof); if(!d) return;
+  let done=''; try{ done=localStorage.getItem('kpi55-day')||''; }catch(e){} if(done===d+'|'+(META.fetched||'')) { HT.saved=d; return; }
+  const rows=[]; [REGION,...POINTS].forEach(n=>KB.forEach(x=>{ const v=kv(x.k,n); if(v.th==null&&v.mt==null) return; rows.push([x.k,n,v.th,v.mt]); }));
+  try{ await window.kpiApi('daySave',{date:d,rows}); HT.saved=d; try{ localStorage.setItem('kpi55-day',d+'|'+(META.fetched||'')); }catch(e){} htLoad(true); }catch(e){ HT.err='Chưa tự lưu được số ngày: '+e.message; } }
+/* số cuối tháng từ lịch sử ngày (thay cho bấm Chốt tháng) */
+function htMonthEnd(k,n,ym){ const a=((DAY[n]||{})[k]||[]).filter(x=>x.d.slice(0,7)===ym); return a.length?a[a.length-1]:null; }
+/* tăng thêm theo ngày: số lũy kế tháng → chênh lệch giữa 2 ngày có số (sang tháng mới tính lại từ 0) */
+function htInc(n,k){ const a=(DAY[n]||{})[k]||[]; return a.map((x,i)=>{ const p=a[i-1]; return {d:x.d, v:p&&p.d.slice(0,7)===x.d.slice(0,7)?x.th-p.th:x.th, th:x.th, mt:x.mt}; }); }
+function htWeeks(){ const D=htIso(META.asof); if(!D) return []; const end=htD(D), w=[]; let m=new Date(end); m.setDate(m.getDate()-((m.getDay()+6)%7));
+  for(let i=0;i<6;i++){ const s=new Date(m); s.setDate(m.getDate()-7*i); const e=new Date(s); e.setDate(s.getDate()+6); w.push({s:htFmt(s),e:htFmt(e>end?end:e),full:e<=end}); } return w; }
+function htWk(n,k,w){ const L=htInc(n,k).filter(x=>x.d>=w.s&&x.d<=w.e); if(!L.length) return null;
+  if(k==='rfw'){ const a=(DAY[n]||{}).rfw||[], last=a.filter(x=>x.d<=w.e).pop(), prev=a.filter(x=>x.d<w.s).pop(); return {v:last?last.th:null, d:last&&prev?last.th-prev.th:null, mt:last?last.mt:null, days:L}; }
+  return {v:L.reduce((s,x)=>s+x.v,0), days:L, last:L[L.length-1]}; }
+/* MT tuần (cách 2 – cần đạt để kịp tháng): với mỗi đoạn của tuần nằm trong 1 tháng
+   MT = (MT tháng + phần thiếu tháng trước trong quý − TH lũy kế đến hết ngày trước tuần) ÷ số ngày còn lại của tháng × số ngày của đoạn
+   Làm dư thì MT tuần KHÔNG giảm: tối thiểu bằng MT tháng chia đều theo ngày */
+function htCarry(k,n,ym){ if(typeof Q4P==='undefined') return 0; const t=+ym.slice(5,7)-10; if(ym.slice(0,4)!=='2026'||t<1||t>2) return 0;
+  const g=Q4G.find(x=>x[2]===k); if(!g) return 0;
+  const one=p=>{ const arr=(Q4P.pgd[p]||{})[g[0]]; if(!arr) return 0; let s=0; for(let i=0;i<t;i++){ const h=q4Hist(k,p,i); if(h!=null&&arr[i]>h) s+=arr[i]-h; } return s; };
+  return n===REGION?Object.keys(Q4P.pgd).reduce((s,p)=>s+one(p),0):one(n); }
+function htMT(n,k,w){ const a=(DAY[n]||{})[k]||[]; let mt=0, ok=false, approx=false; const segs={};
+  for(let d=htD(w.s);d<=htD(w.e);d.setDate(d.getDate()+1)){ const ym=htFmt(d).slice(0,7); (segs[ym]=segs[ym]||[]).push(htFmt(d)); }
+  const fullE=new Date(htD(w.s)); fullE.setDate(fullE.getDate()+6);
+  Object.entries(segs).forEach(([ym,ds])=>{ const d0=htD(ds[0]), dim=new Date(d0.getFullYear(),d0.getMonth()+1,0).getDate();
+    const inM=a.filter(x=>x.d.slice(0,7)===ym), mtM=(inM.length?inM[inM.length-1].mt:null); if(mtM==null) return; ok=true;
+    const M=mtM+htCarry(k,n,ym), before=inM.filter(x=>x.d<ds[0]).pop();
+    let th0; if(d0.getDate()===1) th0=0; else if(before) th0=before.th; else { th0=null; approx=true; }
+    const left=dim-d0.getDate()+1, segLen=Math.min(left,Math.round((Math.min(fullE,new Date(d0.getFullYear(),d0.getMonth(),dim))-d0)/864e5)+1);
+    const base=M*segLen/dim; mt+=th0==null?base:Math.max(base,(M-th0)/left*segLen); });   // làm dư không giảm: không thấp hơn MT chia đều
+  return ok?{mt,approx}:null; }
+function htPct(n,k,w){ const a=htWk(n,k,w), m=htMT(n,k,w); if(!a||!m) return null; const D=htIso(META.asof);
+  const fullE=new Date(htD(w.s)); fullE.setDate(fullE.getDate()+6); const run=htFmt(fullE)>D;   // tuần đang chạy: so với nhịp ngày đã qua
+  const el=run?Math.round((htD(w.e)-htD(w.s))/864e5)+1:7, exp=m.mt*el/7;
+  return {th:a.v, mt:m.mt, exp, r:exp>0?a.v/exp:(a.v>=0?1:0), run, approx:m.approx}; }
+const htCls=r=>r==null?'':r>=1?'good':r>=.9?'warn':'crit';
+const htS=v=>v==null?'–':(v>0?'+':v<0?'−':'')+q4Fs('amt',Math.abs(v));
+const htSc=v=>v==null?'–':(v>0?'+':v<0?'−':'')+nf0.format(Math.abs(Math.round(v)));
+const htPp=v=>v==null?'–':(v>0?'+':v<0?'−':'')+nf2.format(Math.abs(v)*100);
+function htVs(a,b,cnt){ if(a==null||b==null) return ''; const d=a-b; const c=d>=0?'up':'dn';
+  return '<span class="htvs '+c+'">'+(d>=0?'▲ ':'▼ ')+(cnt?nf0.format(Math.abs(Math.round(d))):q4Fs('amt',Math.abs(d)))+' so tuần trước</span>'; }
+function htBars(days,w,neg){ const all=[]; for(let d=htD(w.s);d<=htD(w.e);d.setDate(d.getDate()+1)) all.push(htFmt(d));
+  const m={}; days.forEach(x=>m[x.d]=x.v); const vals=all.map(d=>m[d]), mx=Math.max(1,...vals.filter(v=>v!=null).map(Math.abs)), hasNeg=vals.some(v=>v<0);
+  return '<div class="htbars'+(hasNeg?' neg':'')+'">'+all.map((d,i)=>{ const v=vals[i], h=v==null?0:Math.abs(v)/mx*(hasNeg?50:100);
+    return '<i title="'+htDM(d)+': '+(v==null?'chưa có số':(neg?htSc(v):htS(v)))+'"><b class="'+(v==null?'na':v<0?'dn':'up')+'" style="height:'+Math.max(v==null?0:3,h)+'%"></b><s>'+'T2T3T4T5T6T7CN'.match(/T\d|CN/g)[i]+'</s></i>'; }).join('')+'</div>'; }
+function htTile(n,k,w,pw,label){ const a=htWk(n,k,w), b=htWk(n,k,pw);
+  if(k==='rfw') return '<div class="httile"><small>'+label+' cuối tuần</small><b class="'+(a&&a.mt!=null&&a.v>a.mt?'crit':'')+'">'+(a?pct2(a.v):'–')+'</b><span class="htvs '+(a&&a.d>0?'dn':'up')+'">'+(a&&a.d!=null?(a.d>0?'▲ ':'▼ ')+nf2.format(Math.abs(a.d)*100)+' điểm trong tuần':'')+'</span><span class="t-muted">Trần '+(a&&a.mt!=null?pct2(a.mt):'–')+' · càng thấp càng tốt</span></div>';
+  const cnt=k==='khm', P=htPct(n,k,w), c=P?htCls(P.r):'';
+  const mtl=P?'<div class="htmt"><span>MT tuần'+(P.approx?' ≈':'')+' <b>'+(cnt?nf0.format(Math.round(P.mt)):q4Fs('amt',P.mt))+'</b></span><span class="pill '+c+'">'+Math.round(P.r*100)+'%'+(P.run?' nhịp':'')+'</span></div><div class="q4p"><i class="'+c+'" style="width:'+Math.max(0,Math.min(100,P.mt?P.th/P.mt*100:0))+'%"></i>'+(P.run?'<u style="left:'+Math.min(100,P.exp/P.mt*100)+'%"></u>':'')+'</div>':'';
+  return '<div class="httile"><small>'+label+' trong tuần</small><b class="'+(a&&a.v<0?'crit':'')+'">'+(a?(cnt?htSc(a.v):htS(a.v)):'–')+'</b>'+mtl+htVs(a&&a.v,b&&b.v,cnt)+(a?htBars(a.days,w,cnt):'')+'</div>'; }
+function htFlags(n,w,pw){ const f=[], net=htWk(n,'net',w), r=htWk(n,'rfw',w);
+  if(net&&net.v<0) f.push(['crit','NET tuần âm']);
+  [['net','NET'],['gnn','GN'],['khm','KHM']].forEach(([k,l])=>{ const P=htPct(n,k,w); if(!P||(k==='net'&&net&&net.v<0)) return; const c=htCls(P.r); if(c!=='good') f.push([c,l+' đạt '+Math.round(P.r*100)+'% MT tuần']); });
+  if(r&&r.d!=null&&r.d>0.002) f.push(['crit','RFW tăng '+nf2.format(r.d*100)+' điểm']); else if(r&&r.mt!=null&&r.v>r.mt) f.push(['warn','RFW trên trần']);
+  if(!hdPicked(n).length) f.push(['na','Chưa chọn hành động']);
+  return f; }
+function htCk(n){ const r=(CK.rows||[]).find(x=>String(x.PGD).trim()===n); return !r?'<span class="pill ckw">Chưa nộp</span>':r.Duyet==='ok'?'<span class="pill good">Đã duyệt</span>':r.Duyet==='back'?'<span class="pill crit">Trả lại</span>':'<span class="pill warn">Chờ duyệt</span>'; }
+function htCopy(w,pw){ const K=REGION, net=htWk(K,'net',w), gn=htWk(K,'gnn',w), r=htWk(K,'rfw',w), pn=htWk(K,'net',pw);
+  const L=['📅 HỌP TUẦN KV5.5 · '+htDM(w.s)+'–'+htDM(w.e),
+    'KV: NET '+htS(net&&net.v)+((P=>P?' ('+Math.round(P.r*100)+'% MT tuần)':'')(htPct(K,'net',w)))+' · GN '+htS(gn&&gn.v)+((P=>P?' ('+Math.round(P.r*100)+'%)':'')(htPct(K,'gnn',w)))+' · RFW '+(r?pct2(r.v)+' ('+htPp(r.d)+')':'–'),''];
+  const R=POINTS.map(n=>[n,htFlags(n,w,pw).filter(f=>f[0]!=='na')]).filter(x=>x[1].length).sort((a,b)=>b[1].length-a[1].length);
+  if(R.length){ L.push('Cần trao đổi:'); R.slice(0,6).forEach(([n,f],i)=>L.push((i+1)+'. '+short(n)+': '+f.map(x=>x[1]).join(', '))); } else L.push('✅ Tất cả PGD đúng nhịp');
+  return L.join('\n'); }
+function renderHT(){ const box=$('htBox'); if(!box) return; if(!CK.rows) ckLoad(); if(!HD.groups) hdLoad();
+  if(HT.rows==null){ box.innerHTML='<div class="panel"><p class="t-muted">Đang tải số theo ngày…</p></div>'; htLoad(); return; }
+  const W=htWeeks(); if(!W.length){ box.innerHTML='<div class="panel"><p class="t-muted">Chưa xác định được ngày dữ liệu.</p></div>'; return; }
+  if(HT.wk==null||HT.wk>=W.length) HT.wk=W[0].full?0:1;
+  const w=W[HT.wk], pw=W[HT.wk+1]||W[HT.wk], e=ent(), nDays=new Set(HT.rows.map(r=>String(r[0]).slice(0,10))).size;
+  const chips='<div class="q4t htw">'+W.slice(0,4).map((x,i)=>'<button type="button" data-w="'+i+'" class="'+(i===HT.wk?'on':'')+'">'+htDM(x.s)+'–'+htDM(x.e)+(x.full?'':' <small>đang chạy</small>')+'</button>').join('')+'</div>';
+  const save='<span class="htsave">'+(HT.saved?'✓ Đã tự lưu số ngày '+htDM(HT.saved):USER&&USER.role==='pgd'?'':'Đang tự lưu số ngày…')+' · đã có '+nDays+' ngày</span>';
+  const tiles='<div class="httiles">'+[['net','Tăng NET'],['gnn','GN NET'],['khm','KH mới'],['rfw','%RFW']].map(x=>htTile(e,x[0],w,pw,x[1])).join('')+'</div>';
+  const rows=POINTS.map(n=>({n,f:htFlags(n,w,pw),net:htWk(n,'net',w),pn:htWk(n,'net',pw),gn:htWk(n,'gnn',w),pg:htWk(n,'gnn',pw),kh:htWk(n,'khm',w),r:htWk(n,'rfw',w)}))
+    .sort((a,b)=>b.f.filter(x=>x[0]==='crit').length-a.f.filter(x=>x[0]==='crit').length||b.f.length-a.f.length||((htPct(a.n,'net',w)||{}).r||0)-((htPct(b.n,'net',w)||{}).r||0));
+  const dv=(a,b,cnt,P)=>a==null?'–':'<b title="'+(b!=null?'Tuần trước '+(cnt?htSc(b):htS(b)):'')+'">'+(cnt?htSc(a):htS(a))+'</b>'+(P?'<small class="htm '+htCls(P.r)+'">MT '+(cnt?nf0.format(Math.round(P.mt)):q4Fs('amt',P.mt))+' · '+Math.round(P.r*100)+'%</small>':'');
+  const tb='<table class="httb"><thead><tr><th>PGD · cần trao đổi</th><th>Tăng NET tuần</th><th>GN NET tuần</th><th>KH mới</th><th>%RFW</th><th>Hành động</th><th>Cam kết</th></tr></thead><tbody>'+
+    rows.map(r=>{ const op=HT.open===r.n, ids=hdPicked(r.n);
+      let h='<tr class="click'+(op?' open':'')+'" data-n="'+esc(r.n)+'"><td class="htpg"><b>'+esc(short(r.n))+'</b><div>'+(r.f.filter(x=>x[0]!=='na').map(x=>'<span class="pill '+x[0]+'">'+esc(x[1])+'</span>').join(' ')||'<span class="pill good">Đúng nhịp</span>')+'</div></td><td class="num">'+dv(r.net&&r.net.v,r.pn&&r.pn.v,0,htPct(r.n,'net',w))+'</td><td class="num">'+dv(r.gn&&r.gn.v,r.pg&&r.pg.v,0,htPct(r.n,'gnn',w))+'</td><td class="num">'+dv(r.kh&&r.kh.v,null,1,htPct(r.n,'khm',w))+'</td>'+
+        '<td class="num"><b class="'+(r.r&&r.r.mt!=null&&r.r.v>r.r.mt?'crit':'')+'">'+(r.r?pct2(r.r.v):'–')+'</b>'+(r.r&&r.r.d!=null?'<small class="'+(r.r.d>0?'dn':'up')+'">'+htPp(r.r.d)+'</small>':'')+'</td>'+
+        '<td>'+(ids.length?'<span class="htn">'+ids.length+'</span> '+ids.slice(0,4).map(id=>'<span class="hdchip">'+esc(id)+'</span>').join('')+(ids.length>4?'…':''):'<span class="pill na">Chưa chọn</span>')+'</td><td>'+htCk(r.n)+'</td></tr>';
+      if(op){ const W2={s:pw.s,e:w.e}, d2=htInc(r.n,'net').filter(x=>x.d>=W2.s&&x.d<=W2.e);
+        h+='<tr class="htdet"><td colspan="7"><div class="htdg"><div><h4>Tăng NET từng ngày · 2 tuần</h4>'+htBars2(d2,pw,w)+'</div><div><h4>Hành động đang làm</h4>'+hdChosenHTML(r.n)+'</div><div class="htact">'+(isAdm()?'<button type="button" class="btn primary" data-bb="'+esc(r.n)+'">Lập biên bản KPI</button>':'')+'<button type="button" class="btn" data-hs="'+esc(r.n)+'">Xem hồ sơ PGD</button>'+(isAdm()?'<small class="t-muted">Biên bản tự kiểm việc đã giao lần trước, việc chưa xong tự chuyển sang.</small>':'')+'</div></div></td></tr>'; }
+      return h; }).join('')+'</tbody></table>';
+  box.innerHTML='<div class="panel"><div class="ph"><h2>Họp tuần · '+(sel<0?'Khu vực':esc(short(e)))+'</h2>'+chips+'</div><p class="t-muted q4s">Số tăng thêm trong tuần (T2–CN). MT tuần = phần còn thiếu của tháng (cộng phần thiếu tháng trước) chia đều cho số ngày còn lại; tuần trước làm thiếu thì MT tuần này tăng, làm dư thì không giảm (tối thiểu bằng MT tháng chia đều). '+save+'</p>'+(HT.err?'<p class="ckerr">'+esc(HT.err)+'</p>':'')+tiles+'</div>'+
+    '<div class="panel"><div class="ph"><h2>'+(isPgdUser()?'PGD của bạn':POINTS.length+' PGD · xếp theo mức cần trao đổi')+'</h2>'+(isPgdUser()?'':'<button type="button" class="btn" id="htCopy">Sao chép tóm tắt tuần</button>')+'</div><p class="t-muted q4s">Bấm 1 dòng để xem NET từng ngày, hành động đang làm và lập biên bản ngay trong buổi họp.</p><div class="tablebox">'+tb+'</div></div>';
+  box.querySelectorAll('.htw button').forEach(b=>b.onclick=()=>{ HT.wk=+b.dataset.w; renderHT(); });
+  box.querySelectorAll('.httb tr.click').forEach(tr=>tr.onclick=()=>{ HT.open=HT.open===tr.dataset.n?null:tr.dataset.n; renderHT(); });
+  box.querySelectorAll('[data-bb]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); BB.pgd=b.dataset.bb; BB.mode='kpi'; show('bb'); });
+  box.querySelectorAll('[data-hs]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const i=POINTS.indexOf(b.dataset.hs); if(i>=0){ sel=i; $('pick').value=String(i); } show('hs'); });
+  const cp=$('htCopy'); if(cp) cp.onclick=()=>{ const t=htCopy(w,pw); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Đã sao chép tóm tắt tuần')).catch(()=>{ window.prompt('Sao chép:',t); }); };
+}
+function htBars2(days,pw,w){ const all=[]; for(let d=htD(pw.s);d<=htD(w.e);d.setDate(d.getDate()+1)) all.push(htFmt(d));
+  const m={}; days.forEach(x=>m[x.d]=x.v); const vals=all.map(d=>m[d]), mx=Math.max(1,...vals.filter(v=>v!=null).map(Math.abs)), hasNeg=vals.some(v=>v<0);
+  return '<div class="htbars big'+(hasNeg?' neg':'')+'">'+all.map((d,i)=>{ const v=vals[i], h=v==null?0:Math.abs(v)/mx*(hasNeg?50:100);
+    return '<i class="'+(d<w.s?'old':'')+'" title="'+htDM(d)+': '+(v==null?'chưa có số':htS(v))+'"><b class="'+(v==null?'na':v<0?'dn':'up')+'" style="height:'+Math.max(v==null?0:3,h)+'%"></b><s>'+htDM(d)+'</s></i>'; }).join('')+'</div><div class="hthint"><span class="old"></span>Tuần trước <span></span>Tuần này</div>'; }
+
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }
-function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,hd:renderHD,bb:renderBB,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,q4:renderQ4,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
+function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,hd:renderHD,bb:renderBB,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,q4:renderQ4,ht:renderHT,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
 function show(v){ const changed=view!==v; view=v;
   document.querySelectorAll('.navbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   document.querySelectorAll('.bn').forEach(b=>b.setAttribute('aria-current',(b.dataset.grp||'').split(' ').includes(v)?'page':'false'));
@@ -1301,7 +1411,7 @@ function boot(SRC, meta){ const prev=sel>=0?POINTS[sel]:null; loadData(SRC, meta
   const rv=$('rawPick').value; $('rawPick').innerHTML=Object.entries(TB).map(([k,t])=>'<option value="'+esc(k)+'">'+esc(t.name)+'</option>').join(''); if(rv&&TB[rv]) $('rawPick').value=rv;
   deriveAll(); booted=true; applyRole(); rdCheck(); try{ ckPrefetch(); }catch(e){}
   if(USER&&USER.role==='pgd'&&sel<0&&POINTS.length) sel=0; $('pick').value=String(sel); }
-const VIEWS=['tq','hs','ck','hd','bb','xh','cb','q4','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
+const VIEWS=['tq','ht','hs','ck','hd','bb','xh','cb','q4','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
 let start='tq'; try{ const h=location.hash.slice(1); const s=localStorage.getItem('kpi55-view'); if(VIEWS.includes(h)) start=h; else if(VIEWS.includes(s)) start=s; }catch(e){}
 function startView(){ const q=new URLSearchParams(location.search).get('pgd');
   if(q){ const i=POINTS.findIndex(n=>matchPgd(n,q)); if(i>=0){ sel=i; $('pick').value=String(i); start='hs'; } }

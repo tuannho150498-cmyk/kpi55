@@ -908,6 +908,12 @@ const CKK=[
   {k:'gnn',f:'GNN',name:'GN NET',unit:'tr',auto:1,fmt:ckAu},
   {k:'khm',f:'KHM',name:'KH mới',unit:'khách',fmt:v=>v==null?'–':nf0.format(Math.round(v))+' khách'},
   {k:'rfw',f:'RFW',name:'%RFW',unit:'%',low:1,fmt:ckP2}];
+/* v13: KH cần đạt đã bù phần thiếu các tháng Q4 đã chốt (lấy từ Bộ KPI Q4; vượt không trừ) */
+function ckBu(o,e,v){ if(o.low||typeof q4Mi!=='function') return null; const t=q4Mi(); if(t<1||t>2||!Q4P.pgd[e]) return null;
+  const g=Q4G.find(x=>x[2]===o.k); if(!g) return null; const arr=Q4P.pgd[e][g[0]], ms=[];
+  for(let i=0;i<t;i++){ const h=q4Hist(o.k,e,i); if(h!=null&&arr[i]>h) ms.push([i,arr[i]-h]); }
+  const cr=ms.reduce((a,x)=>a+x[1],0); if(cr<=0) return null; const base=v.mt!=null?v.mt:arr[t];
+  return {cr, base, tgt:base+cr, ms:ms.map(x=>'T'+(10+x[0])).join(', ')}; }
 function ckDays(){ const p=String(META.asof||'').split('/').map(Number); const d=p[0], m=p[1], y=p[2];
   if(!d||!m||!y){ const n=new Date(); return {dd:n.getDate(),dim:new Date(n.getFullYear(),n.getMonth()+1,0).getDate(),key:''+n.getFullYear()+String(n.getMonth()+1).padStart(2,'0'),mm:n.getMonth()+1}; }
   return {dd:d,dim:new Date(y,m,0).getDate(),key:''+y+String(m).padStart(2,'0'),mm:m}; }
@@ -953,18 +959,18 @@ function renderCK(){ const box=$('ckBox'); if(!box) return;
 function ckFormHTML(e,D){ const r=ckRowOf(e)||{}, ed=!!CK.editing[e], locked=!!ckRowOf(e)&&!ed, LEFT=D.dim-D.dd;
   const rv=ckRowOf(e)?(r.Duyet==='back'?'<div class="ckrv back"><b>↩ '+esc(r.NguoiDuyet||'Admin')+' đề nghị xem lại cam kết</b>“'+esc(r.GopY)+'”'+(locked?'<span>Bấm “Sửa cam kết”, chỉnh rồi gửi lại.</span>':'')+'</div>':r.Duyet==='ok'?'<div class="ckrv ok"><b>✓ Cam kết đã được duyệt</b>'+(r.GopY?'Góp ý: “'+esc(r.GopY)+'”':'')+'</div>':(r.GopY?'<div class="ckrv wait"><b>Đã gửi lại · chờ duyệt</b>Góp ý trước: “'+esc(r.GopY)+'”</div>':'')):'';
   return '<div class="panel ckp">'+rv+'<div class="ph"><h2>Cam kết của '+esc(short(e))+'</h2><span class="ckbadge '+(ckRowOf(e)?'ok':'no')+'">'+(ckRowOf(e)?'Đã nộp lúc '+ckTime(r.ThoiGian)+(+r.SoLanSua?' · sửa '+r.SoLanSua+' lần':''):'Chưa nộp')+'</span></div>'+
-    '<div class="ckgrid">'+CKK.map(o=>{ const v=kv(o.k,e), c=ckRowOf(e)?num(r[o.f]):null;
+    '<div class="ckgrid">'+CKK.map(o=>{ const v=kv(o.k,e), c=ckRowOf(e)?num(r[o.f]):null, bu=ckBu(o,e,v);
       const facts=o.low?[['Trần (MT)',ckP2(v.mt)],['Hiện tại',ckP2(v.th)],['RFW tiền',ckAu(cell('RFW',e,'RFW TH'))],['Trần tiền',ckAu(cell('RFW',e,'RFW MT'))]]
         :[['MT',o.fmt(v.mt)],['Hiện tại',o.fmt(v.th)],['Dự báo',v.db!=null?o.fmt(v.db):'–'],['T-1',o.fmt(v.t1)]];
-      const qs=o.low?[['Bằng trần',v.mt]]:[['Bằng MT',v.mt]].concat(v.db!=null&&v.mt!=null&&v.db>v.mt?[['Bằng dự báo',v.db]]:[]).concat(v.mt!=null?[['110% MT',v.mt*1.1]]:[]);
+      const qs=o.low?[['Bằng trần',v.mt]]:(bu?[['Bằng KH đã bù',bu.tgt]]:[]).concat([['Bằng MT',v.mt]]).concat(v.db!=null&&v.mt!=null&&v.db>v.mt?[['Bằng dự báo',v.db]]:[]).concat(v.mt!=null?[['110% MT',v.mt*1.1]]:[]);
       const tr=locked?ckTrack(o,c,v,D):null;
       return '<div class="ckc'+(locked?' locked':'')+'" data-k="'+o.k+'"><div class="ckkh"><b>'+o.name+'</b><span>'+(o.low?'càng thấp càng tốt':o.auto?'nhập theo triệu · từ 1.000 tr hiện ra tỷ':'đơn vị: '+o.unit)+'</span></div>'+
-        '<div class="ckfacts">'+facts.map(f=>'<div>'+f[0]+'<b class="num">'+f[1]+'</b></div>').join('')+'</div>'+
+        '<div class="ckfacts">'+facts.map(f=>'<div>'+f[0]+'<b class="num">'+f[1]+'</b></div>').join('')+'</div>'+(bu?'<div class="ckbu"><span>KH cần đạt (đã bù '+bu.ms+')</span><b class="num">'+o.fmt(bu.tgt)+'</b><small>= MT '+o.fmt(bu.base)+' + thiếu '+bu.ms+' '+o.fmt(bu.cr)+'</small></div>':'')+
         '<div class="ckin"><input inputmode="decimal" aria-label="Cam kết '+o.name+'" placeholder="'+(o.low?'VD: '+(v.mt!=null?nf2.format(v.mt*100):'2,5'):'VD: '+ckShow(v.mt,o)+(o.auto?' (triệu)':''))+'" value="'+ckShow(c,o)+'"'+(locked?' disabled':'')+'><span>'+o.unit+'</span></div>'+
         (locked?'':'<div class="ckq">'+qs.filter(q=>q[1]!=null).map(q=>'<button type="button" data-v="'+q[1]+'">'+q[0]+'</button>').join('')+'</div>')+
         (tr?'<div class="cktrk '+(tr.ok?'good':'crit')+'"><span class="tl">Theo dõi đến '+esc(META.asof||'')+'</span>'+(tr.pct!=null?'<span class="ckbar"><i style="width:'+Math.max(0,Math.min(100,tr.pct*100))+'%"></i><b style="left:'+(D.dd/D.dim*100)+'%"></b></span>':'')+'<span>'+tr.t+'</span></div>':'')+
         '<div class="ckfb'+(locked?' hide':'')+'"></div><div class="ckwhy"><textarea placeholder="Lý do cam kết '+(o.low?'vượt trần':'thấp hơn MT')+'…"'+(locked?' disabled':'')+'>'+esc(r['LyDo'+o.f]||'')+'</textarea></div></div>'; }).join('')+'</div>'+
-    hdPickHTML(e,locked)+
+    hdPickHTML(e,false,locked)+
     '<div><label class="cklb" for="ckAct">Ghi thêm việc riêng của PGD (không bắt buộc)</label><textarea id="ckAct" placeholder="Việc ngoài bộ hành động chuẩn…"'+(locked?' disabled':'')+'>'+esc(r.HanhDong||'')+'</textarea></div>'+
     '<div class="ckact">'+(locked?'<button type="button" class="btn" id="ckEdit">Sửa cam kết</button><span class="t-muted">Sửa rồi gửi lại, anh Tuấn sẽ được báo số cũ → số mới.</span>':'<button type="button" class="btn primary" id="ckSend">Gửi cam kết</button>'+(ed?'<button type="button" class="btn" id="ckCancel">Huỷ sửa</button>':'')+'<span class="t-muted" id="ckMsg"></span>')+'</div></div>'; }
 function ckWire(e,D){ const box=$('ckBox'), LEFT=D.dim-D.dd;
@@ -973,7 +979,7 @@ function ckWire(e,D){ const box=$('ckBox'), LEFT=D.dim-D.dd;
       if(c==null){ ok=false; miss.push(o.name); return; } const w=el.querySelector('.ckwhy'); if(w.classList.contains('show')&&!w.querySelector('textarea').value.trim()){ ok=false; miss.push('lý do '+o.name); } });
     s.disabled=!ok; $('ckMsg').textContent=ok?'':'Còn thiếu: '+miss.join(', '); };
   box.querySelectorAll('.ckc').forEach(el=>{ const o=CKK.find(x=>x.k===el.dataset.k), v=kv(o.k,e), inp=el.querySelector('input'), fb=el.querySelector('.ckfb'), w=el.querySelector('.ckwhy'), locked=el.classList.contains('locked');
-    const upd=()=>{ const c=ckParse(inp.value,o); const f=ckFeedback(o,c,v,LEFT); fb.className='ckfb '+f.cls+(locked?' hide':''); fb.innerHTML=(o.auto&&c!=null?'Bạn nhập: <b>'+ckAu(c)+'</b>. ':'')+f.t; w.classList.toggle('show',!!f.need||(locked&&!!w.querySelector('textarea').value.trim())); check(); };
+    const bu=ckBu(o,e,v); const upd=()=>{ const c=ckParse(inp.value,o); const f=ckFeedback(o,c,v,LEFT); if(bu&&c!=null&&c<bu.tgt){ f.t+=' <b>Chưa đủ KH đã bù '+bu.ms+'</b> (cần '+o.fmt(bu.tgt)+', thiếu '+o.fmt(bu.tgt-c)+').'; if(f.cls==='good') f.cls='warn'; } fb.className='ckfb '+f.cls+(locked?' hide':''); fb.innerHTML=(o.auto&&c!=null?'Bạn nhập: <b>'+ckAu(c)+'</b>. ':'')+f.t; w.classList.toggle('show',!!f.need||(locked&&!!w.querySelector('textarea').value.trim())); check(); };
     inp.addEventListener('input',upd); w.querySelector('textarea').addEventListener('input',check);
     el.querySelectorAll('.ckq button').forEach(b=>b.onclick=()=>{ inp.value=ckShow(+b.dataset.v,o); upd(); }); upd(); });
   hdPickWire(box,e);
@@ -1050,13 +1056,16 @@ function ckPopWire(m,e,close){ m.querySelectorAll('[data-ck=form]').forEach(b=>b
     try{ const j=await window.kpiApi('ckCheckin',{pgd:e,st}); ckSet(j); if(t) t.textContent='Đã ghi nhận, cảm ơn!'; }catch(err){ if(t) t.textContent=err.message; }
     m.querySelectorAll('[data-ci]').forEach(x=>x.disabled=false); }); }
 /* ---------- v12: Bộ hành động chuẩn + Biên bản làm việc ---------- */
-const HD={groups:null, acts:[], picks:{}, loading:false, err:'', tab:'ad', lk:'all', q:'', edit:null, sel:{}};
+const HD={groups:null, acts:[], picks:{}, loading:false, err:'', tab:'ad', lk:'all', q:'', edit:null, sel:{}, cus:{}, cd:{}, ed:{}};
 const HDK=[['net','Tăng NET'],['gnn','GN NET'],['khm','KH mới'],['rfw','%RFW']];
 const hdKN=k=>(HDK.find(x=>x[0]===k)||[k,k])[1];
 async function hdLoad(force){ if(HD.loading||(!force&&HD.groups)) return; HD.loading=true; HD.err='';
   try{ hdSet(await window.kpiApi('hdGet',{month:ckDays().key})); }catch(e){ HD.err=e.message; HD.groups=HD.groups||[]; }
   HD.loading=false; if(view==='hd'||view==='ck') render(); }
-function hdSet(j){ HD.groups=j.groups||[]; HD.acts=j.acts||[]; HD.picks=j.picks||{}; }
+function hdSet(j){ HD.groups=j.groups||[]; HD.acts=j.acts||[]; HD.picks=j.picks||{}; HD.cus=j.cus||{}; HD.cd={}; }
+/* v13: nội dung hành động theo PGD (TP tùy chỉnh, thư viện chung giữ nguyên) */
+const hdCD=p=>HD.cd[p]||(HD.cd[p]=JSON.parse(JSON.stringify(HD.cus[p]||{})));
+function hdA(p,a,draft){ const c=(draft?hdCD(p):(HD.cus[p]||{}))[a.id]; if(!c) return a; return Object.assign({},a,{t:c.t||a.t,s:c.t||a.s,f:c.f||a.f,my:1}); }
 const hdGrp=id=>HD.groups.find(g=>g.id===id)||{n:id,ks:[]};
 const hdLive=()=>HD.acts.filter(a=>!a.off);
 const hdPicked=p=>{ const x=HD.picks[p]; return x?x.codes:[]; };
@@ -1068,7 +1077,7 @@ const hdWeak=p=>HDK.map(x=>x[0]).filter(k=>{ const s=hdStat(k,p); return s==='wa
 function hdSuggest(k){ const gs=HD.groups.filter(g=>g.ks.includes(k)).sort((a,b)=>(a.ks[0]===k?0:1)-(b.ks[0]===k?0:1)); const out=[]; let i=0;
   while(out.length<4&&i<6){ gs.forEach(g=>{ const a=hdLive().filter(x=>x.g===g.id)[i]; if(a&&out.length<4) out.push(a); }); i++; } return out; }
 /* ----- phần chọn hành động trong form Cam kết ----- */
-function hdPickHTML(e,locked){ if(!HD.groups){ hdLoad(); return '<div class="hdbox"><p class="t-muted">Đang tải bộ hành động chuẩn…</p></div>'; }
+function hdPickHTML(e,locked,ckLocked){ if(!HD.groups){ hdLoad(); return '<div class="hdbox"><p class="t-muted">Đang tải bộ hành động chuẩn…</p></div>'; }
   if(!HD.groups.length) return '<div class="hdbox"><p class="t-muted">'+(HD.err?esc(HD.err):'Chưa có bộ hành động chuẩn.')+'</p></div>';
   const cur=HD.sel[e]||(HD.sel[e]=new Set(hdPicked(e))), weak=hdWeak(e);
   let h='<div class="hdbox"><div class="hdhd"><b>Hành động chuẩn để đạt cam kết</b><span class="t-muted">Đã chọn <b class="hdcnt">'+cur.size+'</b> hành động'+(locked?'':' · chọn bao nhiêu cũng được')+'</span></div>';
@@ -1077,15 +1086,29 @@ function hdPickHTML(e,locked){ if(!HD.groups){ hdLoad(); return '<div class="hdb
   const sug=new Set(weak.flatMap(k=>hdSuggest(k).map(a=>a.id)));
   gs.forEach(g=>{ const L=hdLive().filter(a=>a.g===g.id); if(!L.length) return; const hot=g.ks.filter(k=>weak.includes(k)), all=L.every(a=>cur.has(a.id));
     h+='<div class="hdg"><div class="hdgh"><b>'+esc(g.n)+'</b>'+(hot.length?'<span class="pill crit">hỗ trợ '+hot.map(hdKN).join(', ')+'</span>':'<span class="t-muted">'+g.ks.map(hdKN).join(', ')+'</span>')+(locked?'':'<button type="button" class="hdall" data-g="'+esc(g.id)+'">'+(all?'Bỏ chọn nhóm':'Chọn cả nhóm')+'</button>')+'</div>'+
-      L.map(a=>'<label class="hdi'+(cur.has(a.id)?' on':'')+'"><input type="checkbox" value="'+esc(a.id)+'"'+(cur.has(a.id)?' checked':'')+(locked?' disabled':'')+'><span class="hdid">'+esc(a.id)+'</span><span><b>'+esc(a.t)+'</b><small>'+esc(a.f)+(sug.has(a.id)?' · <em>gợi ý</em>':'')+'</small></span></label>').join('')+'</div>'; });
+      L.map(a0=>{ const a=hdA(e,a0,1), ed=HD.ed[e]===a.id;
+        if(ed) return '<div class="hdi on hded" data-id="'+esc(a.id)+'"><span class="hdid">'+esc(a.id)+'</span><div class="hdedf"><label>Nội dung áp dụng tại PGD<textarea class="hdeT" rows="2">'+esc(a.t)+'</textarea></label><label>Tần suất<input class="hdeF" list="hdFreqL" value="'+esc(a.f)+'"></label><small class="t-muted">Mẫu chung: '+esc(a0.t)+' · '+esc(a0.f)+'</small><div class="hdeb"><button type="button" class="btn primary hdeOk">Xong</button>'+(a.my?'<button type="button" class="btn hdeRs">Về mẫu chung</button>':'')+'<button type="button" class="btn hdeNo">Huỷ</button></div></div></div>';
+        return '<label class="hdi'+(cur.has(a.id)?' on':'')+'"><input type="checkbox" value="'+esc(a.id)+'"'+(cur.has(a.id)?' checked':'')+(locked?' disabled':'')+'><span class="hdid">'+esc(a.id)+'</span><span class="hdtx"><b>'+esc(a.t)+'</b><small>'+esc(a.f)+(a.my?' · <i class="hdmy">PGD tùy chỉnh</i>':'')+(sug.has(a.id)?' · <em>gợi ý</em>':'')+'</small></span>'+(locked?'':'<button type="button" class="hdpen" data-id="'+esc(a.id)+'" title="Sửa nội dung cho PGD mình" aria-label="Sửa '+esc(a.id)+'">✎</button>')+'</label>'; }).join('')+'</div>'; });
+  h+='<datalist id="hdFreqL">'+HD_FREQ.map(f=>'<option value="'+esc(f)+'">').join('')+'</datalist>';
+  if(ckLocked&&!locked) h+='<div class="hdsave"><button type="button" class="btn primary" id="hdSave" disabled>Lưu hành động</button><span class="t-muted" id="hdMsg">Đổi hành động không cần sửa cam kết, không phải duyệt lại.</span></div>';
+  else if(!locked) h+='<p class="t-muted hdnote">Hành động được lưu cùng lúc khi bấm "Gửi cam kết". Bấm ✎ để chỉnh nội dung cho hợp PGD mình (mẫu chung giữ nguyên).</p>';
   return h+'</div>'; }
-function hdPickWire(box,e){ const cur=HD.sel[e]; if(!cur) return; const cnt=()=>{ const c=box.querySelector('.hdcnt'); if(c) c.textContent=cur.size; };
+function hdPickWire(box,e){ const cur=HD.sel[e]; if(!cur) return; const sv=$('hdSave'), dirty=()=>{ if(sv){ sv.disabled=false; $('hdMsg').textContent='Có thay đổi chưa lưu.'; } };
+  const cnt=()=>{ const c=box.querySelector('.hdcnt'); if(c) c.textContent=cur.size; dirty(); };
+  const keep=()=>{ const sc=window.scrollY; const d=sv&&!sv.disabled; renderCK(); window.scrollTo(0,sc); if(d&&$('hdSave')){ $('hdSave').disabled=false; $('hdMsg').textContent='Có thay đổi chưa lưu.'; } };
+  box.querySelectorAll('.hdpen').forEach(b=>b.onclick=ev=>{ ev.preventDefault(); ev.stopPropagation(); HD.ed[e]=b.dataset.id; keep(); });
+  box.querySelectorAll('.hded').forEach(el=>{ const id=el.dataset.id, a0=HD.acts.find(x=>x.id===id)||{};
+    el.querySelector('.hdeOk').onclick=()=>{ const t=el.querySelector('.hdeT').value.trim(), f=el.querySelector('.hdeF').value.trim(), C=hdCD(e);
+      if((t&&t!==a0.t)||(f&&f!==a0.f)) C[id]={t:t&&t!==a0.t?t:'',f:f&&f!==a0.f?f:''}; else delete C[id]; cur.add(id); delete HD.ed[e]; keep(); dirty(); };
+    const rs=el.querySelector('.hdeRs'); if(rs) rs.onclick=()=>{ delete hdCD(e)[id]; delete HD.ed[e]; keep(); dirty(); };
+    el.querySelector('.hdeNo').onclick=()=>{ delete HD.ed[e]; keep(); }; });
+  if(sv) sv.onclick=async()=>{ sv.disabled=true; $('hdMsg').textContent='Đang lưu…'; try{ await hdSavePick(e); delete HD.sel[e]; toast('Đã lưu hành động'); renderCK(); }catch(x){ $('hdMsg').textContent=x.message; sv.disabled=false; } };
   box.querySelectorAll('.hdi input').forEach(i=>i.onchange=()=>{ i.checked?cur.add(i.value):cur.delete(i.value); i.closest('.hdi').classList.toggle('on',i.checked); cnt(); });
   box.querySelectorAll('.hdall').forEach(b=>b.onclick=()=>{ const L=hdLive().filter(a=>a.g===b.dataset.g), all=L.every(a=>cur.has(a.id)); L.forEach(a=>all?cur.delete(a.id):cur.add(a.id));
     b.closest('.hdg').querySelectorAll('.hdi input').forEach(i=>{ i.checked=cur.has(i.value); i.closest('.hdi').classList.toggle('on',i.checked); }); b.textContent=all?'Chọn cả nhóm':'Bỏ chọn nhóm'; cnt(); }); }
-async function hdSavePick(e){ const cur=HD.sel[e]; if(!cur) return; const j=await window.kpiApi('hdPick',{month:ckDays().key,pgd:e,codes:[...cur]}); hdSet(j); }
+async function hdSavePick(e){ const cur=HD.sel[e]; if(!cur) return; const j=await window.kpiApi('hdPick',{month:ckDays().key,pgd:e,codes:[...cur],cus:hdCD(e)}); hdSet(j); }
 function hdChosenHTML(p){ const ids=hdPicked(p); if(!ids.length) return '<p class="t-muted">Chưa chọn hành động chuẩn</p>';
-  return '<ul class="hdul">'+HD.groups.map(g=>{ const L=HD.acts.filter(a=>a.g===g.id&&ids.includes(a.id)); return L.length?'<li><b>'+esc(g.n)+':</b> '+L.map(a=>esc(a.id+' '+a.s)).join('; ')+'</li>':''; }).join('')+'</ul>'; }
+  return '<ul class="hdul">'+HD.groups.map(g=>{ const L=HD.acts.filter(a=>a.g===g.id&&ids.includes(a.id)); return L.length?'<li><b>'+esc(g.n)+':</b> '+L.map(a=>esc(a.id+' '+hdA(p,a).s)).join('; ')+'</li>':''; }).join('')+'</ul>'; }
 /* ----- màn Hành động chuẩn ----- */
 function renderHD(){ const box=$('hdBox'); if(!box) return;
   if(!HD.groups){ box.innerHTML='<div class="panel"><p class="t-muted">Đang tải bộ hành động chuẩn…</p></div>'; hdLoad(); return; }
@@ -1104,7 +1127,7 @@ function hdAdminHTML(){ if(!CK.rows) ckLoad();
   const gu={}; rows.forEach(r=>r.ch.forEach(id=>{ const a=HD.acts.find(x=>x.id===id); if(a) gu[a.g]=(gu[a.g]||0)+1; }));
   let h='<div class="hdstats"><div><small>PGD đã chọn hành động</small><b>'+using+'/'+rows.length+'</b><span>tháng '+ckDays().mm+'</span></div><div><small>Số hành động TB mỗi PGD</small><b>'+nf1.format(avg)+'</b><span>đã chọn</span></div><div><small>%RFW báo động nhưng chưa chọn việc RFW, Thu nợ</small><b class="crit">'+miss+'</b><span>PGD cần nhắc</span></div><div><small>Hành động được chọn nhiều nhất</small><b>'+(top?esc(top[0]):'–')+'</b><span>'+(top?top[1]+' PGD':'')+'</span></div></div>';
   h+='<div class="panel"><div class="ph"><h2>Áp dụng theo PGD</h2><span class="t-muted" style="font-size:12.5px">Dùng khi họp tuần · PGD hụt nhiều chỉ tiêu xếp trước</span></div><div class="hdtb">'+
-    rows.sort((a,b)=>b.weak.length-a.weak.length).map(r=>'<div class="hdtr"><div class="pn"><b>'+esc(short(r.p))+'</b></div><div class="hdw">'+(r.weak.map(k=>'<span class="pill '+(hdStat(k,r.p)==='bad'?'crit':'warn')+'">'+hdKN(k)+'</span>').join(' ')||'<span class="pill good">Đúng nhịp</span>')+'</div><div class="hdc">'+(r.ch.map(id=>'<span class="hdchip" title="'+esc((HD.acts.find(a=>a.id===id)||{}).t||'')+'">'+esc(id)+'</span>').join('')||'<span class="t-muted">Chưa chọn</span>')+'</div><div><button type="button" class="btn" data-bb="'+esc(r.p)+'">Lập biên bản</button></div></div>').join('')+'</div></div>';
+    rows.sort((a,b)=>b.weak.length-a.weak.length).map(r=>'<div class="hdtr"><div class="pn"><b>'+esc(short(r.p))+'</b></div><div class="hdw">'+(r.weak.map(k=>'<span class="pill '+(hdStat(k,r.p)==='bad'?'crit':'warn')+'">'+hdKN(k)+'</span>').join(' ')||'<span class="pill good">Đúng nhịp</span>')+'</div><div class="hdc">'+(r.ch.map(id=>'<span class="hdchip" title="'+esc((x=>x?hdA(r.p,x).t:'')(HD.acts.find(a=>a.id===id)))+'">'+esc(id)+'</span>').join('')||'<span class="t-muted">Chưa chọn</span>')+'</div><div><button type="button" class="btn" data-bb="'+esc(r.p)+'">Lập biên bản</button></div></div>').join('')+'</div></div>';
   h+='<div class="panel"><div class="ph"><h2>Nhóm hành động được dùng</h2></div><div class="hdgu">'+HD.groups.map(g=>'<div><span>'+esc(g.n)+'</span><b>'+(gu[g.id]||0)+' lượt</b></div>').join('')+'</div></div>';
   return h; }
 function hdAdminWire(box){ box.querySelectorAll('[data-bb]').forEach(b=>b.onclick=()=>{ BB.pgd=b.dataset.bb; BB.mode='kpi'; show('bb'); }); }
@@ -1146,7 +1169,7 @@ window.BBAPI={
       const r=ckRowOf(p); if(r) ck[p]={NET:num(r.NET),GNN:num(r.GNN),KHM:num(r.KHM),RFW:num(r.RFW),LyDoNET:r.LyDoNET,HanhDong:r.HanhDong,Ten:r.Ten}; });
     return {asof:META.asof||'', pgds:POINTS.slice(), d, ck, names:Object.fromEntries(HDK), me:(USER&&USER.name)||''}; },
   pgd(){ return BB.pgd||(sel>=0?POINTS[sel]:POINTS[0]); },
-  ext(p){ const ids=hdPicked(p); return {groups:(HD.groups||[]).map(g=>({n:g.n,items:HD.acts.filter(a=>a.g===g.id&&ids.includes(a.id)).map(a=>({id:a.id,s:a.s}))})).filter(x=>x.items.length),note:''}; },
+  ext(p){ const ids=hdPicked(p); return {groups:(HD.groups||[]).map(g=>({n:g.n,items:HD.acts.filter(a=>a.g===g.id&&ids.includes(a.id)).map(a=>({id:a.id,s:hdA(p,a).s}))})).filter(x=>x.items.length),note:''}; },
   list:p=>window.kpiApi('bbList',{pgd:p}),
   get:id=>window.kpiApi('bbList',{id}),
   save:bb=>window.kpiApi('bbSave',{bb}),

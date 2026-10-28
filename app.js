@@ -182,7 +182,7 @@ function chooser(where){ const host=document.querySelector('[data-chooser="'+whe
 
 /* ---------- TỔNG QUAN ---------- */
 const GPAGE=['dn','gn','dt','mb','kn'];
-const PAGES={no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',ck:'Cam kết chỉ tiêu',hd:'Hành động chuẩn',bb:'Biên bản làm việc',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
+const PAGES={q4:'Bộ KPI Q4/2026',no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',ck:'Cam kết chỉ tiêu',hd:'Hành động chuẩn',bb:'Biên bản làm việc',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
 const sc=s=>s[1]==='solid'?'crit':s[1];
 const wide=()=>window.matchMedia('(min-width:1024px)').matches;
 const openG=new Set([0,1]);
@@ -1158,9 +1158,104 @@ function renderBB(){ const box=$('bbBox'); if(!box) return; if(!isAdm()){ box.in
     box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ BB.mode=b.dataset.m; renderBB(); }); }
   else { try{ const w=box.querySelector('iframe').contentWindow; if(w.openPgd&&BB.pgd) w.openPgd(BB.pgd); }catch(e){} } }
 
+/* ---------- v13: Bộ KPI Q4/2026 (kế hoạch giao từ file BO KPI KV, số TH lấy trực tiếp từ dashboard) ---------- */
+const Q4P={"kv":[["DPD0",136884.61,125288.61,130878.61,136884.61],["Tăng Net",16976,5380,5590,6006],["Giải ngân Net",53357.47,16968.79,17665.45,18723.23],["Khách hàng mới",982.6,313.2,322.2,347.2],["%RFW",0.0244,0.0246,0.0245,0.0242],["Doanh thu tổng",22526.61,7165.91,7506.86,7853.84],["Doanh thu vay",20333.23,6481.4,6772.2,7079.63],["Doanh thu bảo hiểm bán kèm",2066.87,646.27,692.26,728.34],["Doanh thu bảo hiểm tự nguyện",58.26,17.63,19.37,21.26],["Doanh thu bảo hiểm độc lập",17.93,5.41,6.05,6.47],["Doanh thu VAS",50.31,15.19,16.97,18.14],["Số lượng tài khoản MB",306,102,102,102],["Số lượng giao dịch nạp rút",836,256,272,308],["WO",-4523.58,-1502.06,-1507.95,-1513.56]],"pgd":{"GLI21001.849 Phạm Văn Đồng":{"TĂNG NET":[496,515,549],"GIẢI NGÂN NET":[1413.9,1502.13,1644.87],"KHM":[27,28,30],"%RFW":[0.026,0.026,0.026],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[8.83,9.89,10.78],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.8,3.2,4],"PHÍ BH QUY ĐỔI":[17.23,19.49,22.78],"SL GIAO DỊCH NẠP/RÚT":[28,31,34],"SL TÀI KHOẢN MB":[11,11,11]},"GLI21002.03 Quang Trung":{"TĂNG NET":[506,525,569],"GIẢI NGÂN NET":[1412.68,1502.13,1560.2],"KHM":[27,28,31],"%RFW":[0.0245,0.0245,0.0245],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[7.43,9.89,10.74],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.1,2.4,3],"PHÍ BH QUY ĐỔI":[13.73,17.09,19.74],"SL GIAO DỊCH NẠP/RÚT":[20,21,24],"SL TÀI KHOẢN MB":[8,8,8]},"GLI21004.247 Lê Duẩn":{"TĂNG NET":[525,544,578],"GIẢI NGÂN NET":[1832.3,1932.97,1978.99],"KHM":[30,31,33],"%RFW":[0.0231,0.0231,0.0231],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[10.57,12.52,13.99],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.8,3.2,4],"PHÍ BH QUY ĐỔI":[18.97,22.12,25.99],"SL GIAO DỊCH NẠP/RÚT":[28,31,34],"SL TÀI KHOẢN MB":[11,11,11]},"GLI22005.72 Trần Hưng Đạo":{"TĂNG NET":[379,388,422],"GIẢI NGÂN NET":[1348.17,1316.59,1253.6],"KHM":[22,21,23],"%RFW":[0.0292,0.0292,0.0292],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[8.38,9.16,9.69],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.1,2.4,3],"PHÍ BH QUY ĐỔI":[14.68,16.36,18.69],"SL GIAO DỊCH NẠP/RÚT":[20,21,24],"SL TÀI KHOẢN MB":[8,8,8]},"GLI22006.02 Hoàng Văn Thụ":{"TĂNG NET":[491,510,544],"GIẢI NGÂN NET":[1507.65,1657.98,1694.07],"KHM":[28,29,30],"%RFW":[0.026,0.026,0.026],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[9.75,10.71,11.46],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.1,2.4,3],"PHÍ BH QUY ĐỔI":[16.05,17.91,20.46],"SL GIAO DỊCH NẠP/RÚT":[20,21,24],"SL TÀI KHOẢN MB":[8,8,8]},"GLI22008.399 Trường Chinh":{"TĂNG NET":[467,486,520],"GIẢI NGÂN NET":[1427.05,1541.57,1586.5],"KHM":[28,31,33],"%RFW":[0.0252,0.0252,0.0252],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[8.92,10.18,10.94],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.1,2.4,3],"PHÍ BH QUY ĐỔI":[15.22,17.38,19.94],"SL GIAO DỊCH NẠP/RÚT":[20,21,24],"SL TÀI KHOẢN MB":[8,8,8]},"GLI22009.475 Nguyễn Huệ":{"TĂNG NET":[357,376,410],"GIẢI NGÂN NET":[1323.06,1278.33,1421.08],"KHM":[24,22,24],"%RFW":[0.0289,0.0289,0.0289],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[7.83,8.54,9.4],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.1,2.4,3],"PHÍ BH QUY ĐỔI":[14.13,15.74,18.4],"SL GIAO DỊCH NẠP/RÚT":[20,21,24],"SL TÀI KHOẢN MB":[8,8,8]},"GLI22011.98 Yên Đỗ":{"TĂNG NET":[489,508,542],"GIẢI NGÂN NET":[1440.19,1620.68,1682.82],"KHM":[29,31,33],"%RFW":[0.0252,0.0252,0.0252],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[9.0,10.12,10.17],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.1,2.4,3],"PHÍ BH QUY ĐỔI":[15.3,17.32,19.17],"SL GIAO DỊCH NẠP/RÚT":[20,21,24],"SL TÀI KHOẢN MB":[8,8,8]},"KTM21001.828 Hùng Vương":{"TĂNG NET":[345,364,398],"GIẢI NGÂN NET":[1226.6,1148.14,1283.67],"KHM":[22,21,23],"%RFW":[0.0272,0.0272,0.0272],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[7.71,8.26,9.34],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.1,2.4,3],"PHÍ BH QUY ĐỔI":[14.01,15.46,18.34],"SL GIAO DỊCH NẠP/RÚT":[20,21,24],"SL TÀI KHOẢN MB":[8,8,8]},"KTM21002.271 Trần Phú":{"TĂNG NET":[497,516,548],"GIẢI NGÂN NET":[1485.79,1545.93,1743.54],"KHM":[30,32,35],"%RFW":[0.0253,0.0253,0.0253],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[8.35,9.22,10.41],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.1,2.4,3],"PHÍ BH QUY ĐỔI":[14.65,16.42,19.41],"SL GIAO DỊCH NẠP/RÚT":[20,21,24],"SL TÀI KHOẢN MB":[8,8,8]},"KTM21003.632 Nguyễn Huệ":{"TĂNG NET":[491,502,536],"GIẢI NGÂN NET":[1527.53,1567.51,1753.52],"KHM":[28,29,31],"%RFW":[0.0285,0.0285,0.0285],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[9.02,10.29,11.27],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.1,2.4,3],"PHÍ BH QUY ĐỔI":[15.32,17.49,20.27],"SL GIAO DỊCH NẠP/RÚT":[20,21,24],"SL TÀI KHOẢN MB":[8,8,8]},"KTM21004.214 Hùng Vương":{"TĂNG NET":[337,356,390],"GIẢI NGÂN NET":[1026.1,1052.99,1123.02],"KHM":[18,19,21],"%RFW":[0.0254,0.0254,0.0254],"%Thu Trễ hạn":[0.147,0.147,0.147],"PHÍ BH TỰ NGUYỆN":[6.81,7.26,8.26],"PHÍ BH ĐỘC LẬP  chưa quy đổi":[2.1,2.4,3],"PHÍ BH QUY ĐỔI":[13.11,14.46,17.26],"SL GIAO DỊCH NẠP/RÚT":[20,21,24],"SL TÀI KHOẢN MB":[8,8,8]}}};
+
+const Q4G=[['TĂNG NET','Tăng Net','net','amt'],['GIẢI NGÂN NET','GN NET','gnn','amt'],['KHM','KH mới','khm','cnt'],['%RFW','%RFW','rfw','pct',1],['%Thu Trễ hạn','%Thu trễ hạn',null,'pct'],['PHÍ BH TỰ NGUYỆN','BH tự nguyện','bhtn','dec'],['PHÍ BH ĐỘC LẬP  chưa quy đổi','BH độc lập','bhdl','dec'],['PHÍ BH QUY ĐỔI','BH quy đổi','bhqd','dec'],['SL GIAO DỊCH NẠP/RÚT','GD nạp/rút MB','mbnr','cnt'],['SL TÀI KHOẢN MB','TK MB','mbtk','cnt']];
+const Q4K={'DPD0':['dpd0','amt','Dư nợ',0,1],'Tăng Net':['net','amt','Tăng trưởng'],'Giải ngân Net':['gnn','amt','Tăng trưởng'],'Khách hàng mới':['khm','cnt','Tăng trưởng'],'%RFW':['rfw','pct','Chất lượng',1],'WO':[null,'amt','Chất lượng'],'Doanh thu tổng':['dt','amt','Doanh thu'],'Doanh thu vay':['dtv','amt','Doanh thu'],'Doanh thu bảo hiểm bán kèm':['bhbk','amt','Doanh thu'],'Doanh thu bảo hiểm tự nguyện':['bhtn','dec','Doanh thu'],'Doanh thu bảo hiểm độc lập':['bhdl','dec','Doanh thu'],'Doanh thu VAS':[null,'dec','Doanh thu'],'Số lượng tài khoản MB':['mbtk','cnt','MBBank'],'Số lượng giao dịch nạp rút':['mbnr','cnt','MBBank']};
+let q4Tab=null, q4G=0;
+const q4D=()=>{ const m=String(META.asof||'').split('/').map(Number); return m.length===3&&m[2]?{d:m[0],m:m[1],y:m[2]}:null; };
+const q4Mi=()=>{ const D=q4D(); if(!D||D.y!==2026) return D&&D.y>2026?3:-1; return D.m>=10?D.m-10:-1; };   // 0..2 đang chạy, 3 = quý đã qua
+const q4Dim=i=>new Date(2026,10+i,0).getDate();
+function q4Time(t){ const D=q4D(), c=q4Mi(); if(!D||c<0) return null;
+  if(t===3){ let e=0; for(let i=0;i<3;i++) e+=i<c?q4Dim(i):i===c?D.d:0; return {pace:e/92,left:92-e}; }
+  if(t<c) return {pace:1,left:0}; if(t>c) return null; return {pace:D.d/q4Dim(t),left:q4Dim(t)-D.d}; }
+const q4F=(u,v)=>v==null||isNaN(v)?'–':u==='pct'?pct2(v):u==='dec'?(Math.abs(v)<100?nf1.format(v):fmt(v)):fmt(v);
+const q4Fs=(u,v)=>u==='dec'&&Math.abs(v)<1?nf2.format(v):u==='amt'?(Math.abs(v)>=1000?nf2.format(v/1000)+' tỷ':fmt(v)+' tr'):q4F(u,v);
+const q4Agg=(u,a,last)=>u==='pct'||last?a[2]:a.reduce((s,x)=>s+x,0);
+const q4Ym=s=>{ s=String(s); const m=s.match(/(\d{4})-(\d{1,2})/); if(m) return m[1]+'-'+m[2].padStart(2,'0'); const d=new Date(s); return isNaN(d)?s:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); };
+function q4Hist(k,n,i){ const ym='2026-'+(10+i); const r=HIST.find(x=>x[1]===k&&String(x[3]).trim()===n&&q4Ym(x[0])===ym); return r&&r[6]!==''&&r[6]!=null?Number(r[6]):null; }
+function q4Th1(k,n,i){ const c=q4Mi(); if(!k||!KM[k]) return null; if(i===c){ try{ return kv(k,n).th; }catch(e){ return null; } } return i<c?q4Hist(k,n,i):null; }
+/* số thực hiện theo tab: tháng → số tháng đó (đang chạy lấy trực tiếp, đã qua lấy số đã chốt); Cả Q4 → lũy kế (tỷ lệ/dư nợ lấy số mới nhất) */
+function q4Act(k,n,t,u,last){ const c=q4Mi(); if(!k||!KM[k]||c<0) return null;
+  if(t<3){ const v=q4Th1(k,n,t); return v==null?null:{th:v,miss:[]}; }
+  const ms=[0,1,2].filter(i=>i<=Math.min(c,2)), vals=ms.map(i=>q4Th1(k,n,i)), miss=ms.filter((i,j)=>vals[j]==null);
+  if(u==='pct'||last){ const v=vals.filter(x=>x!=null); return v.length?{th:v[v.length-1],miss:[]}:null; }
+  if(vals.every(x=>x==null)) return null; return {th:vals.reduce((s,x)=>s+(x||0),0),miss}; }
+/* Bù thiếu: tháng đã chốt mà thiếu KH thì dồn phần thiếu sang các tháng sau; tháng vượt KH KHÔNG trừ (đã thưởng riêng) */
+const q4Add=(k,u,low,last)=>!!k&&!low&&!last&&u!=='pct';
+function q4Carry(k,n,t,arr,u,low,last){ if(!q4Add(k,u,low,last)) return 0; const c=q4Mi(); let s=0, ms=[];
+  for(let i=0;i<Math.min(t,c,3);i++){ const h=q4Hist(k,n,i); if(h!=null&&arr[i]>h){ s+=arr[i]-h; ms.push(i); } } return s; }
+function q4Gap(k,n,t,arr,u,low,last,A){ if(!A) return null; const c=q4Mi();
+  if(t<3){ const cr=q4Carry(k,n,t,arr,u,low,last); return {plan:arr[t]+cr, cr, rem:arr[t]+cr-A.th}; }
+  if(!q4Add(k,u,low,last)) return {plan:q4Agg(u,arr,last), cr:0, rem:null};
+  let rem=q4Carry(k,n,3,arr,u,low,last); for(let i=Math.max(0,c);i<3;i++){ if(i===c){ const v=q4Th1(k,n,i); rem+=Math.max(0,arr[i]-(v||0)); } else rem+=arr[i]; }
+  return {plan:q4Agg(u,arr), cr:0, rem}; }
+/* %RFW: càng THẤP càng tốt — TH ≤ KH là đạt; cao hơn KH là chưa đạt */
+const q4Pt=v=>nf2.format(Math.abs(v)*100);
+const q4LowPill=(th,mt)=>th<=mt?'Đạt':'+'+q4Pt(th-mt)+' điểm';
+const q4LowTxt=(th,mt)=>th<=mt?'<span class="q4ok">✓ Thấp hơn KH '+q4Pt(mt-th)+' điểm %</span>':'Cao hơn KH <b>'+q4Pt(th-mt)+' điểm %</b> · cần giảm về ≤ <b>'+pct2(mt)+'</b>';
+function q4Cls(th,mt,low,last,pace){ if(th==null||mt==null) return ''; if(low) return th<=mt?'good':th<=mt*1.2?'warn':'crit';
+  if(mt>0&&th<0) return 'crit'; const p=last?1:(pace==null?1:pace), r=mt?th/mt:0; return r>=p?'good':r>=p*.9?'warn':'crit'; }
+function q4Need(G,u,low,last,T){ if(low||last||!G||G.rem==null||!T) return null; const g=G.rem; if(g<=0) return {done:1};
+  return {g, d:T.left>0?g/T.left:null}; }
+const q4NeedTxt=(N,u)=>!N?'':N.done?'<span class="q4ok">✓ Đã đạt KH</span>':'Thiếu <b>'+q4Fs(u,N.g)+'</b>'+(N.d!=null?' · cần <b>'+q4Fs(u,N.d)+'/ngày</b>':' · hết thời gian');
+function q4Card(name,arr,q,u,k,low,last,e){ const t=q4Tab, plan=t===3?q:arr[t], mx=Math.max(...arr.map(Math.abs))||1, c0=q4Mi(), T=q4Time(t);
+  const bars='<div class="q4b">'+arr.map((v,i)=>{ const a=k&&i<=c0?q4Th1(k,e,i):null; const cl=a==null?'':q4Cls(a,v,low,last,i===c0?(q4Time(i)||{}).pace:1);
+    return '<i class="'+(t===3||i===t?'on':'')+'" style="height:'+Math.max(8,Math.abs(v)/mx*100)+'%" title="T'+(10+i)+': KH '+q4F(u,v)+(a!=null?' · TH '+q4F(u,a):'')+'">'+(cl?'<s class="'+cl+'"></s>':'')+'</i>'; }).join('')+'</div>';
+  let live=''; const A=q4Act(k,e,t,u,last);
+  const Gp=q4Gap(k,e,t,arr,u,low,last,A), ep=Gp&&t<3?Gp.plan:plan;
+  if(A&&T){ const c=q4Cls(A.th,ep,low,last,T.pace), r=ep?A.th/ep:0;
+    live='<div class="q4l"><span>'+(t===3&&!last&&u!=='pct'?'Lũy kế':'TH')+' <b>'+q4F(u,A.th)+'</b></span><span class="pill '+c+'">'+(low?q4LowPill(A.th,plan):Math.round(r*100)+'%')+'</span></div>'+(Gp&&Gp.cr>0?'<div class="q4cr">KH cần đạt <b>'+q4F(u,ep)+'</b> <small>(gốc '+q4F(u,plan)+' + bù '+q4F(u,Gp.cr)+')</small></div>':'')+
+      (low?'':'<div class="q4p"><i class="'+c+'" style="width:'+Math.max(0,Math.min(100,r*100))+'%"></i>'+(!last&&T.pace<1?'<u style="left:'+T.pace*100+'%"></u>':'')+'</div>')+
+      '<div class="q4need">'+(low?q4LowTxt(A.th,plan):q4NeedTxt(q4Need(Gp,u,low,last,T),u))+(A.miss&&A.miss.length?'<em>Thiếu số chốt T'+A.miss.map(i=>10+i).join(', T')+'</em>':'')+'</div>'; }
+  return '<div class="q4c"><div class="q4n">'+esc(name)+'</div><div class="q4v">'+q4F(u,plan)+'</div>'+bars+live+'</div>'; }
+function q4Heat(){ const c=q4Mi(), t=q4Tab, T=q4Time(t); if(c<0||!T) return '';
+  const G=Q4G.filter(g=>g[2]&&KM[g[2]]), rows=POINTS.filter(n=>Q4P.pgd[n]); if(!rows.length) return '';
+  const cells=n=>G.map(g=>{ const a=Q4P.pgd[n][g[0]], A=q4Act(g[2],n,t,g[3]); if(!A) return '<td class="q4hm na">–</td>'; const Gp=q4Gap(g[2],n,t,a,g[3],g[4],0,A), plan=t===3?q4Agg(g[3],a):Gp.plan;
+    const cl=q4Cls(A.th,plan,g[4],0,T.pace), txt=g[4]?pct2(A.th):Math.round(plan?A.th/plan*100:0)+'%';
+    return '<td class="q4hm '+cl+'" title="'+esc(g[1])+': TH '+q4F(g[3],A.th)+' / KH '+q4F(g[3],plan)+'">'+txt+'</td>'; }).join('');
+  const score=n=>G.reduce((s,g)=>{ const a=Q4P.pgd[n][g[0]], A=q4Act(g[2],n,t,g[3]), Gp=q4Gap(g[2],n,t,a,g[3],g[4],0,A), plan=t===3?q4Agg(g[3],a):Gp&&Gp.plan; return s+(A&&q4Cls(A.th,plan,g[4],0,T.pace)==='crit'?1:0); },0);
+  const R=rows.map(n=>[n,score(n)]).sort((a,b)=>b[1]-a[1]);
+  return '<div class="panel"><div class="ph"><h2>Bản đồ nhiệt · '+(t===3?'Cả Q4 (lũy kế)':'T'+(10+t))+'</h2><span class="q4lg"><i class="good"></i>Đúng nhịp <i class="warn"></i>Hơi chậm <i class="crit"></i>Chậm</span></div>'+
+    '<p class="t-muted q4s">% hoàn thành KH'+(T.pace<1?' so với tiến độ thời gian '+Math.round(T.pace*100)+'%':'')+'. RFW hiện số thực tế (càng thấp càng tốt). PGD nhiều ô đỏ nhất xếp trên cùng.</p>'+
+    '<div class="tablebox"><table class="q4heat"><thead><tr><th>PGD</th>'+G.map(g=>'<th>'+esc(g[1])+'</th>').join('')+'<th>Ô đỏ</th></tr></thead><tbody>'+
+    R.map(([n,s])=>'<tr class="click'+(POINTS.indexOf(n)===sel?' sel':'')+'" data-i="'+POINTS.indexOf(n)+'"><td>'+esc(short(n))+'</td>'+cells(n)+'<td class="num"><b>'+(s||'')+'</b></td></tr>').join('')+'</tbody></table></div></div>'; }
+function renderQ4(){ const box=$('q4Box'); if(!box) return; const cur=q4Mi(); if(q4Tab==null) q4Tab=cur>=0&&cur<3?cur:3;
+  const e=ent(), isKV=sel<0, P=Q4P.pgd[e], T=q4Time(q4Tab);
+  const tabs='<div class="q4t">'+['T10','T11','T12','Cả Q4'].map((x,i)=>'<button type="button" data-t="'+i+'" class="'+(i===q4Tab?'on':'')+'">'+x+(i===cur?' <small>đang chạy</small>':'')+'</button>').join('')+'</div>';
+  let cards='';
+  if(isKV){ const grp={}; Q4P.kv.forEach(r=>{ const m=Q4K[r[0]]||[null,'amt','Khác']; (grp[m[2]]=grp[m[2]]||[]).push(q4Card(r[0],r.slice(2),r[1],m[1],m[0],m[3],m[4],REGION)); });
+    const main=[...(grp['Dư nợ']||[]),...(grp['Tăng trưởng']||[]),...(grp['Chất lượng']||[]).slice(0,1)], rest=[...(grp['Doanh thu']||[]),...(grp['MBBank']||[]),...(grp['Chất lượng']||[]).slice(1)];
+    cards='<h3 class="q4h">Chỉ tiêu chính</h3><div class="q4g q4g5">'+main.join('')+'</div><h3 class="q4h">Doanh thu · Bảo hiểm · MBBank · WO</h3><div class="q4g q4g5">'+rest.join('')+'</div>'; }
+  else if(P) cards='<div class="q4g q4g5">'+Q4G.map(g=>q4Card(g[1],P[g[0]],q4Agg(g[3],P[g[0]]),g[3],g[2],g[4],0,e)).join('')+'</div>';
+  else cards='<p class="t-muted">PGD này chưa có trong bộ KPI Q4.</p>';
+  const closed=[0,1,2].filter(i=>i<Math.min(cur,3)), unc=closed.filter(i=>!HIST.some(x=>x[1]==='net'&&q4Ym(x[0])==='2026-'+(10+i)));
+  const warn=unc.length?'<div class="q4warn">⚠️ Chưa chốt số T'+unc.map(i=>10+i).join(', T')+' nên lũy kế Q4 đang thiếu tháng đó.'+(isAdm()?' Admin bấm <b>Chốt tháng</b> khi có số cuối tháng.':'')+'</div>':
+    (cur===0||cur===1)&&q4D()&&q4D().d>=q4Dim(cur)-1?'<div class="q4warn">📌 Cuối tháng: khi có số ngày '+q4Dim(cur)+'/'+(10+cur)+', admin bấm <b>Chốt tháng</b> để giữ số T'+(10+cur)+' cho lũy kế Q4.</div>':'';
+  const G=Q4G[q4G], rows=POINTS.filter(n=>Q4P.pgd[n]);
+  const sel2='<select id="q4Sel">'+Q4G.map((g,i)=>'<option value="'+i+'"'+(i===q4G?' selected':'')+'>'+g[1]+'</option>').join('')+'</select>';
+  const tot=[0,1,2].map(i=>Object.values(Q4P.pgd).reduce((s,p)=>s+p[G[0]][i],0)/(G[3]==='pct'?Object.keys(Q4P.pgd).length:1));
+  const showLive=!!(T&&G[2]&&KM[G[2]]), tl=q4Tab===3?(G[3]==='pct'?'TH mới nhất':'Lũy kế Q4'):'TH T'+(10+q4Tab);
+  const head='<thead><tr><th>PGD</th><th>T10</th><th>T11</th><th>T12</th><th class="gl">'+(G[3]==='pct'?'Mốc T12':'Cả Q4')+'</th>'+(showLive?'<th class="gl">'+tl+'</th><th>Tiến độ</th>'+(G[4]?'':'<th>Cần/ngày</th>'):'')+'</tr></thead>';
+  const row=(n,a,i)=>{ const A=showLive?q4Act(G[2],n,q4Tab,G[3]):null, Gp=q4Gap(G[2],n,q4Tab,a,G[3],G[4],0,A), plan=q4Tab===3?q4Agg(G[3],a):(Gp?Gp.plan:a[q4Tab]), c=A?q4Cls(A.th,plan,G[4],0,T.pace):'', r=A&&plan?A.th/plan:0, N=q4Need(Gp,G[3],G[4],0,T);
+    return '<tr class="'+(i!=null?'click':'reg')+(i===sel?' sel':'')+'"'+(i!=null?' data-i="'+i+'"':'')+'><td>'+esc(i!=null?short(n):'Toàn khu vực')+'</td>'+a.map((v,j)=>'<td class="num'+(j===q4Tab||q4Tab===3?' q4cur':'')+'">'+q4F(G[3],v)+'</td>').join('')+'<td class="num gl"><b>'+q4F(G[3],q4Agg(G[3],a))+'</b></td>'+
+      (showLive?'<td class="num gl">'+(A?q4F(G[3],A.th):'–')+(Gp&&Gp.cr>0?'<br><small class="q4crs" title="KH gốc + bù thiếu tháng trước">KH bù '+q4F(G[3],Gp.plan)+'</small>':'')+'</td><td>'+(A?(G[4]?'<span class="pill '+c+'">'+q4LowPill(A.th,plan)+'</span>':'<div class="q4p sm"><i class="'+c+'" style="width:'+Math.max(0,Math.min(100,r*100))+'%"></i>'+(T.pace<1?'<u style="left:'+T.pace*100+'%"></u>':'')+'</div><small>'+Math.round(r*100)+'%</small>'):'')+'</td>'+
+        (G[4]?'':'<td class="num">'+(!N?'–':N.done?'<span class="q4ok">✓ Đạt</span>':N.d!=null?q4Fs(G[3],N.d):'–')+'</td>'):'')+'</tr>'; };
+  const body=(isPgdUser()?'':row(REGION,tot,null))+rows.map(n=>row(n,Q4P.pgd[n][G[0]],POINTS.indexOf(n))).join('');
+  const sub=T?(q4Tab===3?'Lũy kế Q4 = số đã chốt các tháng trước + số tháng đang chạy (ngày '+esc(META.asof||'')+'). Đã qua '+Math.round(T.pace*100)+'% thời gian quý, còn '+T.left+' ngày.':'Số TH lấy từ dashboard ngày '+esc(META.asof||'')+'. Vạch đứng = tiến độ thời gian '+Math.round(T.pace*100)+'%, còn '+T.left+' ngày.'):(cur>=0&&q4Tab>cur?'Tháng chưa tới, chỉ có kế hoạch.':'Chưa có số thực hiện.');
+  box.innerHTML=warn+'<div class="panel"><div class="ph"><h2>'+(isKV?'Bộ KPI Q4/2026 · Khu vực':'Bộ KPI Q4/2026 · '+esc(short(e)))+'</h2>'+tabs+'</div>'+
+    '<p class="t-muted q4s">Kế hoạch giao theo file BO KPI KV Q4/2026 (đơn vị triệu đồng). '+sub+' Cột nhỏ là KH 3 tháng, chấm màu = kết quả tháng đó. Tháng đã chốt còn thiếu thì phần thiếu dồn sang KH các tháng sau; phần vượt không trừ.</p>'+cards+'</div>'+
+    (isPgdUser()?'':q4Heat())+
+    '<div class="panel"><div class="ph"><h2>KH Q4 theo PGD</h2>'+sel2+'</div><div class="tablebox"><table id="q4Tbl">'+head+'<tbody>'+body+'</tbody></table></div></div>';
+  box.querySelectorAll('.q4t button').forEach(b=>b.onclick=()=>{ q4Tab=+b.dataset.t; renderQ4(); });
+  $('q4Sel').onchange=ev=>{ q4G=+ev.target.value; renderQ4(); };
+  box.querySelectorAll('tr.click').forEach(tr=>tr.addEventListener('click',()=>select(+tr.dataset.i)));
+}
+
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }
-function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,hd:renderHD,bb:renderBB,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
+function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:renderHS,xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,hd:renderHD,bb:renderBB,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,q4:renderQ4,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
 function show(v){ const changed=view!==v; view=v;
   document.querySelectorAll('.navbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   document.querySelectorAll('.bn').forEach(b=>b.setAttribute('aria-current',(b.dataset.grp||'').split(' ').includes(v)?'page':'false'));
@@ -1183,7 +1278,7 @@ function boot(SRC, meta){ const prev=sel>=0?POINTS[sel]:null; loadData(SRC, meta
   const rv=$('rawPick').value; $('rawPick').innerHTML=Object.entries(TB).map(([k,t])=>'<option value="'+esc(k)+'">'+esc(t.name)+'</option>').join(''); if(rv&&TB[rv]) $('rawPick').value=rv;
   deriveAll(); booted=true; applyRole(); rdCheck(); try{ ckPrefetch(); }catch(e){}
   if(USER&&USER.role==='pgd'&&sel<0&&POINTS.length) sel=0; $('pick').value=String(sel); }
-const VIEWS=['tq','hs','ck','hd','bb','xh','cb','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
+const VIEWS=['tq','hs','ck','hd','bb','xh','cb','q4','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
 let start='tq'; try{ const h=location.hash.slice(1); const s=localStorage.getItem('kpi55-view'); if(VIEWS.includes(h)) start=h; else if(VIEWS.includes(s)) start=s; }catch(e){}
 function startView(){ const q=new URLSearchParams(location.search).get('pgd');
   if(q){ const i=POINTS.findIndex(n=>matchPgd(n,q)); if(i>=0){ sel=i; $('pick').value=String(i); start='hs'; } }

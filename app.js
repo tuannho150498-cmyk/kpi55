@@ -1311,8 +1311,8 @@ function htInc(n,k){ const a=(DAY[n]||{})[k]||[]; return a.map((x,i)=>{ const p=
     return {d:x.d, v, th:x.th, mt:x.mt}; }); }
 function htWeeks(){ const D=htIso(META.asof); if(!D) return []; const end=htD(D), w=[]; let m=new Date(end); m.setDate(m.getDate()-((m.getDay()+6)%7));
   for(let i=0;i<6;i++){ const s=new Date(m); s.setDate(m.getDate()-7*i); const e=new Date(s); e.setDate(s.getDate()+6); w.push({s:htFmt(s),e:htFmt(e>end?end:e),full:e<=end}); } return w; }
-function htWk(n,k,w){ const L=htInc(n,k).filter(x=>x.d>=w.s&&x.d<=w.e&&(k==='rfw'||x.v!=null)); if(!L.length) return null;
-  if(k==='rfw'){ const a=(DAY[n]||{}).rfw||[], last=a.filter(x=>x.d<=w.e).pop(), prev=a.filter(x=>x.d<w.s).pop(); return {v:last?last.th:null, d:last&&prev?last.th-prev.th:null, mt:last?last.mt:null, days:L}; }
+function htWk(n,k,w){ const L=htInc(n,k).filter(x=>x.d>=w.s&&x.d<=w.e&&(k==='rfw'||k==='thu'||x.v!=null)); if(!L.length) return null;
+  if(k==='rfw'||k==='thu'){ const a=(DAY[n]||{})[k]||[], last=a.filter(x=>x.d<=w.e).pop(), prev=a.filter(x=>x.d<w.s).pop(); return {v:last?last.th:null, d:last&&prev?last.th-prev.th:null, mt:last?last.mt:null, days:L}; }
   return {v:L.reduce((s,x)=>s+x.v,0), days:L, last:L[L.length-1]}; }
 /* MT tuần (cách 2 – cần đạt để kịp tháng): với mỗi đoạn của tuần nằm trong 1 tháng
    MT = (MT tháng + phần thiếu tháng trước trong quý − TH lũy kế đến hết ngày trước tuần) ÷ số ngày còn lại của tháng × số ngày của đoạn
@@ -1361,7 +1361,7 @@ function htCopy(w,pw){ const K=REGION, net=htWk(K,'net',w), gn=htWk(K,'gnn',w), 
   const L=['📅 REVIEW KQKD TUẦN KV5.5 · '+htDM(w.s)+'–'+htDM(w.e),
     'KV: NET '+htS(net&&net.v)+((P=>P?' ('+Math.round(P.r*100)+'% MT tuần)':'')(htPct(K,'net',w)))+' · GN '+htS(gn&&gn.v)+((P=>P?' ('+Math.round(P.r*100)+'%)':'')(htPct(K,'gnn',w)))+' · RFW '+(r?pct2(r.v)+' ('+htPp(r.d)+')':'–'),''];
   const R=POINTS.map(n=>[n,htFlags(n,w,pw).filter(f=>f[0]!=='na')]).filter(x=>x[1].length).sort((a,b)=>b[1].length-a[1].length);
-  const Hn=htHonor(w,pw); if(Hn.length){ L.push('🏆 Vinh danh tuần: '+Hn.slice(0,5).map(x=>short(x.n).replace(/^[A-Z]+ /,'')+' ('+x.ok.length+'/4'+(x.streak>=2?' · 🔥'+x.streak+' tuần':'')+')').join(', ')); }
+  const Hn=htHonor(w,pw); if(Hn.length){ L.push('🏆 Vinh danh tuần: '+Hn.slice(0,5).map(x=>short(x.n).replace(/^[A-Z]+ /,'')+' ('+x.ok.length+'/5'+(x.streak>=2?' · 🔥'+x.streak+' tuần':'')+')').join(', ')); }
   const Fx=htFix(w); if(Fx.length) L.push('⚠️ Khắc phục '+(w.full?'tuần tới':'trong tuần')+': '+Fx.slice(0,6).map(x=>short(x.n).replace(/^[A-Z]+ /,'')+(x.next?' cần '+q4Fs('amt',x.next.v):'')).join('; '));
   L.push('');
   if(R.length){ L.push('Cần trao đổi:'); R.slice(0,6).forEach(([n,f],i)=>L.push((i+1)+'. '+short(n)+': '+f.map(x=>x[1]).join(', '))); } else L.push('✅ Tất cả PGD đúng nhịp');
@@ -1410,9 +1410,9 @@ function htBars2(days,pw,w){ const all=[]; for(let d=htD(pw.s);d<=htD(w.e);d.set
    3) Chỉ vinh danh từ 2 chỉ tiêu có huy chương trở lên; thêm "Tiến bộ nhất" theo Tăng NET 7 ngày gần nhất.
    4) Vinh danh tuần chỉ bật khi đủ 2 tuần số, và phải đúng tiến độ 2 tuần liên tiếp. */
 const VD={tab:'cur', prev:{}, loading:false, err:''};
-const VDK=[['NET','net','Tăng NET',0,40],['GNN','gnn','GN NET',0,25],['KHM','khm','KH mới',0,15],['RFW','rfw','%RFW',1,20]];
+const VDK=[['NET','net','Tăng NET',0,35],['GNN','gnn','GN NET',0,20],['KHM','khm','KH mới',0,15],['RFW','rfw','%RFW',1,15],['TLT','thu','TLT',0,15]];
 const vdPrevKey=()=>{ const D=ckDays(); const y=+D.key.slice(0,4), m=+D.key.slice(4); const pm=m===1?12:m-1, py=m===1?y-1:y; return ''+py+String(pm).padStart(2,'0'); };
-const vdFmt=(k,v)=>k==='rfw'?pct2(v):k==='khm'?nf0.format(Math.round(v))+' KH':q4Fs('amt',v);
+const vdFmt=(k,v)=>k==='rfw'||k==='thu'?pct2(v):k==='khm'?nf0.format(Math.round(v))+' KH':q4Fs('amt',v);
 const vdName=k=>(VDK.find(x=>x[1]===k)||[])[2]||k;
 const vdSn=p=>short(p).replace(/^[A-Z]+ /,'');
 function vdVal(k,p,mk){ const cur=mk===ckDays().key, ym=mk.slice(0,4)+'-'+mk.slice(4);
@@ -1421,15 +1421,15 @@ function vdVal(k,p,mk){ const cur=mk===ckDays().key, ym=mk.slice(0,4)+'-'+mk.sli
   const d=htMonthEnd(k,p,ym); return d?{th:d.th,mt:d.mt,d:d.d}:null; }
 function vdEval(rows, mk){ let asof='';
   const L=(rows||[]).filter(r=>POINTS.includes(String(r.PGD).trim())).map(r=>{ const p=String(r.PGD).trim(), med=[], low=[], bold=[], near=[]; let pts=0;
-    VDK.forEach(([f,k,lab,lw,wt])=>{ const c=num(r[f]), V=vdVal(k,p,mk); if(c==null||!V||V.th==null) return; if(V.d&&V.d>asof) asof=V.d;
+    VDK.forEach(([f,k,lab,lw,wt])=>{ const c=r[f]===''||r[f]==null?null:num(r[f]), V=vdVal(k,p,mk); if(c==null||!V||V.th==null) return; if(V.d&&V.d>asof) asof=V.d;
       const hit=lw?V.th<=c:V.th>=c, amb=V.mt==null?true:(lw?c<=V.mt+1e-9:c>=V.mt-1e-9);
-      if(hit){ if(amb){ med.push(k); pts+=wt; if(V.mt!=null&&(lw?c<V.mt*.95:c>V.mt*1.05)) bold.push(k); } else low.push(k); }
-      else { const g=lw?V.th-c:c-V.th; if(amb&&(lw?V.th<=c*1.15:c>0&&V.th>=c*.93)) near.push([k,g]); } });
-    const n=med.length, net=med.includes('net'), tier=n===4?4:n>=3&&net?3:n>=2?2:n;
+      if(hit){ if(amb){ med.push(k); pts+=wt; if(V.mt!=null&&(lw?c<V.mt*.95:k==='thu'?c>=V.mt+0.02:c>V.mt*1.05)) bold.push(k); } else low.push(k); }
+      else { const g=lw?V.th-c:c-V.th; if(amb&&(lw?V.th<=c*1.15:k==='thu'?c-V.th<=0.02:c>0&&V.th>=c*.93)) near.push([k,g]); } });
+    const n=med.length, net=med.includes('net'), tier=n>=5?5:n>=3&&net?3:n>=2?2:n;
     return {p, ten:r.Ten||'', med, low, bold, near, pts, tier}; }).sort((a,b)=>b.tier-a.tier||b.pts-a.pts);
   return {L, asof}; }
 function vdImprove(){ const P=POINTS.map(p=>{ const a=htInc(p,'net').filter(x=>x.v!=null).slice(-7); return {p, v:a.reduce((s,x)=>s+x.v,0), n:a.length}; }).filter(x=>x.n).sort((a,b)=>b.v-a.v); return P[0]&&P[0].v>0?P[0]:null; }
-const VDT=[[4,'🏆','Giữ trọn 4/4 cam kết','vd4'],[3,'🥇','Đạt 3/4 · có Tăng NET','vd3'],[2,'🥈','Đạt 2 chỉ tiêu','vd2']];
+const VDT=[[5,'🏆','Giữ trọn 5/5 cam kết','vd4'],[3,'🥇','Đạt từ 3/5 · có Tăng NET','vd3'],[2,'🥈','Đạt 2 chỉ tiêu','vd2']];
 function vdCard(x){ return '<div class="vdcard"><b>'+esc(short(x.p))+'</b><small>'+esc(x.ten)+' · '+x.pts+' điểm</small><div>'+x.med.map(k=>'<span class="vdchip">✓ '+vdName(k)+(x.bold.includes(k)?' 💪':'')+'</span>').join('')+'</div></div>'; }
 function vdBoardHTML(R, mk, final){ const L=R.L, tot=L.length, me=isPgdUser();
   const cnt=VDK.map(([f,k,lab])=>[lab,L.filter(x=>x.med.includes(k)).length]).sort((a,b)=>b[1]-a[1]);
@@ -1440,7 +1440,7 @@ function vdBoardHTML(R, mk, final){ const L=R.L, tot=L.length, me=isPgdUser();
   const side=(bold.length||imp?'<div class="vdsp">'+(imp?'<div class="vdcard vdimp"><b>🚀 Tiến bộ nhất · '+esc(short(imp.p))+'</b><small>Tăng NET '+htS(imp.v)+' trong '+imp.n+' ngày gần nhất</small></div>':'')+
       bold.map(x=>'<div class="vdcard vdbold"><b>💪 Dám cam kết · '+esc(short(x.p))+'</b><small>'+x.bold.map(vdName).join(', ')+' cam kết vượt MT và đã đạt</small></div>').join('')+'</div>':'');
   return (me?'':'<div class="vdsum"><div class="vdtop"><small>Chỉ tiêu có nhiều PGD đạt huy chương nhất</small><b>'+(cnt[0]&&cnt[0][1]?esc(cnt[0][0])+' · '+cnt[0][1]+'/'+tot+' PGD':'Chưa có')+'</b><div class="vdbars">'+cnt.map(([lab,n])=>'<div><span>'+lab+'</span><i><s style="width:'+(tot?n/tot*100:0)+'%"></s></i><b>'+n+'/'+tot+'</b></div>').join('')+'</div></div>'+
-      (near.length?'<div class="vdnear"><small>🔥 Sắp chạm cam kết'+(final?'':' – cố thêm chút nữa')+'</small>'+near.slice(0,5).map(([x,n])=>'<div><b>'+esc(short(x.p))+'</b> '+vdName(n[0])+' còn '+(n[0]==='rfw'?nf2.format(n[1]*100)+' điểm':vdFmt(n[0],n[1]))+'</div>').join('')+'</div>':'')+'</div>')+
+      (near.length?'<div class="vdnear"><small>🔥 Sắp chạm cam kết'+(final?'':' – cố thêm chút nữa')+'</small>'+near.slice(0,5).map(([x,n])=>'<div><b>'+esc(short(x.p))+'</b> '+vdName(n[0])+' còn '+((n[0]==='rfw'||n[0]==='thu')?nf2.format(n[1]*100)+' điểm':vdFmt(n[0],n[1]))+'</div>').join('')+'</div>':'')+'</div>')+
     (tiers||'<p class="t-muted vdnone">Chưa PGD nào đủ điều kiện huy chương'+(final?'':' tính đến hôm nay')+'.</p>')+side+
     (rest.length?'<p class="vdrest"><b>Ghi nhận:</b> '+rest.map(x=>esc(vdSn(x.p))+' ('+x.med.concat(x.low).map(vdName).join(', ')+(x.low.length?' · cam kết dưới MT':'')+')').join('; ')+'</p>':''); }
 function vdCopy(R, mk, final){ const L=R.L, mm=+mk.slice(4), d=R.asof?htDM(R.asof):(META.asof||'');
@@ -1450,7 +1450,7 @@ function vdCopy(R, mk, final){ const L=R.L, mm=+mk.slice(4), d=R.asof?htDM(R.aso
   L.filter(x=>x.bold.length&&x.tier<2).forEach(x=>out.push('💪 Dám cam kết: '+vdSn(x.p)+' – '+x.bold.map(vdName).join(', ')));
   const imp=final?null:vdImprove(); if(imp) out.push('🚀 Tiến bộ nhất: '+vdSn(imp.p)+' – Tăng NET '+htS(imp.v)+' / '+imp.n+' ngày');
   const near=L.flatMap(x=>x.near.map(n=>[x,n])).sort((a,b)=>a[1][1]-b[1][1]).slice(0,3);
-  if(near.length&&!final) out.push('🔥 Sắp chạm: '+near.map(([x,n])=>vdSn(x.p)+' '+vdName(n[0])+' còn '+(n[0]==='rfw'?nf2.format(n[1]*100)+' điểm':vdFmt(n[0],n[1]))).join('; '));
+  if(near.length&&!final) out.push('🔥 Sắp chạm: '+near.map(([x,n])=>vdSn(x.p)+' '+vdName(n[0])+' còn '+((n[0]==='rfw'||n[0]==='thu')?nf2.format(n[1]*100)+' điểm':vdFmt(n[0],n[1]))).join('; '));
   return out.join('\n'); }
 function vdPanel(){ const D=ckDays(), pk=vdPrevKey(), isPrev=VD.tab==='prev';
   const mk=isPrev?pk:D.key, rows=isPrev?VD.prev[pk]:CK.rows;
@@ -1461,7 +1461,7 @@ function vdPanel(){ const D=ckDays(), pk=vdPrevKey(), isPrev=VD.tab==='prev';
     final=isPrev&&R.asof>=ym+'-'+String(dim).padStart(2,'0'); body=R.L.length?vdBoardHTML(R,mk,final):'<p class="t-muted">Chưa có cam kết.</p>'; VD.last={R,mk,final}; }
   const mine=isPgdUser(), d=VD.last&&VD.last.R.asof?htDM(VD.last.R.asof):'';
   const note=isPrev?(final?'Kết quả cả tháng.':'⚠️ Chưa có số ngày cuối tháng – đang dùng số đến '+d+', chốt lại khi đủ số.'):'Tạm tính theo số đến '+esc(META.asof||'')+'; vinh danh chính thức khi hết tháng.';
-  return '<div class="panel vdp"><div class="ph"><h2>🏆 Vinh danh '+(mine?'cam kết của bạn':'Trưởng PGD giữ cam kết')+'</h2>'+tabs+'</div><p class="t-muted q4s">'+note+' Huy chương chỉ tính chỉ tiêu có cam kết ≥ MT (RFW ≤ trần); 🥇/🏆 phải đạt Tăng NET; 💪 = cam kết vượt MT và đã đạt.</p>'+body+
+  return '<div class="panel vdp"><div class="ph"><h2>🏆 Vinh danh '+(mine?'cam kết của bạn':'Trưởng PGD giữ cam kết')+'</h2>'+tabs+'</div><p class="t-muted q4s">'+note+' Tính 5 chỉ tiêu: Tăng NET, GN NET, KH mới, %RFW, TLT. Huy chương chỉ tính chỉ tiêu có cam kết ≥ MT (RFW ≤ trần); 🥇/🏆 phải đạt Tăng NET; 💪 = cam kết vượt MT và đã đạt.</p>'+body+
     (!mine&&VD.last&&VD.last.R.L.length?'<div class="vdact"><button type="button" class="btn" id="vdCopy">Sao chép tin vinh danh</button></div>':'')+'</div>'; }
 async function vdLoadPrev(pk){ if(VD.loading||!window.kpiApi) return; VD.loading=true; VD.err='';
   try{ const j=await window.kpiApi('ckGet',{month:pk}); VD.prev[pk]=j.rows||[]; }catch(e){ VD.err=e.message; }
@@ -1472,7 +1472,8 @@ function vdWire(){ document.querySelectorAll('.vdt button').forEach(b=>b.onclick
 const HTK=[['net','Tăng NET'],['gnn','GN NET'],['khm','KH mới']];
 function htOnTrack(n,w){ const ok=[]; let est=false;
   HTK.forEach(([k,l])=>{ const P=htPct(n,k,w); if(!P) return; if(P.approx) est=true; if(P.r>=1) ok.push(l); });
-  const r=htWk(n,'rfw',w); if(r&&r.mt!=null&&r.v<=r.mt&&!(r.d>0.002)) ok.push('%RFW'); return {ok,est}; }
+  const r=htWk(n,'rfw',w); if(r&&r.mt!=null&&r.v<=r.mt&&!(r.d>0.002)) ok.push('%RFW');
+  const t=htWk(n,'thu',w); if(t&&t.mt!=null&&t.v>=t.mt&&!(t.d<-0.002)) ok.push('TLT'); return {ok,est}; }
 const htQual=o=>o.ok.includes('Tăng NET')&&o.ok.length>=2;
 function htStreak(n,W,i){ let s=0; for(let j=i;j<W.length;j++){ const o=htOnTrack(n,W[j]); if(o.est||!htQual(o)) break; s++; } return s; }
 function htHonor(w,pw){ const W=htWeeks(), i=W.findIndex(x=>x.s===w.s);
@@ -1485,6 +1486,7 @@ function htFix(w){ const run=!w.full, nx=htNextWeek(w);
     if(net&&net.v<0) why.push('NET tuần âm '+htS(net.v)); else if(P&&P.r<1) why.push('Tăng NET đạt '+Math.round(P.r*100)+'% MT tuần');
     const G=htPct(n,'gnn',w); if(G&&G.r<.9) why.push('GN NET '+Math.round(G.r*100)+'%');
     if(r&&r.d!=null&&r.d>0.002) why.push('RFW tăng '+nf2.format(r.d*100)+' điểm');
+    const tl=htWk(n,'thu',w); if(tl&&tl.d!=null&&tl.d<-0.002) why.push('TLT giảm '+nf2.format(-tl.d*100)+' điểm');
     if(!why.length) return null;
     let next=null; if(run){ if(P){ const dl=Math.max(0,Math.round((htD(htFmt(new Date(htD(w.s).getTime()+6*864e5)))-htD(w.e))/864e5)); next={lab:'Cần thêm trong '+dl+' ngày còn lại', v:Math.max(0,P.mt-P.th)}; } }
     else { const M=htMT(n,'net',nx); if(M) next={lab:'MT Tăng NET tuần '+htDM(nx.s)+'–'+htDM(nx.e), v:M.mt}; }
@@ -1492,9 +1494,9 @@ function htFix(w){ const run=!w.full, nx=htNextWeek(w);
     const have=new Set(hdPicked(n)), sug=[]; ks.forEach(k=>(HD.groups?hdSuggest(k):[]).forEach(a=>{ if(!have.has(a.id)&&!sug.find(x=>x.id===a.id)&&sug.length<3) sug.push(a); }));
     return {n,why,next,sug,crit:why.some(x=>/âm|RFW/.test(x))}; }).filter(Boolean).sort((a,b)=>(b.crit?1:0)-(a.crit?1:0)||b.why.length-a.why.length); }
 function htHonorHTML(w,pw){ const H=htHonor(w,pw), F=htFix(w), anyEst=POINTS.some(n=>htOnTrack(n,w).est);
-  const tier=n=>n>=4?['🏆','vd4']:n===3?['🥇','vd3']:['🥈','vd2'];
-  const hon='<div class="panel vdp"><div class="ph"><h2>🏆 Vinh danh tuần '+htDM(w.s)+'–'+htDM(w.e)+(w.full?'':' · đang chạy')+'</h2></div><p class="t-muted q4s">Đạt ≥100% MT tuần Tăng NET (bắt buộc) và thêm ít nhất 1 chỉ tiêu (GN NET, KH mới, hoặc %RFW trong trần không tăng). 🔥 = số tuần liên tiếp giữ được.'+(anyEst?' <b>Tuần này MT là ước tính</b> (chưa có số đầu tuần) nên chưa tính chuỗi.':'')+'</p>'+
-    (H.length?'<div class="vdrow">'+H.map(x=>{ const t=tier(x.ok.length); return '<div class="vdcard '+t[1]+'"><b>'+t[0]+' '+esc(short(x.n))+'</b><small>'+x.ok.length+'/4 chỉ tiêu'+(x.streak>=2?' · <span class="vdstreak">🔥 '+x.streak+' tuần liên tiếp</span>':'')+'</small><div>'+x.ok.map(k=>'<span class="vdchip">✓ '+esc(k)+'</span>').join('')+'</div></div>'; }).join('')+'</div>':'<p class="t-muted">Chưa PGD nào đạt điều kiện vinh danh tuần này.</p>')+'</div>';
+  const tier=n=>n>=5?['🏆','vd4']:n>=3?['🥇','vd3']:['🥈','vd2'];
+  const hon='<div class="panel vdp"><div class="ph"><h2>🏆 Vinh danh tuần '+htDM(w.s)+'–'+htDM(w.e)+(w.full?'':' · đang chạy')+'</h2></div><p class="t-muted q4s">Đạt ≥100% MT tuần Tăng NET (bắt buộc) và thêm ít nhất 1 chỉ tiêu (GN NET, KH mới, %RFW trong trần không tăng, hoặc TLT ≥ MT không giảm). 🔥 = số tuần liên tiếp giữ được.'+(anyEst?' <b>Tuần này MT là ước tính</b> (chưa có số đầu tuần) nên chưa tính chuỗi.':'')+'</p>'+
+    (H.length?'<div class="vdrow">'+H.map(x=>{ const t=tier(x.ok.length); return '<div class="vdcard '+t[1]+'"><b>'+t[0]+' '+esc(short(x.n))+'</b><small>'+x.ok.length+'/5 chỉ tiêu'+(x.streak>=2?' · <span class="vdstreak">🔥 '+x.streak+' tuần liên tiếp</span>':'')+'</small><div>'+x.ok.map(k=>'<span class="vdchip">✓ '+esc(k)+'</span>').join('')+'</div></div>'; }).join('')+'</div>':'<p class="t-muted">Chưa PGD nào đạt điều kiện vinh danh tuần này.</p>')+'</div>';
   const fix=F.length?'<div class="panel vdp htfix"><div class="ph"><h2>⚠️ Khắc phục '+(w.full?'ngay tuần tới':'trong tuần')+' · '+F.length+' PGD</h2></div><p class="t-muted q4s">'+(w.full?'MT tuần tới đã gồm phần còn thiếu của tháng, chia đều cho số ngày còn lại.':'Số còn phải làm để đạt MT tuần này.')+' Gợi ý là hành động chuẩn PGD chưa chọn, đúng chỉ tiêu đang hụt.</p><div class="vdrow fx">'+
     F.map(x=>'<div class="vdcard fx'+(x.crit?' crit':'')+'"><b>'+esc(short(x.n))+'</b><div>'+x.why.map(t=>'<span class="pill '+(/âm|RFW/.test(t)?'crit':'warn')+'">'+esc(t)+'</span>').join('')+'</div>'+
       (x.next?'<div class="fxmt"><small>'+esc(x.next.lab)+'</small><b>'+q4Fs('amt',x.next.v)+'</b></div>':'')+
@@ -1504,7 +1506,7 @@ function htHonorHTML(w,pw){ const H=htHonor(w,pw), F=htFix(w), anyEst=POINTS.som
 
 /* ---------- v16: Họp tuần – màn Trưởng PGD + bảng vinh danh khu vực (chỉ tên & huy chương) ---------- */
 HT.honor=null; HT.honorLoading=false;
-const htMedal=n=>n>=4?'🏆':n===3?'🥇':'🥈';
+const htMedal=n=>n>=5?'🏆':n>=3?'🥇':'🥈';
 async function htHonorLoad(){ if(HT.honorLoading||!window.kpiApi) return; HT.honorLoading=true;
   const W=htWeeks(); const from=W.length?W[Math.min(W.length-1,5)].s:'';
   try{ const j=await window.kpiApi('honorGet',{from}); const m={}; (j.rows||[]).forEach(r=>{ (m[r[0]]=m[r[0]]||[]).push({p:r[1],tier:r[2],ok:String(r[3]||'').split(',').filter(Boolean),streak:r[4]}); }); HT.honor=m; }
@@ -1514,7 +1516,7 @@ async function htHonorLoad(){ if(HT.honorLoading||!window.kpiApi) return; HT.hon
 async function htHonorSave(W){ if(!isAdm()||!window.kpiApi) return;
   for(const w of W.slice(0,2)){ const pw=W[W.indexOf(w)+1]; if(!pw) continue; const key='kpi55-hon-'+w.s+'|'+(META.asof||'');
     let done=''; try{ done=localStorage.getItem(key)||''; }catch(e){} if(done) continue;
-    const H=htHonor(w,pw).map(x=>[x.n, x.ok.length>=4?4:x.ok.length===3?3:2, x.ok.join(','), x.streak||0]);
+    const H=htHonor(w,pw).map(x=>[x.n, x.ok.length>=5?5:x.ok.length>=3?3:2, x.ok.join(','), x.streak||0]);
     try{ await window.kpiApi('honorSave',{week:w.s, rows:H}); try{ localStorage.setItem(key,'1'); }catch(e){} }catch(e){} } }
 function htTPView(w,pw,chips,tiles,e){
   const mine=(HT.honor||{})[w.s], me=mine?mine.find(x=>x.p===e):null, F=htFix(w).find(x=>x.n===e), d2=htInc(e,'net').filter(x=>x.d>=pw.s&&x.d<=w.e);
@@ -1538,8 +1540,8 @@ function hsTP(e){ const r=ckRowOf(e); if(r&&r.Ten) return r.Ten; const p=(HD.pic
 function hsWeeks(){ const W=htWeeks(); if(!W.length) return {}; const hasD=x=>!!x&&(HT.rows||[]).some(r=>{ const d=String(r[0]).slice(0,10); return d>=x.s&&d<=x.e; });
   const fi=W[0].full?0:(hasD(W[1])?1:0); return {W, run:W[0].full?null:W[0], full:W[fi], prev:W[fi+1]}; }
 function hsMedals(e){ const out=[];
-  try{ const R=vdEval(CK.rows,ckDays().key); const me=R.L.find(x=>x.p===e); if(me&&me.tier>=2) out.push((me.tier>=4?'🏆':me.tier===3?'🥇':'🥈')+' Cam kết T'+ckDays().mm+' (tạm tính)'); if(me&&me.bold.length) out.push('💪 Dám cam kết'); }catch(x){}
-  try{ const S=hsWeeks(); if(S.full&&S.prev){ const H=htHonor(S.full,S.prev).find(x=>x.n===e); if(H) out.push((H.ok.length>=4?'🏆':H.ok.length===3?'🥇':'🥈')+' Tuần '+htDM(S.full.s)+'–'+htDM(S.full.e)+(H.streak>=2?' · 🔥'+H.streak+' tuần':'')); } }catch(x){}
+  try{ const R=vdEval(CK.rows,ckDays().key); const me=R.L.find(x=>x.p===e); if(me&&me.tier>=2) out.push((me.tier>=5?'🏆':me.tier===3?'🥇':'🥈')+' Cam kết T'+ckDays().mm+' (tạm tính)'); if(me&&me.bold.length) out.push('💪 Dám cam kết'); }catch(x){}
+  try{ const S=hsWeeks(); if(S.full&&S.prev){ const H=htHonor(S.full,S.prev).find(x=>x.n===e); if(H) out.push((H.ok.length>=5?'🏆':H.ok.length===3?'🥇':'🥈')+' Tuần '+htDM(S.full.s)+'–'+htDM(S.full.e)+(H.streak>=2?' · 🔥'+H.streak+' tuần':'')); } }catch(x){}
   return out; }
 function hsVerdict(e){ const S=hsWeeks(), ok=[], bad=[];
   HDK.forEach(([k,lab])=>{ const s=hdStat(k,e); if(s==='ok') ok.push(lab); else if(s==='warn'||s==='bad') bad.push(lab); });

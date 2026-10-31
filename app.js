@@ -1368,6 +1368,9 @@ function renderHT(){ const box=$('htBox'); if(!box) return; if(!CK.rows) ckLoad(
   const chips='<div class="q4t htw">'+W.slice(0,4).map((x,i)=>'<button type="button" data-w="'+i+'" class="'+(i===HT.wk?'on':'')+'">'+htDM(x.s)+'–'+htDM(x.e)+(x.full?'':' <small>đang chạy</small>')+'</button>').join('')+'</div>';
   const save='<span class="htsave">'+(HT.saved?'✓ Đã tự lưu số ngày '+htDM(HT.saved):USER&&USER.role==='pgd'?'':'Đang tự lưu số ngày…')+' · đã có '+nDays+' ngày</span>';
   const tiles='<div class="httiles">'+[['net','Tăng NET'],['gnn','GN NET'],['khm','KH mới'],['rfw','%RFW']].map(x=>htTile(e,x[0],w,pw,x[1])).join('')+'</div>';
+  if(isPgdUser()){ if(HT.honor==null) htHonorLoad(); const me=myPgd()||e, t2='<div class="httiles">'+[['net','Tăng NET'],['gnn','GN NET'],['khm','KH mới'],['rfw','%RFW']].map(x=>htTile(me,x[0],w,pw,x[1])).join('')+'</div>';
+    box.innerHTML=htTPView(w,pw,chips,t2,me); box.querySelectorAll('.htw button').forEach(b=>b.onclick=()=>{ HT.wk=+b.dataset.w; renderHT(); });
+    const tp=$('tpPick'); if(tp) tp.onclick=()=>show('ck'); return; }
   const rows=POINTS.map(n=>({n,f:htFlags(n,w,pw),net:htWk(n,'net',w),pn:htWk(n,'net',pw),gn:htWk(n,'gnn',w),pg:htWk(n,'gnn',pw),kh:htWk(n,'khm',w),r:htWk(n,'rfw',w)}))
     .sort((a,b)=>b.f.filter(x=>x[0]==='crit').length-a.f.filter(x=>x[0]==='crit').length||b.f.length-a.f.length||((htPct(a.n,'net',w)||{}).r||0)-((htPct(b.n,'net',w)||{}).r||0));
   const dv=(a,b,cnt,P)=>a==null?'–':'<b title="'+(b!=null?'Tuần trước '+(cnt?htSc(b):htS(b)):'')+'">'+(cnt?htSc(a):htS(a))+'</b>'+(P?'<small class="htm '+htCls(P.r)+'">MT '+(cnt?nf0.format(Math.round(P.mt)):q4Fs('amt',P.mt))+' · '+Math.round(P.r*100)+'%</small>':'');
@@ -1385,6 +1388,7 @@ function renderHT(){ const box=$('htBox'); if(!box) return; if(!CK.rows) ckLoad(
   box.querySelectorAll('.httb tr.click').forEach(tr=>tr.onclick=()=>{ HT.open=HT.open===tr.dataset.n?null:tr.dataset.n; renderHT(); });
   box.querySelectorAll('[data-bb]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); BB.pgd=b.dataset.bb; BB.mode='kpi'; show('bb'); });
   box.querySelectorAll('[data-hs]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); const i=POINTS.indexOf(b.dataset.hs); if(i>=0){ sel=i; $('pick').value=String(i); } show('hs'); });
+  setTimeout(()=>htHonorSave(W),300);
   const cp=$('htCopy'); if(cp) cp.onclick=()=>{ const t=htCopy(w,pw); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Đã sao chép tóm tắt tuần')).catch(()=>{ window.prompt('Sao chép:',t); }); };
 }
 function htBars2(days,pw,w){ const all=[]; for(let d=htD(pw.s);d<=htD(w.e);d.setDate(d.getDate()+1)) all.push(htFmt(d));
@@ -1491,6 +1495,35 @@ function htHonorHTML(w,pw){ const H=htHonor(w,pw), F=htFix(w), anyEst=POINTS.som
       (x.sug.length?'<div class="fxsug"><small>Gợi ý thêm:</small>'+x.sug.map(a=>'<span title="'+esc(a.t)+'"><i>'+esc(a.id)+'</i> '+esc(a.s)+'</span>').join('')+'</div>':'')+
       (isAdm()?'<button type="button" class="btn fxbb" data-bb="'+esc(x.n)+'">Lập biên bản giao việc</button>':'')+'</div>').join('')+'</div></div>':'';
   return hon+fix; }
+
+/* ---------- v16: Họp tuần – màn Trưởng PGD + bảng vinh danh khu vực (chỉ tên & huy chương) ---------- */
+HT.honor=null; HT.honorLoading=false;
+const htMedal=n=>n>=4?'🏆':n===3?'🥇':'🥈';
+async function htHonorLoad(){ if(HT.honorLoading||!window.kpiApi) return; HT.honorLoading=true;
+  const W=htWeeks(); const from=W.length?W[Math.min(W.length-1,5)].s:'';
+  try{ const j=await window.kpiApi('honorGet',{from}); const m={}; (j.rows||[]).forEach(r=>{ (m[r[0]]=m[r[0]]||[]).push({p:r[1],tier:r[2],ok:String(r[3]||'').split(',').filter(Boolean),streak:r[4]}); }); HT.honor=m; }
+  catch(e){ HT.honor={}; }
+  HT.honorLoading=false; if(view==='ht') renderHT(); }
+/* admin mở Họp tuần → lưu bảng vinh danh 2 tuần gần nhất để Trưởng PGD xem được (không gửi số liệu) */
+async function htHonorSave(W){ if(!isAdm()||!window.kpiApi) return;
+  for(const w of W.slice(0,2)){ const pw=W[W.indexOf(w)+1]; if(!pw) continue; const key='kpi55-hon-'+w.s+'|'+(META.asof||'');
+    let done=''; try{ done=localStorage.getItem(key)||''; }catch(e){} if(done) continue;
+    const H=htHonor(w,pw).map(x=>[x.n, x.ok.length>=4?4:x.ok.length===3?3:2, x.ok.join(','), x.streak||0]);
+    try{ await window.kpiApi('honorSave',{week:w.s, rows:H}); try{ localStorage.setItem(key,'1'); }catch(e){} }catch(e){} } }
+function htTPView(w,pw,chips,tiles,e){
+  const mine=(HT.honor||{})[w.s], me=mine?mine.find(x=>x.p===e):null, F=htFix(w).find(x=>x.n===e), d2=htInc(e,'net').filter(x=>x.d>=pw.s&&x.d<=w.e);
+  const hon='<div class="panel vdp"><div class="ph"><h2>🏆 Bảng vinh danh tuần · Khu vực</h2></div>'+
+    (HT.honor==null?'<p class="t-muted">Đang tải…</p>':!mine?'<p class="t-muted">Bảng vinh danh tuần này sẽ hiện khi khu vực cập nhật số tuần.</p>':
+      (mine.length?'<div class="tphon">'+mine.sort((a,b)=>b.tier-a.tier||b.streak-a.streak).map(x=>'<span class="tpchip'+(x.p===e?' me':'')+'">'+htMedal(x.tier)+' '+esc(short(x.p))+(x.streak>=2?' <i>🔥'+x.streak+' tuần</i>':'')+(x.p===e?' <b>· Bạn</b>':'')+'</span>').join('')+'</div>':'<p class="t-muted">Tuần này khu vực chưa có PGD nào vào bảng.</p>')+
+      (me?'<p class="tpme good">🎉 Chúc mừng! PGD bạn đạt '+htMedal(me.tier)+' với '+me.ok.join(', ')+(me.streak>=2?' – giữ được '+me.streak+' tuần liên tiếp':'')+'.</p>':
+        F?'<p class="tpme">Bạn chưa vào bảng tuần này: '+F.why.join(', ')+'. Điều kiện: đạt 100% MT tuần Tăng NET và thêm 1 chỉ tiêu.</p>':''))+'</div>';
+  const todo=F?'<div class="panel vdp htfix"><div class="ph"><h2>📋 Việc cần làm '+(w.full?'tuần tới':'trong tuần')+'</h2></div><div class="tptodo"><div>'+F.why.map(t=>'<span class="pill '+(/âm|RFW/.test(t)?'crit':'warn')+'">'+esc(t)+'</span>').join(' ')+'</div>'+
+      (F.next?'<div class="fxmt big"><small>'+esc(F.next.lab)+'</small><b>'+q4Fs('amt',F.next.v)+'</b></div>':'')+
+      (F.sug.length?'<div class="fxsug"><small>Hành động chuẩn nên thêm (đúng chỉ tiêu đang hụt):</small>'+F.sug.map(a=>'<span><i>'+esc(a.id)+'</i> '+esc(a.t)+' <em>· '+esc(a.f)+'</em></span>').join('')+'</div>':'')+
+      '<button type="button" class="btn primary" id="tpPick">Chọn thêm hành động</button></div></div>':
+      '<div class="panel vdp"><div class="ph"><h2>📋 Việc cần làm</h2></div><p class="tpme good">✅ Tuần này PGD bạn đúng tiến độ. Giữ nhịp cho tuần tới!</p></div>';
+  const trend='<div class="panel"><div class="ph"><h2>Diễn biến 2 tuần & hành động</h2></div><div class="htdg tp"><div><h4>Tăng NET từng ngày</h4>'+htBars2(d2,pw,w)+'</div><div><h4>Hành động đang làm</h4>'+hdChosenHTML(e)+'</div></div></div>';
+  return '<div class="panel"><div class="ph"><h2>Họp tuần · '+esc(short(e))+'</h2>'+chips+'</div><p class="t-muted q4s">MT tuần đã gồm phần còn thiếu của tháng: tuần trước thiếu thì tuần này tăng, làm dư thì không giảm.</p>'+tiles+'</div>'+todo+hon+trend; }
 
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }

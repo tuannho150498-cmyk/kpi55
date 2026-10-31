@@ -1430,7 +1430,7 @@ function vdEval(rows, mk){ let asof='';
   return {L, asof}; }
 function vdImprove(){ const P=POINTS.map(p=>{ const a=htInc(p,'net').filter(x=>x.v!=null).slice(-7); return {p, v:a.reduce((s,x)=>s+x.v,0), n:a.length}; }).filter(x=>x.n).sort((a,b)=>b.v-a.v); return P[0]&&P[0].v>0?P[0]:null; }
 const VDT=[[5,'🏆','Giữ trọn 5/5 cam kết','vd4'],[3,'🥇','Đạt từ 3/5 · có Tăng NET','vd3'],[2,'🥈','Đạt 2 chỉ tiêu','vd2']];
-function vdCard(x){ return '<div class="vdcard"><b>'+esc(short(x.p))+'</b><small>'+esc(x.ten)+' · '+x.pts+' điểm</small><div>'+x.med.map(k=>'<span class="vdchip">✓ '+vdName(k)+(x.bold.includes(k)?' 💪':'')+'</span>').join('')+'</div></div>'; }
+function vdCard(x){ return '<div class="vdcard"><div class="vdwho">'+tpImg(x.p)+'<b>'+esc(short(x.p))+'</b></div><small>'+esc(x.ten)+' · '+x.pts+' điểm</small><div>'+x.med.map(k=>'<span class="vdchip">✓ '+vdName(k)+(x.bold.includes(k)?' 💪':'')+'</span>').join('')+'</div></div>'; }
 function vdBoardHTML(R, mk, final){ const L=R.L, tot=L.length, me=isPgdUser();
   const cnt=VDK.map(([f,k,lab])=>[lab,L.filter(x=>x.med.includes(k)).length]).sort((a,b)=>b[1]-a[1]);
   const tiers=VDT.map(([n,ic,lab,cls])=>{ const T=L.filter(x=>x.tier===n); if(!T.length) return '';
@@ -1535,6 +1535,7 @@ function htTPView(w,pw,chips,tiles,e){
 
 /* ---------- v17: Hồ sơ PGD 1 trang (đầu trang · 4 chỉ tiêu × 4 tầng · cam kết & hành động · biên bản & việc tồn) ---------- */
 const HSP={bb:{}, loading:{}};
+const tpImg=(p,cls)=>'<span class="tpav '+(cls||'')+'"><img src="tp/'+esc(pgdCode(p))+'.jpg" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'noimg\');this.remove()"><b>'+esc(hsIni(hsTP(p)||short(p)))+'</b></span>';
 const hsIni=t=>{ const w=String(t||'').trim().split(/\s+/); return (w.length?w[w.length-1][0]:'?').toUpperCase(); };
 function hsTP(e){ const r=ckRowOf(e); if(r&&r.Ten) return r.Ten; const p=(HD.picks||{})[e]; return p&&p.name?p.name:''; }
 function hsWeeks(){ const W=htWeeks(); if(!W.length) return {}; const hasD=x=>!!x&&(HT.rows||[]).some(r=>{ const d=String(r[0]).slice(0,10); return d>=x.s&&d<=x.e; });
@@ -1599,7 +1600,7 @@ function renderHSPro(){ const box=$('hsPro'); if(!box) return; const e=ent();
   if(!CK.rows) ckLoad(); if(!HD.groups) hdLoad(); if(HT.rows==null) htLoad();
   let rank=''; if(canRank()){ const rk=ranking(), pos=rk.findIndex(r=>r.i===sel); if(pos>=0) rank='Hạng <b>'+(pos+1)+'/'+rk.length+'</b> khu vực'; }
   const tp=hsTP(e), med=hsMedals(e);
-  box.innerHTML='<div class="panel hshead"><div class="hsav">'+esc(hsIni(tp||short(e)))+'</div><div class="hsid"><h2>'+esc(short(e))+'</h2><small>'+[tp?'Trưởng PGD: '+esc(tp):'',rank].filter(Boolean).join(' · ')+'</small><p>'+hsVerdict(e)+'</p>'+(med.length?'<div class="hsmed">'+med.map(m=>'<span>'+m+'</span>').join('')+'</div>':'')+'</div>'+
+  box.innerHTML='<div class="panel hshead">'+tpImg(e,'big')+'<div class="hsid"><h2>'+esc(short(e))+'</h2><small>'+[tp?'Trưởng PGD: '+esc(tp):'',rank].filter(Boolean).join(' · ')+'</small><p>'+hsVerdict(e)+'</p>'+(med.length?'<div class="hsmed">'+med.map(m=>'<span>'+m+'</span>').join('')+'</div>':'')+'</div>'+
     '<div class="hsbtn"><button type="button" class="btn" id="hsPrint">In hồ sơ 1 trang</button></div></div>'+
     '<div class="panel"><div class="ph"><h2>Chỉ tiêu chính · tháng / tuần / cam kết / quý</h2></div><div class="tablebox">'+hsGrid(e)+'</div></div>'+
     '<div class="panel"><div class="ph"><h2>Cam kết & hành động</h2><span class="sub">Tick để thêm/bỏ, bấm ✎ để sửa nội dung cho PGD mình, rồi bấm Lưu hành động</span></div>'+hsActs(e)+'</div>';

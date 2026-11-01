@@ -1676,20 +1676,21 @@ const RMSUB=[['Giải ngân',[['GN tổng','GIẢI NGÂN TỔNG','amt',{w24:1}],
   ['Doanh thu & bảo hiểm',[['Doanh thu','DOANH THU','amt',{}],['Doanh thu vay','DOANH THU VAY','amt',{}],['Doanh thu bảo hiểm','DOANH THU BẢO HIỂM','amt',{}],['Phí BH quy đổi','PHÍ BẢO HIỂM QUY ĐỔI','amt',{}],['Phí BH bán kèm','PHÍ BH BÁN KÈM','amt',{tick:1}],['Phí BH tự nguyện','PHÍ BH TỰ NGUYỆN','dec',{}],['Phí BH độc lập','PHÍ BH ĐỘC LẬP','dec',{}]]],
   ['MBBank',[['Nạp rút MBBank','NẠP RÚT MBBANK','cnt',{}],['Mở tài khoản MBBank','MỞ TÀI KHOẢN MBBANK','cnt',{}],['% KH vay mở TK','TỶ LỆ KH VAY MỞ TÀI KHOẢN','pct',{noMT:1}]]]];
 const rmF=(u,v)=>v==null?'–':u==='amt'?q4Fs('amt',v):u==='cnt'?nf0.format(Math.round(v)):u==='pct'?pct1(v):u==='pct2'?pct2(v):u==='dec'?nf1.format(v):fmt(v);
-const rmVs=(u,v)=>v==null?'–':(u==='pct'||u==='pct2')?pp(v):u==='amt'?((v>0?'+':v<0?'−':'')+q4Fs('amt',Math.abs(v))):spct(v);
+const RMVSAMT=['TĂNG NET','NET GIẢI NGÂN - RÚT GỐC'];
+const rmVs=(u,v,tab)=>v==null?'–':(u==='pct'||u==='pct2')?pp(v):(u==='amt'&&RMVSAMT.includes(tab))?((v>0?'+':v<0?'−':'')+q4Fs('amt',Math.abs(v))):spct(v);
 function rmRow(e,[lab,tab,u,o]){ const c=k=>cell(tab,e,k);
   let th=c('TH'), mt=o.noMT?null:c('MT'), t1=c('T-1'), ht=c('%HT'), db=c('DB'), hdb=c('%HT DB'), vs=c('vs. T-1');
   if(o.rfwAmt){ th=c('RFW TH'); mt=c('RFW MT'); t1=null; ht=th&&mt!=null?mt/th:null; db=null; hdb=null; vs=null; }
-  if(o.low&&th!=null&&mt!=null) ht=th?mt/th:null; else if(ht==null&&th!=null&&mt) ht=th/mt;
+  if(ht==null&&th!=null&&mt) ht=o.low?(th?mt/th:null):th/mt;
   const cls=ht==null?'':o.low?(th<=mt?'good':th<=mt*1.2?'warn':'crit'):(o.neg&&th<0?'crit':ht>=1?'good':ht>=0.9?'warn':'crit');
   let sub=''; if(o.w24){ const a=c('TH 2W'), b=c('TH 4W'); if(a!=null||b!=null) sub='<small class="rm24">2W <b>'+rmF(u,a)+'</b> · 4W <b>'+rmF(u,b)+'</b></small>'; }
   if(o.tick){ const t2=cell('TỶ LỆ TICK BH BÁN KÈM',e,'%Tick 2W TH'), t4=cell('TỶ LỆ TICK BH BÁN KÈM',e,'%Tick 4W TH'), tt=cell('TỶ LỆ TICK BH BÁN KÈM',e,'%Tick Topup TH'); if(t2!=null||t4!=null) sub='<small class="rm24">Tick 2W <b>'+pct1(t2)+'</b> · 4W <b>'+pct1(t4)+'</b> · Topup <b>'+pct1(tt)+'</b></small>'; }
   if(tab==='TỶ LỆ KH VAY MỞ TÀI KHOẢN'){ const k1=c('%KHM mở TK TH'); if(k1!=null) sub='<small class="rm24">% KH mới mở TK <b>'+pct1(k1)+'</b></small>'; }
   let ck=''; if(o.ck){ const r=ckRowOf(e)||{}, cv=r[o.ck]===''||r[o.ck]==null?null:num(r[o.ck]); if(cv==null) ck='<span class="t-muted">–</span>'; else { const low=o.low, hit=th!=null&&(low?th<=cv:th>=cv); ck='<b class="'+(hit?'good':'crit')+'">'+(hit?'✓ ':'✗ ')+rmF(u,cv)+'</b>'; } }
-  return {lab,th,mt,ht,cls,html:'<tr><th>'+esc(lab)+sub+'</th><td class="num">'+rmF(u,t1)+'</td><td class="num">'+rmF(u,mt)+'</td><td class="num"><b class="'+cls+'">'+rmF(u,th)+'</b></td><td class="num">'+(ht==null?'–':'<span class="pill '+cls+'">'+pct0(ht)+'</span>')+'</td>'+(RMNODB?'':'<td class="num">'+rmF(u,db)+(hdb!=null?'<small> · '+pct0(hdb)+'</small>':'')+'</td>')+'<td class="num '+(vs==null?'':(o.low?vs<=0:vs>=0)?'up':'dn')+'">'+rmVs(u,vs)+'</td>'+(RMCKCOL?'<td class="num">'+(ck||'<span class="t-muted">–</span>')+'</td>':'')+'</tr>'}; }
+  return {lab,th,mt,ht,cls,html:'<tr><th>'+esc(lab)+sub+'</th><td class="num">'+rmF(u,t1)+'</td><td class="num">'+rmF(u,mt)+'</td><td class="num"><b class="'+cls+'">'+rmF(u,th)+'</b></td><td class="num">'+(ht==null?'–':'<span class="pill '+cls+'">'+pct0(ht)+'</span>')+'</td>'+(RMNODB?'':'<td class="num">'+rmF(u,db)+(hdb!=null?'<small> · '+pct0(hdb)+'</small>':'')+'</td>')+'<td class="num '+(vs==null?'':(o.low?vs<=0:vs>=0)?'up':'dn')+'">'+rmVs(u,vs,tab)+'</td>'+(RMCKCOL?'<td class="num">'+(ck||'<span class="t-muted">–</span>')+'</td>':'')+'</tr>'}; }
 let RMCKCOL=false, RMNODB=false;
 function rmTable(e,rows,withCk,noDb){ RMCKCOL=withCk; RMNODB=!!noDb; const R=rows.map(r=>rmRow(e,r)); RMCKCOL=false; RMNODB=false;
-  return {R,html:'<table class="rmt"><thead><tr><th>Chỉ tiêu</th><th>T-1</th><th>MT</th><th>TH</th><th>%HT</th>'+(noDb?'':'<th>Dự báo · %HT DB</th>')+'<th>so T-1</th>'+(withCk?'<th>Cam kết</th>':'')+'</tr></thead><tbody>'+R.map(x=>x.html).join('')+'</tbody></table>'}; }
+  return {R,html:'<table class="rmt"><thead><tr><th>Chỉ tiêu</th><th title="Cùng kỳ tháng trước (cột T-1 trong file key)">Cùng kỳ T-1</th><th>MT</th><th>TH</th><th>%HT</th>'+(noDb?'':'<th>Dự báo · %HT DB</th>')+'<th>so T-1</th>'+(withCk?'<th>Cam kết</th>':'')+'</tr></thead><tbody>'+R.map(x=>x.html).join('')+'</tbody></table>'}; }
 function rmKv(k,e){ let v={}; try{ v=kv(k,e)||{}; }catch(x){} if(v.th!=null||e!==REGION) return v;
   const L=POINTS.map(n=>{ try{ return kv(k,n)||{}; }catch(x){ return {}; } }).filter(x=>x.th!=null); if(!L.length) return v;
   const ratio=/f2s$|cv$/.test(k), sum=f=>L.reduce((a,x)=>a+(x[f]||0),0), avg=f=>{ const M=L.filter(x=>x[f]!=null); return M.length?M.reduce((a,x)=>a+x[f],0)/M.length:null; };

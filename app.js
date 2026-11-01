@@ -1671,7 +1671,7 @@ function renderNR(){ const box=$('nrBox'); if(!box) return;
 // [nhãn, tab, đơn vị (amt|cnt|pct|pct2), tuỳ chọn]  ·  w24: có cột TH 2W/TH 4W  ·  low: thấp hơn là tốt  ·  ck: trường cam kết
 const RMMAIN=[['DPD0','DPD0','amt',{}],['Tăng NET','TĂNG NET','amt',{ck:'NET',neg:1}],['GN NET','GIẢI NGÂN NET','amt',{w24:1,ck:'GNN'}],['KH mới','KHM','cnt',{w24:1,ck:'KHM'}],
   ['TLT (thu DPD0)','TỶ LỆ THU DPD0','pct',{ck:'TLT'}],['%RFW','RFW','pct2',{low:1,ck:'RFW'}],['RFW số tiền','RFW','amt',{low:1,rfwAmt:1}]];
-const RMSUB=[['Giải ngân',[['GN tổng','GIẢI NGÂN TỔNG','amt',{w24:1}],['GN KH mới','GIẢI NGÂN KHM','amt',{w24:1}],['GN NET KH quay lại','GIẢI NGÂN NET KHQL','amt',{w24:1}],['KH quay lại','KHQL','cnt',{w24:1}],['Giấy nhận nợ mở mới','GIẤY NHẬN NƠ MỞ MỚI','cnt',{w24:1}]]],
+const RMSUB=[['Giải ngân',[['GN tổng','GIẢI NGÂN TỔNG','amt',{w24:1}],['GN KH mới','GIẢI NGÂN KHM','amt',{w24:1}],['GN NET KH quay lại','GIẢI NGÂN NET KHQL','amt',{w24:1}],['GN vay lại','GIẢI NGÂN VAY LẠI','amt',{raw:9,parts:[['Ô tô',1],['Xe máy',5]]}],['GN NET Topup','GIẢI NGÂN NET TOPUP','amt',{raw:17,parts:[['Ô tô',[1,5]],['Xe máy',[9,13]],['My F88',[1,9]]]}]]],
   ['Rút gốc & chất lượng',[['Rút gốc','RÚT GỐC','amt',{low:1}],['NET GN − Rút gốc','NET GIẢI NGÂN - RÚT GỐC','amt',{}],['Tỷ lệ trễ hạn','TỶ LỆ TRỄ HẠN','pct',{low:1}]]],
   ['Doanh thu & bảo hiểm',[['Doanh thu','DOANH THU','amt',{}],['Doanh thu vay','DOANH THU VAY','amt',{}],['Doanh thu bảo hiểm','DOANH THU BẢO HIỂM','amt',{}],['Phí BH quy đổi','PHÍ BẢO HIỂM QUY ĐỔI','amt',{}],['Phí BH bán kèm','PHÍ BH BÁN KÈM','amt',{tick:1}],['Phí BH tự nguyện','PHÍ BH TỰ NGUYỆN','dec',{}],['Phí BH độc lập','PHÍ BH ĐỘC LẬP','dec',{}]]],
   ['MBBank',[['Nạp rút MBBank','NẠP RÚT MBBANK','cnt',{}],['Mở tài khoản MBBank','MỞ TÀI KHOẢN MBBANK','cnt',{}],['% KH vay mở TK','TỶ LỆ KH VAY MỞ TÀI KHOẢN','pct',{noMT:1}]]]];
@@ -1680,10 +1680,13 @@ const RMVSAMT=['TĂNG NET','NET GIẢI NGÂN - RÚT GỐC'];
 const rmVs=(u,v,tab)=>v==null?'–':(u==='pct'||u==='pct2')?pp(v):(u==='amt'&&RMVSAMT.includes(tab))?((v>0?'+':v<0?'−':'')+q4Fs('amt',Math.abs(v))):spct(v);
 function rmRow(e,[lab,tab,u,o]){ const c=k=>cell(tab,e,k);
   let th=c('TH'), mt=o.noMT?null:c('MT'), t1=c('T-1'), ht=c('%HT'), db=c('DB'), hdb=c('%HT DB'), vs=c('vs. T-1');
+  if(o.raw!=null){ let r=null; try{ r=tb(tab).body.find(x=>x[0]===e); }catch(x){} const g=i=>r?num(r[i]):null;
+    t1=g(o.raw+1); th=g(o.raw+2); vs=g(o.raw+3); mt=null; ht=null; db=null; hdb=null; }
   if(o.rfwAmt){ th=c('RFW TH'); mt=c('RFW MT'); t1=null; ht=th&&mt!=null?mt/th:null; db=null; hdb=null; vs=null; }
   if(ht==null&&th!=null&&mt) ht=o.low?(th?mt/th:null):th/mt;
   const cls=ht==null?'':o.low?(th<=mt?'good':th<=mt*1.2?'warn':'crit'):(o.neg&&th<0?'crit':ht>=1?'good':ht>=0.9?'warn':'crit');
   let sub=''; if(o.w24){ const a=c('TH 2W'), b=c('TH 4W'); if(a!=null||b!=null) sub='<small class="rm24">2W <b>'+rmF(u,a)+'</b> · 4W <b>'+rmF(u,b)+'</b></small>'; }
+  if(o.parts){ let r=null; try{ r=tb(tab).body.find(x=>x[0]===e); }catch(x){} if(r){ const v=ix=>[].concat(ix).reduce((a,i)=>a+(num(r[i+2])||0),0); sub='<small class="rm24">'+o.parts.map(([l,ix])=>l+' <b>'+rmF(u,v(ix))+'</b>').join(' · ')+'</small>'; } }
   if(o.tick){ const t2=cell('TỶ LỆ TICK BH BÁN KÈM',e,'%Tick 2W TH'), t4=cell('TỶ LỆ TICK BH BÁN KÈM',e,'%Tick 4W TH'), tt=cell('TỶ LỆ TICK BH BÁN KÈM',e,'%Tick Topup TH'); if(t2!=null||t4!=null) sub='<small class="rm24">Tick 2W <b>'+pct1(t2)+'</b> · 4W <b>'+pct1(t4)+'</b> · Topup <b>'+pct1(tt)+'</b></small>'; }
   if(tab==='TỶ LỆ KH VAY MỞ TÀI KHOẢN'){ const k1=c('%KHM mở TK TH'); if(k1!=null) sub='<small class="rm24">% KH mới mở TK <b>'+pct1(k1)+'</b></small>'; }
   let ck=''; if(o.ck){ const r=ckRowOf(e)||{}, cv=r[o.ck]===''||r[o.ck]==null?null:num(r[o.ck]); if(cv==null) ck='<span class="t-muted">–</span>'; else { const low=o.low, hit=th!=null&&(low?th<=cv:th>=cv); ck='<b class="'+(hit?'good':'crit')+'">'+(hit?'✓ ':'✗ ')+rmF(u,cv)+'</b>'; } }

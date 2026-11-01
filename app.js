@@ -182,7 +182,7 @@ function chooser(where){ const host=document.querySelector('[data-chooser="'+whe
 
 /* ---------- TỔNG QUAN ---------- */
 const GPAGE=['dn','gn','dt','mb','kn'];
-const PAGES={nr:'Báo cáo NET ngày',ht:'Review KQKD tuần',q4:'Bộ KPI Q4/2026',no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',ck:'Cam kết chỉ tiêu',hd:'Hành động chuẩn',bb:'Biên bản làm việc',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
+const PAGES={rm:'Review KQKD tháng',nr:'Báo cáo NET ngày',ht:'Review KQKD tuần',q4:'Bộ KPI Q4/2026',no:'Cảnh báo nợ',tq:'Tổng quan',hs:'Hồ sơ PGD',xh:'Xếp hạng PGD',cb:'Cơ hội & Cảnh báo',dn:'DPD0 · NET · TLT · RFW',tt:'Tăng trưởng DPD0',ck:'Cam kết chỉ tiêu',hd:'Hành động chuẩn',bb:'Biên bản làm việc',gn:'GN NET · KHM',kn:'Kênh bán',pt:'Chi tiết kênh',dt:'Bảo hiểm',nk:'Ai đã xem',mb:'MBBank',kt:'Kiểm tra dữ liệu',raw:'Dữ liệu gốc'};
 const sc=s=>s[1]==='solid'?'crit':s[1];
 const wide=()=>window.matchMedia('(min-width:1024px)').matches;
 const openG=new Set([0,1]);
@@ -1667,9 +1667,70 @@ function renderNR(){ const box=$('nrBox'); if(!box) return;
     catch(e){ toast((e&&e.message)||'Không tạo được ảnh'); }
     f.style.transform=old; nrFit(); b.disabled=false; b.textContent='Tải ảnh báo cáo'; }; }
 
+/* ---------- v19: Review KQKD tháng – 1 trang / PGD: nhánh chính, nhánh phụ, kênh bán, cam kết ---------- */
+// [nhãn, tab, đơn vị (amt|cnt|pct|pct2), tuỳ chọn]  ·  w24: có cột TH 2W/TH 4W  ·  low: thấp hơn là tốt  ·  ck: trường cam kết
+const RMMAIN=[['DPD0','DPD0','amt',{}],['Tăng NET','TĂNG NET','amt',{ck:'NET',neg:1}],['GN NET','GIẢI NGÂN NET','amt',{w24:1,ck:'GNN'}],['KH mới','KHM','cnt',{w24:1,ck:'KHM'}],
+  ['TLT (thu DPD0)','TỶ LỆ THU DPD0','pct',{ck:'TLT'}],['%RFW','RFW','pct2',{low:1,ck:'RFW'}],['RFW số tiền','RFW','amt',{low:1,rfwAmt:1}]];
+const RMSUB=[['Giải ngân',[['GN tổng','GIẢI NGÂN TỔNG','amt',{w24:1}],['GN KH mới','GIẢI NGÂN KHM','amt',{w24:1}],['GN NET KH quay lại','GIẢI NGÂN NET KHQL','amt',{w24:1}],['KH quay lại','KHQL','cnt',{w24:1}],['Giấy nhận nợ mở mới','GIẤY NHẬN NƠ MỞ MỚI','cnt',{w24:1}]]],
+  ['Rút gốc & chất lượng',[['Rút gốc','RÚT GỐC','amt',{low:1}],['NET GN − Rút gốc','NET GIẢI NGÂN - RÚT GỐC','amt',{}],['Tỷ lệ trễ hạn','TỶ LỆ TRỄ HẠN','pct',{low:1}]]],
+  ['Doanh thu & bảo hiểm',[['Doanh thu','DOANH THU','amt',{}],['Doanh thu vay','DOANH THU VAY','amt',{}],['Doanh thu bảo hiểm','DOANH THU BẢO HIỂM','amt',{}],['Phí BH quy đổi','PHÍ BẢO HIỂM QUY ĐỔI','amt',{}],['Phí BH bán kèm','PHÍ BH BÁN KÈM','amt',{tick:1}],['Phí BH tự nguyện','PHÍ BH TỰ NGUYỆN','dec',{}],['Phí BH độc lập','PHÍ BH ĐỘC LẬP','dec',{}]]],
+  ['MBBank',[['Nạp rút MBBank','NẠP RÚT MBBANK','cnt',{}],['Mở tài khoản MBBank','MỞ TÀI KHOẢN MBBANK','cnt',{}],['% KH vay mở TK','TỶ LỆ KH VAY MỞ TÀI KHOẢN','pct',{noMT:1}]]]];
+const rmF=(u,v)=>v==null?'–':u==='amt'?q4Fs('amt',v):u==='cnt'?nf0.format(Math.round(v)):u==='pct'?pct1(v):u==='pct2'?pct2(v):u==='dec'?nf1.format(v):fmt(v);
+const rmVs=(u,v)=>v==null?'–':(u==='pct'||u==='pct2')?pp(v):u==='amt'?((v>0?'+':v<0?'−':'')+q4Fs('amt',Math.abs(v))):spct(v);
+function rmRow(e,[lab,tab,u,o]){ const c=k=>cell(tab,e,k);
+  let th=c('TH'), mt=o.noMT?null:c('MT'), t1=c('T-1'), ht=c('%HT'), db=c('DB'), hdb=c('%HT DB'), vs=c('vs. T-1');
+  if(o.rfwAmt){ th=c('RFW TH'); mt=c('RFW MT'); t1=null; ht=th&&mt!=null?mt/th:null; db=null; hdb=null; vs=null; }
+  if(o.low&&th!=null&&mt!=null) ht=th?mt/th:null; else if(ht==null&&th!=null&&mt) ht=th/mt;
+  const cls=ht==null?'':o.low?(th<=mt?'good':th<=mt*1.2?'warn':'crit'):(o.neg&&th<0?'crit':ht>=1?'good':ht>=0.9?'warn':'crit');
+  let sub=''; if(o.w24){ const a=c('TH 2W'), b=c('TH 4W'); if(a!=null||b!=null) sub='<small class="rm24">2W <b>'+rmF(u,a)+'</b> · 4W <b>'+rmF(u,b)+'</b></small>'; }
+  if(o.tick){ const t2=cell('TỶ LỆ TICK BH BÁN KÈM',e,'%Tick 2W TH'), t4=cell('TỶ LỆ TICK BH BÁN KÈM',e,'%Tick 4W TH'), tt=cell('TỶ LỆ TICK BH BÁN KÈM',e,'%Tick Topup TH'); if(t2!=null||t4!=null) sub='<small class="rm24">Tick 2W <b>'+pct1(t2)+'</b> · 4W <b>'+pct1(t4)+'</b> · Topup <b>'+pct1(tt)+'</b></small>'; }
+  if(tab==='TỶ LỆ KH VAY MỞ TÀI KHOẢN'){ const k1=c('%KHM mở TK TH'); if(k1!=null) sub='<small class="rm24">% KH mới mở TK <b>'+pct1(k1)+'</b></small>'; }
+  let ck=''; if(o.ck){ const r=ckRowOf(e)||{}, cv=r[o.ck]===''||r[o.ck]==null?null:num(r[o.ck]); if(cv==null) ck='<span class="t-muted">–</span>'; else { const low=o.low, hit=th!=null&&(low?th<=cv:th>=cv); ck='<b class="'+(hit?'good':'crit')+'">'+(hit?'✓ ':'✗ ')+rmF(u,cv)+'</b>'; } }
+  return {lab,th,mt,ht,cls,html:'<tr><th>'+esc(lab)+sub+'</th><td class="num">'+rmF(u,t1)+'</td><td class="num">'+rmF(u,mt)+'</td><td class="num"><b class="'+cls+'">'+rmF(u,th)+'</b></td><td class="num">'+(ht==null?'–':'<span class="pill '+cls+'">'+pct0(ht)+'</span>')+'</td>'+(RMNODB?'':'<td class="num">'+rmF(u,db)+(hdb!=null?'<small> · '+pct0(hdb)+'</small>':'')+'</td>')+'<td class="num '+(vs==null?'':(o.low?vs<=0:vs>=0)?'up':'dn')+'">'+rmVs(u,vs)+'</td>'+(RMCKCOL?'<td class="num">'+(ck||'<span class="t-muted">–</span>')+'</td>':'')+'</tr>'}; }
+let RMCKCOL=false, RMNODB=false;
+function rmTable(e,rows,withCk,noDb){ RMCKCOL=withCk; RMNODB=!!noDb; const R=rows.map(r=>rmRow(e,r)); RMCKCOL=false; RMNODB=false;
+  return {R,html:'<table class="rmt"><thead><tr><th>Chỉ tiêu</th><th>T-1</th><th>MT</th><th>TH</th><th>%HT</th>'+(noDb?'':'<th>Dự báo · %HT DB</th>')+'<th>so T-1</th>'+(withCk?'<th>Cam kết</th>':'')+'</tr></thead><tbody>'+R.map(x=>x.html).join('')+'</tbody></table>'}; }
+function rmKv(k,e){ let v={}; try{ v=kv(k,e)||{}; }catch(x){} if(v.th!=null||e!==REGION) return v;
+  const L=POINTS.map(n=>{ try{ return kv(k,n)||{}; }catch(x){ return {}; } }).filter(x=>x.th!=null); if(!L.length) return v;
+  const ratio=/f2s$|cv$/.test(k), sum=f=>L.reduce((a,x)=>a+(x[f]||0),0), avg=f=>{ const M=L.filter(x=>x[f]!=null); return M.length?M.reduce((a,x)=>a+x[f],0)/M.length:null; };
+  const th=ratio?avg('th'):sum('th'), mt=ratio?avg('mt'):(L.some(x=>x.mt!=null)?sum('mt'):null); return {th,mt,ht:mt?th/mt:null}; }
+function rmChannels(e){ const row=(ch,i)=>{ const g=k=>rmKv('c'+i+k,e), f=g('form'), s=g('f2s'), k=g('khm'), n=g('gn');
+    const pill=v=>v.ht==null?'':' <span class="pill '+(v.ht>=1?'good':v.ht>=0.9?'warn':'crit')+'">'+pct0(v.ht)+'</span>';
+    return '<tr><th><i class="rmdot" style="background:'+ch[2]+'"></i>'+esc(ch[1])+'</th><td class="num">'+rmF('cnt',f.th)+(f.mt?'<small> / '+rmF('cnt',f.mt)+'</small>':'')+pill(f)+'</td><td class="num">'+pct1(s.th)+(s.mt?'<small> / '+pct1(s.mt)+'</small>':'')+'</td><td class="num">'+rmF('cnt',k.th)+(k.mt?'<small> / '+rmF('cnt',k.mt)+'</small>':'')+pill(k)+'</td><td class="num">'+rmF('amt',n.th)+(n.mt?'<small> / '+rmF('amt',n.mt)+'</small>':'')+pill(n)+'</td></tr>'; };
+  const prog=CHD.map((c,ci)=>c.progs.map((p,pi)=>{ const id='x'+ci+'_'+pi, g=k=>rmKv(id+k,e), a=g('in'), cv=g('cv'), sa=g('sale'), kh=g('khm'), pr=p[6]?g('pre'):null;
+      if(a.th==null&&sa.th==null&&kh.th==null) return '';
+      return '<tr><th><small class="t-muted">'+esc(c.lab)+'</small> '+esc(p[1])+'</th><td class="num">'+rmF('cnt',a.th)+' <small>'+esc(p[4])+'</small></td><td class="num">'+pct1(cv.th)+' <small>'+esc(p[5])+'</small></td><td class="num">'+rmF('cnt',sa.th)+'</td><td class="num">'+rmF('cnt',kh.th)+'</td><td class="num">'+(pr?rmF('cnt',pr.th):'–')+'</td></tr>'; }).join('')).join('');
+  return '<table class="rmt"><thead><tr><th>Kênh</th><th>Form · /MT</th><th>F2S</th><th>KHM · /MT</th><th>Giải ngân · /MT</th></tr></thead><tbody>'+CH.map(row).join('')+'</tbody></table>'+
+    (prog?'<h4 class="rmh4">Chi tiết chương trình</h4><table class="rmt"><thead><tr><th>Chương trình</th><th>Đầu vào</th><th>Chuyển đổi</th><th>Sale</th><th>KHM</th><th>Task</th></tr></thead><tbody>'+prog+'</tbody></table>':''); }
+function rmVerdict(R){ const good=R.filter(x=>x.cls==='good').map(x=>x.lab), bad=R.filter(x=>x.cls==='crit').map(x=>x.lab), warn=R.filter(x=>x.cls==='warn').map(x=>x.lab);
+  return '<ul class="rmv">'+(good.length?'<li class="good">✅ Đạt: <b>'+good.join(', ')+'</b></li>':'')+(warn.length?'<li class="warn">🟡 Gần đạt (90–99%): <b>'+warn.join(', ')+'</b></li>':'')+(bad.length?'<li class="crit">🔴 Chưa đạt: <b>'+bad.join(', ')+'</b></li>':'')+'</ul>'; }
+function rmMatrix(){ const D=RMMAIN, rows=POINTS.map((n,i)=>{ const R=D.map(r=>rmRow(n,r)); const ok=R.filter(x=>x.cls==='good').length;
+    const ch=CH.reduce((o,c,ci)=>{ try{ const v=kv('c'+ci+'khm',n); o.th+=v.th||0; o.mt+=v.mt||0; }catch(x){} return o; },{th:0,mt:0});
+    return {n,i,R,ok,ch,net:R[1].ht==null?-9:R[1].ht}; }).sort((a,b)=>b.ok-a.ok||b.net-a.net);
+  const tot=D.map((r,j)=>rows.filter(x=>x.R[j].cls==='good').length);
+  const c=(x,u)=>'<td class="num"><b class="'+x.cls+'">'+rmF(u,x.th)+'</b>'+(x.ht==null?'':'<br><span class="pill '+x.cls+'">'+pct0(x.ht)+'</span>')+'</td>';
+  const chc=o=>{ const h=o.mt?o.th/o.mt:null, cl=h==null?'':h>=1?'good':h>=0.9?'warn':'crit'; return '<td class="num"><b class="'+cl+'">'+nf0.format(o.th)+'</b>'+(h==null?'':'<br><span class="pill '+cl+'">'+pct0(h)+'</span>')+'</td>'; };
+  return '<table class="rmt rmmx"><thead><tr><th>#</th><th>PGD</th>'+D.map(r=>'<th>'+esc(r[0])+'</th>').join('')+'<th>KHM 4 kênh</th><th>Đạt</th></tr></thead><tbody>'+
+    rows.map((x,k)=>'<tr class="click" data-i="'+x.i+'"><td class="num">'+(k+1)+'</td><th>'+esc(short(x.n))+'<small class="rm24">'+esc(hsTP(x.n)||'')+'</small></th>'+x.R.map((y,j)=>c(y,D[j][2])).join('')+chc(x.ch)+'<td class="num"><b>'+x.ok+'/'+D.length+'</b></td></tr>').join('')+
+    '</tbody><tfoot><tr><td></td><th>Số PGD đạt</th>'+tot.map(t=>'<td class="num"><b>'+t+'/'+rows.length+'</b></td>').join('')+'<td></td><td></td></tr></tfoot></table>'; }
+function renderRM(){ const box=$('rmBox'); if(!box) return; if(!CK.rows) ckLoad();
+  const e=ent(), isKV=sel<0, D=ckDays();
+  const M=rmTable(e,RMMAIN,!isKV), mainOk=M.R.filter(x=>x.cls==='good').length;
+  let rank=''; if(!isKV&&canRank()){ const rk=ranking(), pos=rk.findIndex(r=>r.i===sel); if(pos>=0) rank='Hạng <b>'+(pos+1)+'/'+rk.length+'</b> khu vực'; }
+  let med=''; if(!isKV){ try{ const R=vdEval(CK.rows,D.key); const me=R.L.find(x=>x.p===e); if(me&&me.tier>=2) med='<span class="rmmed">'+(me.tier>=5?'🏆':me.tier===3?'🥇':'🥈')+' Vinh danh cam kết (tạm tính)</span>'; }catch(x){} }
+  const subs=RMSUB.map(([g,rows])=>{ const T=rmTable(e,rows,false,true); return '<div class="panel"><div class="ph"><h2>'+esc(g)+'</h2></div><div class="tablebox">'+T.html+'</div></div>'; }).join('');
+  box.innerHTML='<div class="panel rmhead">'+(isKV?'':tpImg(e,'big'))+'<div class="rmid"><h2>Review KQKD tháng '+D.mm+' · '+esc(isKV?'Toàn khu vực':short(e))+'</h2><small>'+[!isKV&&hsTP(e)?'Trưởng PGD: '+esc(hsTP(e)):'','Số liệu đến '+esc(META.asof||''),rank].filter(Boolean).join(' · ')+'</small>'+
+      '<p>Nhánh chính đạt <b>'+mainOk+'/'+M.R.length+'</b> chỉ tiêu '+med+'</p>'+rmVerdict(M.R)+'</div><div class="hsbtn"><button type="button" class="btn" id="rmPrint">In / lưu PDF</button></div></div>'+
+    '<div class="panel"><div class="ph"><h2>Nhánh chính</h2><span class="sub">KH mới, GN NET có TH 2W/4W · RFW cả % và số tiền'+(isKV?'':' · cột Cam kết: ✓ đạt / ✗ chưa đạt')+'</span></div><div class="tablebox">'+M.html+'</div></div>'+
+    (isKV&&canRank()?'<div class="panel"><div class="ph"><h2>So sánh 12 PGD · nhánh chính</h2><span class="sub">Xếp theo số chỉ tiêu đạt, rồi %HT Tăng NET · bấm 1 dòng để mở review của PGD đó</span></div><div class="tablebox">'+rmMatrix()+'</div></div>':'')+
+    '<div class="panel"><div class="ph"><h2>Kênh bán</h2><span class="sub">TH / MT từng kênh và từng chương trình</span></div><div class="tablebox">'+rmChannels(e)+'</div></div>'+
+    '<h3 class="q4h">Nhánh phụ</h3><div class="rmsubs">'+subs+'</div>';
+  box.querySelectorAll('.rmmx tr.click').forEach(tr=>tr.onclick=()=>{ sel=+tr.dataset.i; $('pick').value=String(sel); render(); window.scrollTo(0,0); });
+  const pr=$('rmPrint'); if(pr) pr.onclick=()=>{ document.body.classList.add('rmprint'); setTimeout(()=>{ window.print(); setTimeout(()=>document.body.classList.remove('rmprint'),500); },50); }; }
+
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }
-function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:()=>{renderHS();renderHSPro();},xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,hd:renderHD,bb:renderBB,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,q4:renderQ4,ht:renderHT,nr:renderNR,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
+function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:()=>{renderHS();renderHSPro();},xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,hd:renderHD,bb:renderBB,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,q4:renderQ4,ht:renderHT,nr:renderNR,rm:renderRM,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
 function show(v){ const changed=view!==v; view=v;
   document.querySelectorAll('.navbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   document.querySelectorAll('.bn').forEach(b=>b.setAttribute('aria-current',(b.dataset.grp||'').split(' ').includes(v)?'page':'false'));
@@ -1692,7 +1753,7 @@ function boot(SRC, meta){ const prev=sel>=0?POINTS[sel]:null; loadData(SRC, meta
   const rv=$('rawPick').value; $('rawPick').innerHTML=Object.entries(TB).map(([k,t])=>'<option value="'+esc(k)+'">'+esc(t.name)+'</option>').join(''); if(rv&&TB[rv]) $('rawPick').value=rv;
   deriveAll(); booted=true; applyRole(); rdCheck(); try{ ckPrefetch(); }catch(e){}
   if(USER&&USER.role==='pgd'&&sel<0&&POINTS.length) sel=0; $('pick').value=String(sel); }
-const VIEWS=['tq','nr','ht','hs','ck','hd','bb','xh','cb','q4','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
+const VIEWS=['tq','nr','ht','rm','hs','ck','hd','bb','xh','cb','q4','dn','tt','gn','kn','pt','dt','mb','no','kt','raw','nk'];
 let start='tq'; try{ const h=location.hash.slice(1); const s=localStorage.getItem('kpi55-view'); if(VIEWS.includes(h)) start=h; else if(VIEWS.includes(s)) start=s; }catch(e){}
 function startView(){ const q=new URLSearchParams(location.search).get('pgd');
   if(q){ const i=POINTS.findIndex(n=>matchPgd(n,q)); if(i>=0){ sel=i; $('pick').value=String(i); start='hs'; } }

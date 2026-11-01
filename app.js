@@ -947,7 +947,7 @@ async function ckLoad(force){ if(CK.loading||(!force&&CK.rows)) return; CK.loadi
   catch(e){ CK.err=e.message; CK.rows=CK.rows||[]; }
   CK.loading=false; ckBadge(); if(view==='ck') renderCK(); if(CK.popWait){ CK.popWait=false; try{ dnPopup(); }catch(e){} } }
 function ckSet(j){ CK.rows=j.rows||[]; if(j.log) CK.log=j.log; CK.month=j.month||''; CK.ci=j.ci||{}; CK.ciDay=j.ciDay||''; }
-function ckPrefetch(){ if(USER&&window.kpiApi){ ckLoad(); hdLoad(); htLoad(); setTimeout(()=>{ htAutoSave(); },1200); } }
+function ckPrefetch(){ if(USER&&window.kpiApi){ ckLoad(); hdLoad(); htLoad(); setTimeout(()=>{ htAutoSave(); },1200); setTimeout(()=>{ try{ rmAutoSnap(); }catch(e){} },4000); } }
 const ckRowOf=p=>(CK.rows||[]).find(r=>String(r.PGD).trim()===p);
 function ckChText(l){ let a=[]; try{ a=JSON.parse(l.ch); }catch(e){ return esc(l.ch); }
   return a.map(x=>{ const o=CKK.find(k=>k.f===x.k); return o?esc(o.name)+': '+o.fmt(x.from)+' → '+o.fmt(x.to):''; }).join(' · '); }
@@ -1715,22 +1715,45 @@ function rmMatrix(){ const D=RMMAIN, rows=POINTS.map((n,i)=>{ const R=D.map(r=>r
   const c=(x,u)=>'<td class="num"><b class="'+x.cls+'">'+rmF(u,x.th)+'</b>'+(x.ht==null?'':'<br><span class="pill '+x.cls+'">'+pct0(x.ht)+'</span>')+'</td>';
   const chc=o=>{ const h=o.mt?o.th/o.mt:null, cl=h==null?'':h>=1?'good':h>=0.9?'warn':'crit'; return '<td class="num"><b class="'+cl+'">'+nf0.format(o.th)+'</b>'+(h==null?'':'<br><span class="pill '+cl+'">'+pct0(h)+'</span>')+'</td>'; };
   return '<table class="rmt rmmx"><thead><tr><th>#</th><th>PGD</th>'+D.map(r=>'<th>'+esc(r[0])+'</th>').join('')+'<th>KHM 4 kênh</th><th>Đạt</th></tr></thead><tbody>'+
-    rows.map((x,k)=>'<tr class="click" data-i="'+x.i+'"><td class="num">'+(k+1)+'</td><th>'+esc(short(x.n))+'<small class="rm24">'+esc(hsTP(x.n)||'')+'</small></th>'+x.R.map((y,j)=>c(y,D[j][2])).join('')+chc(x.ch)+'<td class="num"><b>'+x.ok+'/'+D.length+'</b></td></tr>').join('')+
+    rows.map((x,k)=>'<tr class="click" data-n="'+esc(x.n)+'"><td class="num">'+(k+1)+'</td><th>'+esc(short(x.n))+'<small class="rm24">'+esc(hsTP(x.n)||'')+'</small></th>'+x.R.map((y,j)=>c(y,D[j][2])).join('')+chc(x.ch)+'<td class="num"><b>'+x.ok+'/'+D.length+'</b></td></tr>').join('')+
     '</tbody><tfoot><tr><td></td><th>Số PGD đạt</th>'+tot.map(t=>'<td class="num"><b>'+t+'/'+rows.length+'</b></td>').join('')+'<td></td><td></td></tr></tfoot></table>'; }
+/* v20: Lưu trữ Review KQKD theo tháng – máy chủ chụp toàn bộ file key mỗi ngày dữ liệu (ghi đè trong tháng), ngày cuối tháng thành bản chốt */
+const RMA={list:null, month:'', cache:{}, loading:{}, err:''};
+const rmMonthLbl=m=>{ const p=String(m).split('-'); return 'Tháng '+(+p[1])+'/'+p[0]; };
+async function rmAutoSnap(){ if(!USER||USER.role==='pgd'||!window.kpiApi||!META.asof) return;
+  let done=''; try{ done=localStorage.getItem('kpi55-rmsnap')||''; }catch(e){} if(done===META.asof) return;
+  try{ await window.kpiApi('rmSnap',{}); try{ localStorage.setItem('kpi55-rmsnap',META.asof); }catch(e){} RMA.list=null; if(view==='rm') rmListLoad(); }catch(e){} }
+async function rmListLoad(){ if(RMA.loading.list||!window.kpiApi) return; RMA.loading.list=1;
+  try{ const j=await window.kpiApi('rmList',{}); RMA.list=j.rows||[]; }catch(e){ RMA.list=[]; } RMA.loading.list=0; if(view==='rm') render(); }
+async function rmMonthLoad(m){ if(RMA.loading[m]) return; RMA.loading[m]=1; RMA.err='';
+  try{ const j=await window.kpiApi('rmGet',{month:m}); let ck=[]; try{ const c=await window.kpiApi('ckGet',{month:m.replace('-','')}); ck=c.rows||[]; }catch(x){}
+    RMA.cache[m]={sheets:j.sheets, meta:j.meta||{}, ck}; }catch(e){ RMA.err='Chưa mở được bản lưu '+rmMonthLbl(m)+': '+e.message; RMA.month=''; }
+  RMA.loading[m]=0; if(view==='rm') render(); }
+function rmWith(S,fn){ const sv={TB,META,DIRTY,DNRAW,TTRAW,REGION,POINTS,R,P,ck:CK.rows}, cur=sel>=0?POINTS[sel]:null;
+  try{ loadData(S.sheets,S.meta); const i=cur?POINTS.indexOf(cur):-1; if(cur&&i<0) return '<div class="panel"><p class="t-muted">PGD này không có trong bản lưu '+esc(rmMonthLbl(RMA.month))+'.</p></div>'; sel=cur?i:-1; deriveAll(); CK.rows=S.ck||[]; return fn(); }
+  finally{ TB=sv.TB; META=sv.META; DIRTY=sv.DIRTY; DNRAW=sv.DNRAW; TTRAW=sv.TTRAW; REGION=sv.REGION; POINTS=sv.POINTS; R=sv.R; P=sv.P; CK.rows=sv.ck; sel=cur?POINTS.indexOf(cur):-1; } }
+function rmBar(){ const live=monthOf(), L=(RMA.list||[]).filter(r=>r[0]!==live);
+  if(RMA.list==null) rmListLoad();
+  return '<div class="rmbar"><label>Xem tháng <select id="rmMonth"><option value="">'+esc(rmMonthLbl(live))+' · đang chạy</option>'+L.map(r=>'<option value="'+esc(r[0])+'"'+(r[0]===RMA.month?' selected':'')+'>'+esc(rmMonthLbl(r[0]))+' · chốt số '+esc(r[1]||'')+'</option>').join('')+'</select></label>'+
+    (RMA.list&&!L.length?'<small class="t-muted">Chưa có tháng nào đã lưu. Từ nay số mỗi ngày được tự lưu, sang tháng mới vẫn xem lại được tháng cũ.</small>':'')+(RMA.err?'<small class="ckerr">'+esc(RMA.err)+'</small>':'')+'</div>'; }
 function renderRM(){ const box=$('rmBox'); if(!box) return; if(!CK.rows) ckLoad();
+  const m=RMA.month, bar=rmBar(); let html;
+  if(!m) html=rmBody(); else if(!RMA.cache[m]){ rmMonthLoad(m); html='<div class="panel"><p class="t-muted">Đang mở bản lưu '+esc(rmMonthLbl(m))+'…</p></div>'; } else html=rmWith(RMA.cache[m],rmBody);
+  box.innerHTML=bar+html; const ms=$('rmMonth'); if(ms) ms.onchange=()=>{ RMA.month=ms.value; render(); };
+  box.querySelectorAll('.rmmx tr.click').forEach(tr=>tr.onclick=()=>{ const n=tr.dataset.n, i=POINTS.indexOf(n); if(i>=0){ sel=i; $('pick').value=String(i); } render(); window.scrollTo(0,0); });
+  const pr=$('rmPrint'); if(pr) pr.onclick=()=>{ document.body.classList.add('rmprint'); setTimeout(()=>{ window.print(); setTimeout(()=>document.body.classList.remove('rmprint'),500); },50); }; }
+function rmBody(){
   const e=ent(), isKV=sel<0, D=ckDays();
   const M=rmTable(e,RMMAIN,!isKV), mainOk=M.R.filter(x=>x.cls==='good').length;
   let rank=''; if(!isKV&&canRank()){ const rk=ranking(), pos=rk.findIndex(r=>r.i===sel); if(pos>=0) rank='Hạng <b>'+(pos+1)+'/'+rk.length+'</b> khu vực'; }
   let med=''; if(!isKV){ try{ const R=vdEval(CK.rows,D.key); const me=R.L.find(x=>x.p===e); if(me&&me.tier>=2) med='<span class="rmmed">'+(me.tier>=5?'🏆':me.tier===3?'🥇':'🥈')+' Vinh danh cam kết (tạm tính)</span>'; }catch(x){} }
   const subs=RMSUB.map(([g,rows])=>{ const T=rmTable(e,rows,false,true); return '<div class="panel"><div class="ph"><h2>'+esc(g)+'</h2></div><div class="tablebox">'+T.html+'</div></div>'; }).join('');
-  box.innerHTML='<div class="panel rmhead">'+(isKV?'':tpImg(e,'big'))+'<div class="rmid"><h2>Review KQKD tháng '+D.mm+' · '+esc(isKV?'Toàn khu vực':short(e))+'</h2><small>'+[!isKV&&hsTP(e)?'Trưởng PGD: '+esc(hsTP(e)):'','Số liệu đến '+esc(META.asof||''),rank].filter(Boolean).join(' · ')+'</small>'+
+  return '<div class="panel rmhead"><span class="rmtag">'+(RMA.month?'📁 Bản lưu':'● Đang chạy')+'</span>'+(isKV?'':tpImg(e,'big'))+'<div class="rmid"><h2>Review KQKD tháng '+D.mm+' · '+esc(isKV?'Toàn khu vực':short(e))+'</h2><small>'+[!isKV&&hsTP(e)?'Trưởng PGD: '+esc(hsTP(e)):'','Số liệu đến '+esc(META.asof||''),rank].filter(Boolean).join(' · ')+'</small>'+
       '<p>Nhánh chính đạt <b>'+mainOk+'/'+M.R.length+'</b> chỉ tiêu '+med+'</p>'+rmVerdict(M.R)+'</div><div class="hsbtn"><button type="button" class="btn" id="rmPrint">In / lưu PDF</button></div></div>'+
     '<div class="panel"><div class="ph"><h2>Nhánh chính</h2><span class="sub">KH mới, GN NET có TH 2W/4W · RFW cả % và số tiền'+(isKV?'':' · cột Cam kết: ✓ đạt / ✗ chưa đạt')+'</span></div><div class="tablebox">'+M.html+'</div></div>'+
     (isKV&&canRank()?'<div class="panel"><div class="ph"><h2>So sánh 12 PGD · nhánh chính</h2><span class="sub">Xếp theo số chỉ tiêu đạt, rồi %HT Tăng NET · bấm 1 dòng để mở review của PGD đó</span></div><div class="tablebox">'+rmMatrix()+'</div></div>':'')+
     '<div class="panel"><div class="ph"><h2>Kênh bán</h2><span class="sub">TH / MT từng kênh và từng chương trình</span></div><div class="tablebox">'+rmChannels(e)+'</div></div>'+
-    '<h3 class="q4h">Nhánh phụ</h3><div class="rmsubs">'+subs+'</div>';
-  box.querySelectorAll('.rmmx tr.click').forEach(tr=>tr.onclick=()=>{ sel=+tr.dataset.i; $('pick').value=String(sel); render(); window.scrollTo(0,0); });
-  const pr=$('rmPrint'); if(pr) pr.onclick=()=>{ document.body.classList.add('rmprint'); setTimeout(()=>{ window.print(); setTimeout(()=>document.body.classList.remove('rmprint'),500); },50); }; }
+    '<h3 class="q4h">Nhánh phụ</h3><div class="rmsubs">'+subs+'</div>'; }
 
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }

@@ -1955,6 +1955,18 @@ const dnDL=(D,d)=>d+'/'+D.mon;
 function dnStripHTML(){ const D=dnData(); if(!D) return ''; const e=dnE(), o=dnEnt(D,e); if(!o) return ''; const W=dnWin(D), x=dnSum(D,o,W);
   const nh=e===REGION?D.rows.filter(r=>dnSum(D,r,W).hot.length).length:0;
   return '<span class="dsi">⚠️</span><span class="dst"><b>5 ngày tới cần thu '+fmt(x.s)+' tr</b><small>'+dnDL(D,W[0])+'–'+dnDL(D,W[4])+' · cao điểm '+dnDL(D,x.pk)+' ('+fmt(dnV(o,x.pk))+' tr)'+(nh?' · '+nh+' PGD có ngày cao điểm':'')+'</small></span><span class="dsa">Xem ›</span>'; }
+/* v23: 5 ngày đỉnh nợ trong tháng (DN cần thu cao nhất) – khu vực kèm 3 PGD đóng góp lớn nhất mỗi ngày */
+const DNWD=['CN','T2','T3','T4','T5','T6','T7'];
+function dnPeaks(D,o,n){ return Array.from({length:D.nd},(_,i)=>i+1).filter(d=>(dnV(o,d)||0)>0).sort((a,b)=>dnV(o,b)-dnV(o,a)).slice(0,n||5); }
+function dnPeakHTML(D,e,o){ const P=dnPeaks(D,o); if(!P.length) return ''; const isReg=e===REGION, tot=o.tot||1, now=D.today;
+  const sumP=P.reduce((a,d)=>a+dnV(o,d),0), rank=P.slice().sort((a,b)=>a-b);
+  const card=(d,i)=>{ const v=dnV(o,d), wd=DNWD[new Date(D.yr,D.mon-1,d).getDay()], left=d-now, st=left>0?'còn '+left+' ngày':left===0?'hôm nay':'đã qua';
+    const tops=isReg?D.rows.map(r=>({r,v:dnV(r,d)||0})).filter(z=>z.v>0).sort((a,b)=>b.v-a.v).slice(0,3):[];
+    return '<div class="dnpk'+(left<0?' past':left<=2?' soon':'')+'"><div class="dnpkh"><span class="dnpkr">#'+(i+1)+'</span><b>'+wd+' '+dnDL(D,d)+'</b><span class="pill '+(left<0?'':left<=2?'crit':'warn')+'">'+st+'</span></div>'+
+      '<div class="dnpkv num">'+fmt(v)+' <small>tr</small></div><div class="sub">'+(o.avg?nf1.format(v/o.avg)+'× bình quân ngày':'')+' · '+pct0(v/tot)+' cả tháng</div>'+
+      (tops.length?'<ul class="dnpkl">'+tops.map(z=>'<li><span>'+esc(short(z.r.n))+'</span><b class="num">'+fmt(z.v)+'</b></li>').join('')+'</ul>':'')+'</div>'; };
+  return '<div class="panel"><div class="ph"><h2>5 ngày đỉnh nợ tháng '+D.mon+' · '+esc(short(e))+'</h2><span class="sub">'+fmt(sumP)+' tr = '+pct0(sumP/tot)+' DN cần thu cả tháng dồn vào 5 ngày: '+rank.map(d=>dnDL(D,d)).join(', ')+'</span></div>'+
+    '<div class="dnpks">'+P.map(card).join('')+'</div><p class="foot">Xếp theo DN cần thu từ cao xuống thấp. '+(isReg?'Mỗi ngày kèm 3 PGD có DN cần thu lớn nhất. ':'')+'Nhắc khách trước 1–2 ngày, dồn nhân sự gọi nhắc vào các ngày này.</p></div>'; }
 function renderNO(){ const box=$('noBox'); if(!box) return; const D=dnData();
   const wireUp=()=>{ const f=$('dnFile'); if(f) f.onchange=()=>{ dnUpload(f.files[0]); f.value=''; }; };
   if(!D){ box.innerHTML='<div class="panel"><p class="t-muted">Chưa có dữ liệu DN cần thu.'+(USER&&USER.role==='admin'?' Bấm nút dưới để tải file lên.':' Admin sẽ cập nhật sớm.')+'</p>'+(USER&&USER.role==='admin'?'<div class="dnup"><label class="btn">📤 Cập nhật file DN cần thu<input type="file" accept=".xlsx,.xls" id="dnFile" hidden></label><small>Chọn file Excel trên máy (ví dụ "DN cần thu T10.xlsx"), dashboard tự cập nhật.</small></div>':'')+'</div>'; wireUp(); return; }
@@ -1967,7 +1979,7 @@ function renderNO(){ const box=$('noBox'); if(!box) return; const D=dnData();
     '<div class="panel"><div class="ph"><h2>'+esc(short(e))+' · '+dnDL(D,W[0])+'–'+dnDL(D,W[4])+'</h2><button type="button" class="btn" id="noCopy">Sao chép cảnh báo</button></div>'+
     '<div class="dnhero"><div><div class="dnbig num">'+fmt(x.s)+' <small>triệu</small></div><p class="sub">Bằng '+(o.tot?pct0(x.s/o.tot):'–')+' DN cần thu cả tháng · cao điểm '+dnDL(D,x.pk)+' ('+fmt(dnV(o,x.pk))+' tr)</p></div>'+
     '<div class="dndays">'+W.map(d=>{ const v=dnV(o,d); return '<div><b class="num">'+dnF(v)+'</b><i class="'+dnLv(v,o.avg)+'" style="height:'+Math.max(4,(v||0)/mx*100)+'%"></i><span>'+dnDL(D,d)+'</span></div>'; }).join('')+'</div></div>'+
-    '<div class="dnlg"><span><i class="hot"></i>Cao điểm ≥ 1,5× bình quân ngày</span><span><i class="mid"></i>Cao ≥ bình quân</span><span><i></i>Bình thường</span></div>'+(miss.length?'<p class="sub">Chưa có số từ ngày '+dnDL(D,miss[0])+'.</p>':'')+'</div>'+
+    '<div class="dnlg"><span><i class="hot"></i>Cao điểm ≥ 1,5× bình quân ngày</span><span><i class="mid"></i>Cao ≥ bình quân</span><span><i></i>Bình thường</span></div>'+(miss.length?'<p class="sub">Chưa có số từ ngày '+dnDL(D,miss[0])+'.</p>':'')+'</div>'+dnPeakHTML(D,e,o)+
     (list.length?'<div class="panel"><div class="ph"><h2>Theo PGD · xếp theo DN cần thu 5 ngày</h2></div><div class="dnlist">'+list.map(card).join('')+'</div><p class="foot">Đơn vị triệu đồng. Bình quân ngày của mỗi PGD tính trên các ngày phát sinh đáng kể trong tháng. Ô đỏ là ngày cao điểm: nhắc khách trước 1–2 ngày.</p></div>':'');
   if(USER&&USER.role==='admin') box.insertAdjacentHTML('beforeend','<div class="panel">'+(USER&&USER.role==='admin'?'<div class="dnup"><label class="btn">📤 Cập nhật file DN cần thu<input type="file" accept=".xlsx,.xls" id="dnFile" hidden></label><small>Chọn file Excel trên máy (ví dụ "DN cần thu T10.xlsx"), dashboard tự cập nhật.</small></div>':'')+'</div>'); wireUp();
   box.querySelectorAll('.dnc').forEach(b=>b.addEventListener('click',()=>{ DNSTART=+b.dataset.d; renderNO(); }));
@@ -1977,6 +1989,7 @@ function renderNO(){ const box=$('noBox'); if(!box) return; const D=dnData();
 function reportNO(){ const D=dnData(); if(!D) return 'Chưa có dữ liệu DN cần thu.'; const e=dnE(), o=dnEnt(D,e)||D.reg, W=dnWin(D,DNSTART), x=dnSum(D,o,W), L=[];
   L.push('⚠️ CẢNH BÁO DN CẦN THU 5 NGÀY TỚI ('+dnDL(D,W[0])+'–'+dnDL(D,W[4])+') · '+(e===REGION?'Khu vực '+REGION.replace(/^\(([\d.]+)\)\s*/,'$1 – '):short(e)));
   L.push('▪ Tổng: '+fmt(x.s)+' tr · '+W.map(d=>dnDL(D,d)+': '+dnF(dnV(o,d))).join(' · '));
+  { const P=dnPeaks(D,o); if(P.length) L.push('▪ 5 ngày đỉnh nợ T'+D.mon+': '+P.map(d=>dnDL(D,d)+' ('+fmt(dnV(o,d))+' tr)').join(', ')); }
   if(e===REGION){ D.rows.slice().sort((a,b)=>dnSum(D,b,W).s-dnSum(D,a,W).s).forEach(r=>{ const y=dnSum(D,r,W); L.push('▪ '+short(r.n)+': '+fmt(y.s)+' tr'+(y.hot.length?' · cao điểm '+y.hot.map(d=>dnDL(D,d)).join(', '):'')); });
     L.push('→ TP các PGD có ngày cao điểm bố trí nhắc khách trước 1–2 ngày.'); }
   else { if(x.hot.length) L.push('▪ Ngày cao điểm: '+x.hot.map(d=>dnDL(D,d)+' ('+fmt(dnV(o,d))+' tr)').join(', ')); L.push('→ Nhắc khách trước 1–2 ngày, ưu tiên ngày cao điểm.'); }

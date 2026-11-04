@@ -945,7 +945,7 @@ function ckBadge(){ const b=document.querySelector('.navbtn[data-v="ck"] .ckb');
 async function ckLoad(force){ if(CK.loading||(!force&&CK.rows)) return; CK.loading=true; CK.err='';
   try{ const j=await window.kpiApi('ckGet',{month:ckDays().key}); ckSet(j); }
   catch(e){ CK.err=e.message; CK.rows=CK.rows||[]; }
-  CK.loading=false; ckBadge(); if(view==='ck') renderCK(); if(CK.popWait){ CK.popWait=false; try{ dnPopup(); }catch(e){} } }
+  CK.loading=false; ckBadge(); if(view==='ck') renderCK(); if(view==='nr') render(); if(CK.popWait){ CK.popWait=false; try{ dnPopup(); }catch(e){} } }
 function ckSet(j){ CK.rows=j.rows||[]; if(j.log) CK.log=j.log; CK.month=j.month||''; CK.ci=j.ci||{}; CK.ciDay=j.ciDay||''; }
 function ckPrefetch(){ if(USER&&window.kpiApi){ ckLoad(); hdLoad(); htLoad(); setTimeout(()=>{ htAutoSave(); },1200); setTimeout(()=>{ try{ rmAutoSnap(); }catch(e){} },4000); } }
 const ckRowOf=p=>(CK.rows||[]).find(r=>String(r.PGD).trim()===p);
@@ -1611,43 +1611,47 @@ function renderHSPro(){ const box=$('hsPro'); if(!box) return; const e=ent();
 
 /* ---------- v18: Báo cáo NET ngày (skill /NET chạy ngay trên KPI55: ảnh 12 PGD + văn bản so hôm trước) ---------- */
 const NETTP={"KTM21003.632 Nguyễn Huệ":"Đặng Thị Ánh Dương","GLI21001.849 Phạm Văn Đồng":"Trịnh Thị Dung","GLI22008.399 Trường Chinh":"Nguyễn Thị Ngọc Luyến","GLI21004.247 Lê Duẩn":"Đinh Thị Phương Thảo","GLI22006.02 Hoàng Văn Thụ":"Nguyễn Thị Kim Nhiên","GLI21002.03 Quang Trung":"Nguyễn Thị Út Thương","KTM21002.271 Trần Phú":"Trần Thị Như","GLI22005.72 Trần Hưng Đạo":"Đinh Thị Vui","KTM21004.214 Hùng Vương":"Lê Thị Ngọc Nhung","KTM21001.828 Hùng Vương":"Nguyễn Thị Thúy","GLI22011.98 Yên Đỗ":"Bùi Gia Kiệt","GLI22009.475 Nguyễn Huệ":"Nguyễn Thị Bích Ngọc"};
-const NRK=[['gnn','GN net','ty',0],['net','Tăng net','ty',0],['gnt','GN tổng','ty',0],['rg','Rút gốc','ty',1],['thu','Thu DPD0','pc',0],['rfw','RFW','pc',1]];
+const NRK=[['gnn','GN net','ty',0],['net','Tăng net','ty',0],['khm','KH mới','sl',0],['ngrg','NET GN − RG','ty',0],['rg','Rút gốc','ty',1],['thu','Thu DPD0','pc',0],['rfw','RFW','pc',1]];
 const nrTy=v=>v==null?'–':Math.abs(v)>=1000?(v/1000).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2})+' tỷ':Math.round(v).toLocaleString('vi-VN')+' tr';
 const nrPc=v=>v==null?'–':(v*100).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
 const nrShort=p=>{ const a=p.split(' '), c=a[0]; return c.slice(0,3)+' '+c.split('.')[1]+' '+a.slice(1).join(' '); };
 /* ngày trước = ngày gần nhất trong lịch sử tự lưu, trước ngày dữ liệu */
 function nrPrev(){ const d=htIso(META.asof); const ds=[...new Set((HT.rows||[]).map(r=>String(r[0]).slice(0,10)))].filter(x=>x<d).sort(); return ds.length?ds[ds.length-1]:null; }
 function nrData(){ const pd=nrPrev(), pv=(k,n)=>{ if(!pd) return null; const a=((DAY[n]||{})[k]||[]).find(x=>x.d===pd); return a?a.th:null; };
-  const row=n=>{ const m={}; NRK.forEach(([k])=>{ let v={}; try{ v=kv(k,n)||{}; }catch(e){} const p=pv(k,n); m[k]={th:v.th,mt:v.mt,d:p==null||v.th==null?null:v.th-p}; }); return {p:n,tp:NETTP[n]||hsTP(n)||'',m}; };
-  return {pd, KV:row(REGION), P:POINTS.map(row)}; }
-function nrHTML(D){ const T=k=>NRK.find(x=>x[0]===k), fv=(k,v)=>T(k)[2]==='ty'?nrTy(v):nrPc(v);
+  const ckv=(n,k)=>{ const f=NRCKF[k]; if(!f) return null; const r=ckRowOf(n); if(!r||r[f]===''||r[f]==null) return null; const c=num(r[f]); return c==null||!isFinite(c)?null:c; };
+  const row=n=>{ const m={}; NRK.forEach(([k])=>{ let v={}; try{ v=kv(k,n)||{}; }catch(e){} const p=pv(k,n), c=ckv(n,k); m[k]={th:v.th,mt:c!=null?c:v.mt,ck:c!=null,d:p==null||v.th==null?null:v.th-p}; }); return {p:n,tp:NETTP[n]||hsTP(n)||'',m}; };
+  const P=POINTS.map(row), KV=row(REGION);
+  Object.keys(NRCKF).forEach(k=>{ if(P.some(r=>r.m[k].ck)){ KV.m[k].mt=P.reduce((a,r)=>a+(r.m[k].mt||0),0); KV.m[k].ck=true; } });
+  return {pd, KV, P, nck:P.filter(r=>r.m.net.ck).length}; }
+const NRCKF={net:'NET',gnn:'GNN',khm:'KHM'};
+function nrHTML(D){ const T=k=>NRK.find(x=>x[0]===k), fv=(k,v)=>T(k)[2]==='ty'?nrTy(v):T(k)[2]==='sl'?(v==null?'–':nf0.format(Math.round(v))):nrPc(v), kl=o=>o.ck?'CK':'KH';
   const P=D.P.slice(), gap=r=>(r.m.net.mt||0)-(r.m.net.th||0); P.sort((a,b)=>gap(a)-gap(b));
   const rt=(r,k)=>r.m[k].mt?r.m[k].th/r.m[k].mt:0, pick=(f)=>P.reduce((a,b)=>f(b,a)?b:a);
-  const best={gnn:pick((b,a)=>rt(b,'gnn')>rt(a,'gnn')),gnt:pick((b,a)=>rt(b,'gnt')>rt(a,'gnt')),net:P[0],rg:pick((b,a)=>rt(b,'rg')<rt(a,'rg')),thu:pick((b,a)=>(b.m.thu.th||0)>(a.m.thu.th||0)),rfw:pick((b,a)=>(b.m.rfw.th??9)<(a.m.rfw.th??9))};
+  const best={khm:pick((b,a)=>rt(b,'khm')>rt(a,'khm')),gnn:pick((b,a)=>rt(b,'gnn')>rt(a,'gnn')),ngrg:pick((b,a)=>rt(b,'ngrg')>rt(a,'ngrg')),net:P[0],rg:pick((b,a)=>rt(b,'rg')<rt(a,'rg')),thu:pick((b,a)=>(b.m.thu.th||0)>(a.m.thu.th||0)),rfw:pick((b,a)=>(b.m.rfw.th??9)<(a.m.rfw.th??9))};
   const dc=(k,d)=>d==null||Math.abs(d)<1e-9?'na':((T(k)[3]?d<0:d>0)?'up':'dn');
-  const dt=(k,d)=>{ if(d==null) return '—'; const a=Math.abs(d), t=T(k)[2]==='ty'?nrTy(a):(a*100).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2}); return (d>0?'+':d<0?'−':'')+t; };
+  const dt=(k,d)=>{ if(d==null) return '—'; const a=Math.abs(d), t=T(k)[2]==='ty'?nrTy(a):T(k)[2]==='sl'?nf0.format(Math.round(a)):(a*100).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2}); return (d>0?'+':d<0?'−':'')+t; };
   const st=(k,o)=>{ if(o.th==null||o.mt==null) return 'a'; const low=T(k)[3]; if(o.th<0) return 'r'; return low?(o.th>o.mt?'r':'g'):(o.th>=o.mt?'g':'a'); };
   const pa=D.pd?htDM(D.pd):'chưa có ngày trước';
-  let h='<div class="nrw"><div class="nrtop"></div><div class="nrin"><div class="nrhd"><div><h1>BÁO CÁO 12 PGD · <span>KHU VỰC 5.5</span></h1><div class="nrsub">Xếp theo khoảng còn thiếu để đạt KH tăng net · số nhỏ: KH và thay đổi so với '+pa+'</div></div><div class="nrdate"><b>'+esc(META.asof||'')+'</b><span>LŨY KẾ KDML</span></div></div>';
-  h+='<div class="nrsum">'+NRK.map(([k,lb])=>{ const o=D.KV.m[k]; return '<div><small>'+lb+' · KH '+fv(k,o.mt)+'</small><b>'+fv(k,o.th)+'</b><i class="'+dc(k,o.d)+'">'+dt(k,o.d)+'</i></div>'; }).join('')+'</div>';
-  h+='<table class="nrt"><colgroup><col style="width:44px"><col style="width:108px"><col style="width:196px"><col style="width:92px">'+NRK.map(()=>'<col>').join('')+'</colgroup><thead><tr><th>#</th><th style="text-align:left" colspan="2">PGD · TP</th><th>Còn thiếu<br>tăng net</th>'+NRK.map(x=>'<th>'+x[1]+'</th>').join('')+'</tr></thead><tbody>';
+  let h='<div class="nrw"><div class="nrtop"></div><div class="nrin"><div class="nrhd"><div><h1>BÁO CÁO 12 PGD · <span>KHU VỰC 5.5</span></h1></div><div class="nrdate"><b>'+esc(META.asof||'')+'</b><span>LŨY KẾ KDML</span></div></div>';
+  h+='<div class="nrsum">'+NRK.map(([k,lb])=>{ const o=D.KV.m[k]; return '<div><small>'+lb+' · '+kl(o)+' '+fv(k,o.mt)+'</small><b>'+fv(k,o.th)+'</b><i class="'+dc(k,o.d)+'">'+dt(k,o.d)+'</i></div>'; }).join('')+'</div>';
+  h+='<table class="nrt"><colgroup><col style="width:44px"><col style="width:108px"><col style="width:178px"><col style="width:86px">'+NRK.map(()=>'<col>').join('')+'</colgroup><thead><tr><th>#</th><th style="text-align:left" colspan="2">PGD · TP</th><th>Còn thiếu<br>CK tăng net</th>'+NRK.map(x=>'<th>'+x[1]+'</th>').join('')+'</tr></thead><tbody>';
   P.forEach((r,i)=>{ const g=gap(r);
     h+='<tr><td><span class="nrrk">'+(i+1)+'</span></td><td class="nrav">'+tpImg(r.p,'nr')+'</td><td class="nrpg"><b>'+esc(nrShort(r.p))+'</b><span>'+esc(r.tp)+'</span></td><td class="nrgap"><b class="'+(g<=0?'ok':'')+'">'+(g<=0?'Đạt':nrTy(g))+'</b></td>'+
       NRK.map(([k])=>{ const o=r.m[k], s=st(k,o), w=o.th==null||!o.mt?0:o.th<0?Math.min(100,Math.abs(o.th)/Math.max(o.mt,1)*100):Math.min(100,o.th/o.mt*100);
-        return '<td class="nrc '+(s==='a'?'':s)+'"><div class="v '+s+'">'+fv(k,o.th)+(best[k]===r?' ⭐':'')+'</div><div class="bar"><i style="width:'+w+'%;background:'+(s==='g'?'#1f8a46':s==='r'?'#c0392b':'#f0a500')+'"></i></div><div class="s">KH '+fv(k,o.mt)+' · <span class="'+dc(k,o.d)+'">'+dt(k,o.d)+'</span></div></td>'; }).join('')+'</tr>'; });
+        return '<td class="nrc '+(s==='a'?'':s)+'"><div class="v '+s+'">'+fv(k,o.th)+(best[k]===r?' ⭐':'')+'</div><div class="bar"><i style="width:'+w+'%;background:'+(s==='g'?'#1f8a46':s==='r'?'#c0392b':'#f0a500')+'"></i></div><div class="s">'+kl(o)+' '+fv(k,o.mt)+'<br><span class="'+dc(k,o.d)+'">'+dt(k,o.d)+'</span></div></td>'; }).join('')+'</tr>'; });
   const n=new Date();
-  h+='</tbody></table><div class="nrfoot"><span>Xanh: đạt KH · Vàng: chưa đạt · Đỏ: âm hoặc vượt KH (rút gốc, RFW thấp hơn là tốt) · ⭐ tốt nhất 12 PGD · Thay đổi: xanh là tốt</span><span><b>F88 · KV5.5</b> · tạo '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+' '+n.getDate()+'/'+(n.getMonth()+1)+'</span></div></div></div>';
+  h+='</tbody></table><div class="nrfoot"><span>Xanh: đạt cam kết (CK) / kế hoạch (KH) · Vàng: chưa đạt · Đỏ: âm hoặc vượt KH (rút gốc, RFW thấp hơn là tốt) · ⭐ tốt nhất 12 PGD · Thay đổi: xanh là tốt</span><span><b>F88 · KV5.5</b> · tạo '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+' '+n.getDate()+'/'+(n.getMonth()+1)+'</span></div></div></div>';
   return h; }
 /* văn bản copy – giống hệt net_text.py */
 function nrText(D){ const au=v=>{ const a=Math.abs(v), s=a>=1000?(a/1000).toFixed(2).replace('.',',')+' tỷ':Math.round(a)+' tr'; return (v<0?'−':'')+s; };
   const sg=v=>Math.round(v)===0?'0':(v>0?'+':'−')+au(Math.abs(v)), pc=v=>(v*100).toFixed(2).replace('.',',')+'%', pd2=v=>Math.abs(v)<5e-5?'0':(v>0?'+':'−')+(Math.abs(v)*100).toFixed(2).replace('.',',');
   const dl=(r,k)=>r.m[k].d==null?0:r.m[k].d, K=D.KV, dd=String(META.asof||'').split('/').map(Number), left=new Date(dd[2],dd[1],0).getDate()-dd[0], gap=(K.m.net.mt||0)-(K.m.net.th||0);
   const L=['📊 NET KV5.5 · '+String(META.asof||'').slice(0,5)+' (so '+(D.pd?D.pd.slice(8,10)+'/'+D.pd.slice(5,7):'—')+')',
-    'KV: NET '+au(K.m.net.th||0)+' ('+sg(dl(K,'net'))+') · GN '+au(K.m.gnn.th||0)+' ('+sg(dl(K,'gnn'))+') · RFW '+pc(K.m.rfw.th||0)+' ('+pd2(dl(K,'rfw'))+')',
-    gap>0?'Còn '+left+' ngày, cần '+au(gap/Math.max(left,1))+'/ngày':'🎉 KV đã đạt KH tăng net',''];
+    'KV: NET '+au(K.m.net.th||0)+' ('+sg(dl(K,'net'))+') · GN '+au(K.m.gnn.th||0)+' ('+sg(dl(K,'gnn'))+') · KHM '+nf0.format(K.m.khm.th||0)+' ('+(dl(K,'khm')>0?'+':'')+nf0.format(dl(K,'khm'))+') · RFW '+pc(K.m.rfw.th||0)+' ('+pd2(dl(K,'rfw'))+')',
+    gap>0?'Còn '+left+' ngày, cần '+au(gap/Math.max(left,1))+'/ngày để đạt '+(K.m.net.ck?'cam kết':'KH')+' tăng net':'🎉 KV đã đạt '+(K.m.net.ck?'cam kết':'KH')+' tăng net',''];
   const P=D.P.slice().sort((a,b)=>((a.m.net.mt||0)-(a.m.net.th||0))-((b.m.net.mt||0)-(b.m.net.th||0)));
   P.forEach((r,i)=>{ const g=(r.m.net.mt||0)-(r.m.net.th||0), dn=dl(r,'net'), dr=dl(r,'rfw'), ic=g<=0?'✅':dn>=100?'🔥':dn<10?'⏸':'', nm=r.p.split(' ')[0].split('.')[1]+' '+r.p.split(' ').slice(1).join(' ');
-    L.push((i+1)+'. '+nm+(ic?' '+ic:'')+': NET '+sg(dn)+' · GN '+sg(dl(r,'gnn'))+' · RFW '+pd2(dr)+(dr>0?'⚠️':'')); });
+    L.push((i+1)+'. '+nm+(ic?' '+ic:'')+': NET '+sg(dn)+' · GN '+sg(dl(r,'gnn'))+' · KHM '+(dl(r,'khm')>0?'+':'')+nf0.format(dl(r,'khm'))+' · RFW '+pd2(dr)+(dr>0?'⚠️':'')); });
   return L.join('\n'); }
 function nrLoadH2C(){ return window.html2canvas?Promise.resolve(window.html2canvas):new Promise((ok,no)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'; s.onload=()=>ok(window.html2canvas); s.onerror=()=>no(new Error('Không tải được bộ tạo ảnh')); document.head.appendChild(s); }); }
 /* thu nhỏ bản 1200px cho vừa màn hình (ảnh tải về vẫn đủ 1200px × 2) */
@@ -1655,6 +1659,7 @@ function nrFit(){ const box=$('nrFitBox'), f=$('nrFit'); if(!box||!f) return; co
 function renderNR(){ const box=$('nrBox'); if(!box) return;
   if(!isAdm()&&!(USER&&USER.role==='khuvuc')){ box.innerHTML='<div class="panel"><p class="t-muted">Mục này dành cho quản lý khu vực.</p></div>'; return; }
   if(HT.rows==null){ box.innerHTML='<div class="panel"><p class="t-muted">Đang tải số các ngày trước…</p></div>'; htLoad(); return; }
+  if(!CK.rows){ box.innerHTML='<div class="panel"><p class="t-muted">Đang tải cam kết chỉ tiêu…</p></div>'; ckLoad(); return; }
   const D=nrData(), txt=nrText(D);
   box.innerHTML='<div class="panel nrbar"><div><b>Báo cáo NET ngày '+esc(META.asof||'')+'</b><span class="t-muted"> · so với '+(D.pd?htDM(D.pd):'— (chưa có ngày trước trong lịch sử tự lưu)')+'</span></div><div class="nrbtn"><button type="button" class="btn primary" id="nrImg">Tải ảnh báo cáo</button><button type="button" class="btn" id="nrCopy">Sao chép văn bản</button></div></div>'+
     '<div class="nrscroll" id="nrFitBox"><div id="nrFit"><div id="nrCap">'+nrHTML(D)+'</div></div></div>'+

@@ -814,6 +814,11 @@ function ttSeries(D,e){ const o=D.ent[e]; if(!o) return null;
     if(k<0){ const last=L[L.length-1], nm=last.m===12?1:last.m+1, ny=last.m===12?last.y+1:last.y;
       if(nm===am&&ny===ay){ L.push({lab:'T'+am+'/'+String(ay).slice(2),m:am,y:ay,th:null,mt:cv.mt,cur:false}); k=L.length-1; } }
     if(k>=0&&L[k].th==null){ L[k].th=cv.th; L[k].cur=true; if(L[k].mt==null) L[k].mt=cv.mt; } }
+  // v22.2: tháng đã qua mà sheet Tăng trưởng còn trống → lấy số chốt tháng (Chốt tháng) hoặc số lưu ngày cuối tháng
+  L.forEach(x=>{ if(x.th!=null||x.cur||!(x.y<ay||(x.y===ay&&x.m<am))) return; const ym=x.y+'-'+String(x.m).padStart(2,'0');
+    const h=HIST.find(r=>r[1]==='dpd0'&&String(r[3]).trim()===e&&q4Ym(r[0])===ym); let v=h&&h[6]!==''&&h[6]!=null?+h[6]:null, mt=h&&h[5]!==''&&h[5]!=null?+h[5]:null;
+    if(v==null){ const d=htMonthEnd('dpd0',e,ym); if(d){ v=d.th; if(mt==null) mt=d.mt; } }
+    if(v!=null){ x.th=v; x.chot=true; if(x.mt==null) x.mt=mt; } });
   return L; }
 function ttStats(L){ const H=L.filter(x=>x.th!=null); const cur=H[H.length-1];
   const dec=L.find(x=>x.m===12&&x.y===cur.y-1), yoy=L.find(x=>x.m===cur.m&&x.y===cur.y-1);
@@ -860,7 +865,7 @@ function ttSpark(L){ const v=L.map(x=>x.th).filter(x=>x!=null); if(v.length<2) r
   const pts=L.map((x,i)=>x.th==null?null:[(i/(L.length-1))*w,h-3-((x.th-lo)/((hi-lo)||1))*(h-6)]).filter(Boolean);
   const last=pts[pts.length-1];
   return '<svg class="ttsp" viewBox="0 0 '+w+' '+h+'" aria-hidden="true"><polyline points="'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')+'"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="2.5"/></svg>'; }
-function renderTT(){ const box=$('ttBox'); const D=ttData();
+function renderTT(){ const box=$('ttBox'); const D=ttData(); if(HT.rows==null) htLoad();
   if(!D){ box.innerHTML='<div class="panel"><p class="t-muted">Chưa có dữ liệu sheet "Tăng trưởng" (file Chi tiết digital ho).</p></div>'; return; }
   const e=(isPgdUser()&&sel<0&&POINTS.length)?POINTS[0]:ent(); const L=ttSeries(D,e);
   if(!L){ box.innerHTML='<div class="panel"><p class="t-muted">Chưa có số tăng trưởng cho '+esc(short(e))+'.</p></div>'; return; }
@@ -1296,7 +1301,7 @@ function htSet(rows){ HT.rows=rows||[]; DAY={};
 async function htLoad(force){ if(HT.loading||(!force&&HT.rows)||!window.kpiApi) return; HT.loading=true; HT.err='';
   const D=htIso(META.asof); let from=''; if(D){ const d=htD(D); d.setDate(1); d.setMonth(d.getMonth()-1); from=htFmt(d); }
   try{ const j=await window.kpiApi('dayGet',{from}); htSet(j.rows); }catch(e){ HT.err=e.message; HT.rows=HT.rows||[]; }
-  HT.loading=false; if(view==='ht'||view==='q4') render(); }
+  HT.loading=false; if(view==='ht'||view==='q4'||view==='tt') render(); }
 /* Tự lưu: admin / khu vực mở dashboard là số của ngày dữ liệu được lưu (mỗi ngày 1 lần, lưu lại thì ghi đè) */
 async function htAutoSave(){ if(!USER||USER.role==='pgd'||!window.kpiApi) return; const d=htIso(META.asof); if(!d) return;
   let done=''; try{ done=localStorage.getItem('kpi55-day')||''; }catch(e){} if(done===d+'|'+(META.fetched||'')) { HT.saved=d; return; }

@@ -1300,7 +1300,7 @@ async function htLoad(force){ if(HT.loading||(!force&&HT.rows)||!window.kpiApi) 
 /* Tự lưu: admin / khu vực mở dashboard là số của ngày dữ liệu được lưu (mỗi ngày 1 lần, lưu lại thì ghi đè) */
 async function htAutoSave(){ if(!USER||USER.role==='pgd'||!window.kpiApi) return; const d=htIso(META.asof); if(!d) return;
   let done=''; try{ done=localStorage.getItem('kpi55-day')||''; }catch(e){} if(done===d+'|'+(META.fetched||'')) { HT.saved=d; return; }
-  const rows=[]; [REGION,...POINTS].forEach(n=>KB.forEach(x=>{ const v=kv(x.k,n); if(v.th==null&&v.mt==null) return; rows.push([x.k,n,v.th,v.mt]); }));
+  const rows=[]; [REGION,...POINTS].forEach(n=>KB.forEach(x=>{ const v=kv(x.k,n); if(v.th==null&&v.mt==null) return; rows.push([x.k,n,v.th,v.mt]); })); [REGION,...POINTS].forEach(n=>{ const t=cell('RFW',n,'RFW TH'), m=cell('RFW',n,'RFW MT'); if(t!=null||m!=null) rows.push(['rfwt',n,t,m]); });
   try{ await window.kpiApi('daySave',{date:d,rows}); HT.saved=d; try{ localStorage.setItem('kpi55-day',d+'|'+(META.fetched||'')); }catch(e){} htLoad(true); }catch(e){ HT.err='Chưa tự lưu được số ngày: '+e.message; } }
 /* số cuối tháng từ lịch sử ngày (thay cho bấm Chốt tháng) */
 function htMonthEnd(k,n,ym){ const a=((DAY[n]||{})[k]||[]).filter(x=>x.d.slice(0,7)===ym); return a.length?a[a.length-1]:null; }
@@ -1309,8 +1309,16 @@ function htInc(n,k){ const a=(DAY[n]||{})[k]||[]; return a.map((x,i)=>{ const p=
     // cùng tháng: lấy chênh lệch; sang tháng mới (ngày trước đó thuộc tháng trước, cách ≤3 ngày) hoặc ngày đầu tháng: số lũy kế = số tăng; chưa có ngày trước để so: không tính (null)
     const v=p&&p.d.slice(0,7)===x.d.slice(0,7)?x.th-p.th:(dd===1||(p&&(htD(x.d)-htD(p.d))/864e5<=3)?x.th:null);
     return {d:x.d, v, th:x.th, mt:x.mt}; }); }
-function htWeeks(){ const D=htIso(META.asof); if(!D) return []; const end=htD(D), w=[]; let m=new Date(end); m.setDate(m.getDate()-((m.getDay()+6)%7));
-  for(let i=0;i<6;i++){ const s=new Date(m); s.setDate(m.getDate()-7*i); const e=new Date(s); e.setDate(s.getDate()+6); w.push({s:htFmt(s),e:htFmt(e>end?end:e),full:e<=end}); } return w; }
+/* v22: tuần KHÔNG chéo tháng – cắt tại Chủ nhật và cuối tháng; đoạn đầu/cuối tháng < 4 ngày gộp vào tuần kề bên (vd 1/11–8/11) */
+function htMonthWeeks(y,m){ const dim=new Date(y,m+1,0).getDate(), cut=[]; let a=1;
+  for(let d=1;d<=dim;d++){ const wd=new Date(y,m,d).getDay(); if(wd===0||d===dim){ cut.push([a,d]); a=d+1; } }
+  if(cut.length>1&&cut[0][1]-cut[0][0]+1<4){ cut[1][0]=cut[0][0]; cut.shift(); }
+  const L=cut.length; if(L>1&&cut[L-1][1]-cut[L-1][0]+1<4){ cut[L-2][1]=cut[L-1][1]; cut.pop(); }
+  return cut.map(([a,b])=>({s:htFmt(new Date(y,m,a)),pe:htFmt(new Date(y,m,b))})); }
+function htWeeks(){ const D=htIso(META.asof); if(!D) return []; const end=htD(D), w=[];
+  for(let k=0;k<3&&w.length<6;k++){ const mm=new Date(end.getFullYear(),end.getMonth()-k,1);
+    htMonthWeeks(mm.getFullYear(),mm.getMonth()).reverse().forEach(x=>{ if(x.s<=D&&w.length<6) w.push({s:x.s,pe:x.pe,e:x.pe>D?D:x.pe,full:x.pe<=D}); }); }
+  return w; }
 function htWk(n,k,w){ const L=htInc(n,k).filter(x=>x.d>=w.s&&x.d<=w.e&&(k==='rfw'||k==='thu'||x.v!=null)); if(!L.length) return null;
   if(k==='rfw'||k==='thu'){ const a=(DAY[n]||{})[k]||[], last=a.filter(x=>x.d<=w.e).pop(), prev=a.filter(x=>x.d<w.s).pop(); return {v:last?last.th:null, d:last&&prev?last.th-prev.th:null, mt:last?last.mt:null, days:L}; }
   return {v:L.reduce((s,x)=>s+x.v,0), days:L, last:L[L.length-1]}; }
@@ -1323,7 +1331,7 @@ function htCarry(k,n,ym){ if(typeof Q4P==='undefined') return 0; const t=+ym.sli
   return n===REGION?Object.keys(Q4P.pgd).reduce((s,p)=>s+one(p),0):one(n); }
 function htMT(n,k,w){ const a=(DAY[n]||{})[k]||[]; let mt=0, ok=false, approx=false; const segs={};
   for(let d=htD(w.s);d<=htD(w.e);d.setDate(d.getDate()+1)){ const ym=htFmt(d).slice(0,7); (segs[ym]=segs[ym]||[]).push(htFmt(d)); }
-  const fullE=new Date(htD(w.s)); fullE.setDate(fullE.getDate()+6);
+  const fullE=htD(w.pe||w.e);
   Object.entries(segs).forEach(([ym,ds])=>{ const d0=htD(ds[0]), dim=new Date(d0.getFullYear(),d0.getMonth()+1,0).getDate();
     const inM=a.filter(x=>x.d.slice(0,7)===ym), mtM=(inM.length?inM[inM.length-1].mt:null); if(mtM==null) return; ok=true;
     const M=mtM+htCarry(k,n,ym), before=inM.filter(x=>x.d<ds[0]).pop();
@@ -1332,8 +1340,8 @@ function htMT(n,k,w){ const a=(DAY[n]||{})[k]||[]; let mt=0, ok=false, approx=fa
     const base=M*segLen/dim; mt+=th0==null?base:Math.max(base,(M-th0)/left*segLen); });   // làm dư không giảm: không thấp hơn MT chia đều
   return ok?{mt,approx}:null; }
 function htPct(n,k,w){ const a=htWk(n,k,w), m=htMT(n,k,w); if(!a||!m) return null; const D=htIso(META.asof);
-  const fullE=new Date(htD(w.s)); fullE.setDate(fullE.getDate()+6); const run=htFmt(fullE)>D;   // tuần đang chạy: so với nhịp ngày đã qua
-  const el=run?Math.round((htD(w.e)-htD(w.s))/864e5)+1:7, exp=m.mt*el/7;
+  const pe=w.pe||w.e, run=pe>D, len=Math.round((htD(pe)-htD(w.s))/864e5)+1;   // tuần đang chạy: so với nhịp ngày đã qua
+  const el=run?Math.round((htD(w.e)-htD(w.s))/864e5)+1:len, exp=m.mt*el/len;
   return {th:a.v, mt:m.mt, exp, r:exp>0?a.v/exp:(a.v>=0?1:0), run, approx:m.approx}; }
 const htCls=r=>r==null?'':r>=1?'good':r>=.9?'warn':'crit';
 const htS=v=>v==null?'–':(v>0?'+':v<0?'−':'')+q4Fs('amt',Math.abs(v));
@@ -1388,7 +1396,7 @@ function renderHT(){ const box=$('htBox'); if(!box) return; if(!CK.rows) ckLoad(
       if(op){ const W2={s:pw.s,e:w.e}, d2=htInc(r.n,'net').filter(x=>x.d>=W2.s&&x.d<=W2.e);
         h+='<tr class="htdet"><td colspan="7"><div class="htdg"><div><h4>Tăng NET từng ngày · 2 tuần</h4>'+htBars2(d2,pw,w)+'</div><div><h4>Hành động đang làm</h4>'+hdChosenHTML(r.n)+'</div><div class="htact">'+(isAdm()?'<button type="button" class="btn primary" data-bb="'+esc(r.n)+'">Lập biên bản KPI</button>':'')+'<button type="button" class="btn" data-hs="'+esc(r.n)+'">Xem hồ sơ PGD</button>'+(isAdm()?'<small class="t-muted">Biên bản tự kiểm việc đã giao lần trước, việc chưa xong tự chuyển sang.</small>':'')+'</div></div></td></tr>'; }
       return h; }).join('')+'</tbody></table>';
-  box.innerHTML='<div class="panel"><div class="ph"><h2>Review KQKD tuần · '+(sel<0?'Khu vực':esc(short(e)))+'</h2>'+chips+'</div><p class="t-muted q4s">Số tăng thêm trong tuần (T2–CN). MT tuần = phần còn thiếu của tháng (cộng phần thiếu tháng trước) chia đều cho số ngày còn lại; tuần trước làm thiếu thì MT tuần này tăng, làm dư thì không giảm (tối thiểu bằng MT tháng chia đều). '+save+'</p>'+(HT.err?'<p class="ckerr">'+esc(HT.err)+'</p>':'')+tiles+'</div>'+htHonorHTML(w,pw)+
+  box.innerHTML='<div class="panel"><div class="ph"><h2>Review KQKD tuần · '+(sel<0?'Khu vực':esc(short(e)))+'</h2>'+chips+'</div><p class="t-muted q4s">Số tăng thêm trong tuần. Tuần không chéo tháng: cắt tại Chủ nhật và cuối tháng, đầu/cuối tháng dưới 4 ngày thì gộp vào tuần kề bên. MT tuần = phần còn thiếu của tháng (cộng phần thiếu tháng trước) chia đều cho số ngày còn lại; tuần trước làm thiếu thì MT tuần này tăng, làm dư thì không giảm (tối thiểu bằng MT tháng chia đều). '+save+'</p>'+(HT.err?'<p class="ckerr">'+esc(HT.err)+'</p>':'')+tiles+'</div>'+htHonorHTML(w,pw)+
     '<div class="panel"><div class="ph"><h2>'+(isPgdUser()?'PGD của bạn':POINTS.length+' PGD · xếp theo mức cần trao đổi')+'</h2>'+(isPgdUser()?'':'<button type="button" class="btn" id="htCopy">Sao chép tóm tắt tuần</button>')+'</div><p class="t-muted q4s">Bấm 1 dòng để xem NET từng ngày, hành động đang làm và lập biên bản ngay trong buổi họp.</p><div class="tablebox">'+tb+'</div></div>';
   box.querySelectorAll('.htw button').forEach(b=>b.onclick=()=>{ HT.wk=+b.dataset.w; renderHT(); });
   box.querySelectorAll('.httb tr.click').forEach(tr=>tr.onclick=()=>{ HT.open=HT.open===tr.dataset.n?null:tr.dataset.n; renderHT(); });
@@ -1479,7 +1487,7 @@ function htStreak(n,W,i){ let s=0; for(let j=i;j<W.length;j++){ const o=htOnTrac
 function htHonor(w,pw){ const W=htWeeks(), i=W.findIndex(x=>x.s===w.s);
   return POINTS.map(n=>{ const o=htOnTrack(n,w); return {n,ok:o.ok,est:o.est,streak:htQual(o)&&!o.est?htStreak(n,W,i):0}; })
     .filter(x=>htQual(x)).sort((a,b)=>b.ok.length-a.ok.length||b.streak-a.streak); }
-function htNextWeek(w){ const s=htD(w.s); s.setDate(s.getDate()+7); const e=new Date(s); e.setDate(s.getDate()+6); return {s:htFmt(s),e:htFmt(e),full:true}; }
+function htNextWeek(w){ const n=htD(w.pe||w.e); n.setDate(n.getDate()+1); const x=htMonthWeeks(n.getFullYear(),n.getMonth()).find(z=>z.s<=htFmt(n)&&z.pe>=htFmt(n)); return {s:x.s,e:x.pe,pe:x.pe,full:true}; }
 /* PGD cần khắc phục: Tăng NET chưa đạt MT tuần (hoặc âm) / RFW tăng → MT tuần tới (đã gồm phần thiếu) + gợi ý hành động */
 function htFix(w){ const run=!w.full, nx=htNextWeek(w);
   return POINTS.map(n=>{ const P=htPct(n,'net',w), net=htWk(n,'net',w), r=htWk(n,'rfw',w), why=[];
@@ -1611,7 +1619,7 @@ function renderHSPro(){ const box=$('hsPro'); if(!box) return; const e=ent();
 
 /* ---------- v18: Báo cáo NET ngày (skill /NET chạy ngay trên KPI55: ảnh 12 PGD + văn bản so hôm trước) ---------- */
 const NETTP={"KTM21003.632 Nguyễn Huệ":"Đặng Thị Ánh Dương","GLI21001.849 Phạm Văn Đồng":"Trịnh Thị Dung","GLI22008.399 Trường Chinh":"Nguyễn Thị Ngọc Luyến","GLI21004.247 Lê Duẩn":"Đinh Thị Phương Thảo","GLI22006.02 Hoàng Văn Thụ":"Nguyễn Thị Kim Nhiên","GLI21002.03 Quang Trung":"Nguyễn Thị Út Thương","KTM21002.271 Trần Phú":"Trần Thị Như","GLI22005.72 Trần Hưng Đạo":"Đinh Thị Vui","KTM21004.214 Hùng Vương":"Lê Thị Ngọc Nhung","KTM21001.828 Hùng Vương":"Nguyễn Thị Thúy","GLI22011.98 Yên Đỗ":"Bùi Gia Kiệt","GLI22009.475 Nguyễn Huệ":"Nguyễn Thị Bích Ngọc"};
-const NRK=[['gnn','GN net','ty',0],['net','Tăng net','ty',0],['khm','KH mới','sl',0],['ngrg','NET GN − RG','ty',0],['rg','Rút gốc','ty',1],['thu','Thu DPD0','pc',0],['rfw','RFW','pc',1]];
+const NRK=[['gnn','GN net','ty',0],['net','Tăng net','ty',0],['khm','KH mới','sl',0],['ngrg','NET GN − RG','ty',0],['rg','Rút gốc','ty',1],['thu','Thu DPD0','pc',0],['rfw','RFW','pc',1],['rfwt','RFW tiền','ty',1]];
 const nrTy=v=>v==null?'–':Math.abs(v)>=1000?(v/1000).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2})+' tỷ':Math.round(v).toLocaleString('vi-VN')+' tr';
 const nrPc=v=>v==null?'–':(v*100).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
 const nrShort=p=>{ const a=p.split(' '), c=a[0]; return c.slice(0,3)+' '+c.split('.')[1]+' '+a.slice(1).join(' '); };
@@ -1619,7 +1627,7 @@ const nrShort=p=>{ const a=p.split(' '), c=a[0]; return c.slice(0,3)+' '+c.split
 function nrPrev(){ const d=htIso(META.asof); const ds=[...new Set((HT.rows||[]).map(r=>String(r[0]).slice(0,10)))].filter(x=>x<d).sort(); return ds.length?ds[ds.length-1]:null; }
 function nrData(){ const pd=nrPrev(), pv=(k,n)=>{ if(!pd) return null; const a=((DAY[n]||{})[k]||[]).find(x=>x.d===pd); return a?a.th:null; };
   const ckv=(n,k)=>{ const f=NRCKF[k]; if(!f) return null; const r=ckRowOf(n); if(!r||r[f]===''||r[f]==null) return null; const c=num(r[f]); return c==null||!isFinite(c)?null:c; };
-  const row=n=>{ const m={}; NRK.forEach(([k])=>{ let v={}; try{ v=kv(k,n)||{}; }catch(e){} const p=pv(k,n), c=ckv(n,k); m[k]={th:v.th,mt:c!=null?c:v.mt,ck:c!=null,d:p==null||v.th==null?null:v.th-p}; }); return {p:n,tp:NETTP[n]||hsTP(n)||'',m}; };
+  const row=n=>{ const m={}; NRK.forEach(([k])=>{ let v={}; try{ v=k==='rfwt'?{th:cell('RFW',n,'RFW TH'),mt:cell('RFW',n,'RFW MT')}:(kv(k,n)||{}); }catch(e){} const p=pv(k,n), c=ckv(n,k); m[k]={th:v.th,mt:c!=null?c:v.mt,ck:c!=null,d:p==null||v.th==null?null:v.th-p}; }); return {p:n,tp:NETTP[n]||hsTP(n)||'',m}; };
   const P=POINTS.map(row), KV=row(REGION);
   Object.keys(NRCKF).forEach(k=>{ if(P.some(r=>r.m[k].ck)){ KV.m[k].mt=P.reduce((a,r)=>a+(r.m[k].mt||0),0); KV.m[k].ck=true; } });
   return {pd, KV, P, nck:P.filter(r=>r.m.net.ck).length}; }
@@ -1627,7 +1635,7 @@ const NRCKF={net:'NET',gnn:'GNN',khm:'KHM'};
 function nrHTML(D){ const T=k=>NRK.find(x=>x[0]===k), fv=(k,v)=>T(k)[2]==='ty'?nrTy(v):T(k)[2]==='sl'?(v==null?'–':nf0.format(Math.round(v))):nrPc(v), kl=o=>o.ck?'CK':'KH';
   const P=D.P.slice(), gap=r=>(r.m.net.mt||0)-(r.m.net.th||0); P.sort((a,b)=>gap(a)-gap(b));
   const rt=(r,k)=>r.m[k].mt?r.m[k].th/r.m[k].mt:0, pick=(f)=>P.reduce((a,b)=>f(b,a)?b:a);
-  const best={khm:pick((b,a)=>rt(b,'khm')>rt(a,'khm')),gnn:pick((b,a)=>rt(b,'gnn')>rt(a,'gnn')),ngrg:pick((b,a)=>rt(b,'ngrg')>rt(a,'ngrg')),net:P[0],rg:pick((b,a)=>rt(b,'rg')<rt(a,'rg')),thu:pick((b,a)=>(b.m.thu.th||0)>(a.m.thu.th||0)),rfw:pick((b,a)=>(b.m.rfw.th??9)<(a.m.rfw.th??9))};
+  const best={khm:pick((b,a)=>rt(b,'khm')>rt(a,'khm')),gnn:pick((b,a)=>rt(b,'gnn')>rt(a,'gnn')),ngrg:pick((b,a)=>rt(b,'ngrg')>rt(a,'ngrg')),net:P[0],rg:pick((b,a)=>rt(b,'rg')<rt(a,'rg')),thu:pick((b,a)=>(b.m.thu.th||0)>(a.m.thu.th||0)),rfw:pick((b,a)=>(b.m.rfw.th??9)<(a.m.rfw.th??9)),rfwt:pick((b,a)=>(b.m.rfwt.mt?b.m.rfwt.th/b.m.rfwt.mt:9)<(a.m.rfwt.mt?a.m.rfwt.th/a.m.rfwt.mt:9))};
   const dc=(k,d)=>d==null||Math.abs(d)<1e-9?'na':((T(k)[3]?d<0:d>0)?'up':'dn');
   const dt=(k,d)=>{ if(d==null) return '—'; const a=Math.abs(d), t=T(k)[2]==='ty'?nrTy(a):T(k)[2]==='sl'?nf0.format(Math.round(a)):(a*100).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2}); return (d>0?'+':d<0?'−':'')+t; };
   const st=(k,o)=>{ if(o.th==null||o.mt==null) return 'a'; const low=T(k)[3]; if(o.th<0) return 'r'; return low?(o.th>o.mt?'r':'g'):(o.th>=o.mt?'g':'a'); };

@@ -1655,11 +1655,11 @@ function nrText(D){ const au=v=>{ const a=Math.abs(v), s=a>=1000?(a/1000).toFixe
   const sg=v=>Math.round(v)===0?'0':(v>0?'+':'−')+au(Math.abs(v)), pc=v=>(v*100).toFixed(2).replace('.',',')+'%', pd2=v=>Math.abs(v)<5e-5?'0':(v>0?'+':'−')+(Math.abs(v)*100).toFixed(2).replace('.',',');
   const dl=(r,k)=>r.m[k].d==null?0:r.m[k].d, K=D.KV, dd=String(META.asof||'').split('/').map(Number), left=new Date(dd[2],dd[1],0).getDate()-dd[0], gap=(K.m.net.mt||0)-(K.m.net.th||0);
   const L=['📊 NET KV5.5 · '+String(META.asof||'').slice(0,5)+' (so '+(D.pd?D.pd.slice(8,10)+'/'+D.pd.slice(5,7):'—')+')',
-    'KV: NET '+au(K.m.net.th||0)+' ('+sg(dl(K,'net'))+') · GN '+au(K.m.gnn.th||0)+' ('+sg(dl(K,'gnn'))+') · KHM '+nf0.format(K.m.khm.th||0)+' ('+(dl(K,'khm')>0?'+':'')+nf0.format(dl(K,'khm'))+') · RFW '+pc(K.m.rfw.th||0)+' ('+pd2(dl(K,'rfw'))+')',
+    'KV: NET '+au(K.m.net.th||0)+' ('+sg(dl(K,'net'))+') · GN '+au(K.m.gnn.th||0)+' ('+sg(dl(K,'gnn'))+') · KHM '+nf0.format(K.m.khm.th||0)+' ('+(dl(K,'khm')>0?'+':'')+nf0.format(dl(K,'khm'))+') · RFW '+pc(K.m.rfw.th||0)+' ('+pd2(dl(K,'rfw'))+')'+(K.m.rfwt.th!=null?' · RFW tiền '+au(K.m.rfwt.th)+(K.m.rfwt.d!=null?' ('+sg(K.m.rfwt.d)+')':''):''),
     gap>0?'Còn '+left+' ngày, cần '+au(gap/Math.max(left,1))+'/ngày để đạt '+(K.m.net.ck?'cam kết':'KH')+' tăng net':'🎉 KV đã đạt '+(K.m.net.ck?'cam kết':'KH')+' tăng net',''];
   const P=D.P.slice().sort((a,b)=>((a.m.net.mt||0)-(a.m.net.th||0))-((b.m.net.mt||0)-(b.m.net.th||0)));
   P.forEach((r,i)=>{ const g=(r.m.net.mt||0)-(r.m.net.th||0), dn=dl(r,'net'), dr=dl(r,'rfw'), ic=g<=0?'✅':dn>=100?'🔥':dn<10?'⏸':'', nm=r.p.split(' ')[0].split('.')[1]+' '+r.p.split(' ').slice(1).join(' ');
-    L.push((i+1)+'. '+nm+(ic?' '+ic:'')+': NET '+sg(dn)+' · GN '+sg(dl(r,'gnn'))+' · KHM '+(dl(r,'khm')>0?'+':'')+nf0.format(dl(r,'khm'))+' · RFW '+pd2(dr)+(dr>0?'⚠️':'')); });
+    L.push((i+1)+'. '+nm+(ic?' '+ic:'')+': NET '+sg(dn)+' · GN '+sg(dl(r,'gnn'))+' · KHM '+(dl(r,'khm')>0?'+':'')+nf0.format(dl(r,'khm'))+' · RFW '+pd2(dr)+(dr>0?'⚠️':'')+(r.m.rfwt.d!=null?' · RFW tiền '+sg(r.m.rfwt.d)+(r.m.rfwt.d>0?'⚠️':''):'')); });
   return L.join('\n'); }
 function nrLoadH2C(){ return window.html2canvas?Promise.resolve(window.html2canvas):new Promise((ok,no)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'; s.onload=()=>ok(window.html2canvas); s.onerror=()=>no(new Error('Không tải được bộ tạo ảnh')); document.head.appendChild(s); }); }
 /* thu nhỏ bản 1200px cho vừa màn hình (ảnh tải về vẫn đủ 1200px × 2) */

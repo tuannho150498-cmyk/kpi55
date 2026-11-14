@@ -1737,7 +1737,7 @@ function rmMatrix(){ const D=RMMAIN.filter(r=>!r[3].info||r[1]==='NET GIẢI NG�
   const tot=D.map((r,j)=>rows.filter(x=>x.R[j].cls==='good').length);
   const c=(x,u)=>'<td class="num"><b class="'+x.cls+'">'+rmF(u,x.th)+'</b>'+(x.ht==null?'':'<br><span class="pill '+x.cls+'">'+pct0(x.ht)+'</span>')+'</td>';
   const chc=o=>{ const h=o.mt?o.th/o.mt:null, cl=h==null?'':h>=1?'good':h>=0.9?'warn':'crit'; return '<td class="num"><b class="'+cl+'">'+nf0.format(o.th)+'</b>'+(h==null?'':'<br><span class="pill '+cl+'">'+pct0(h)+'</span>')+'</td>'; };
-  return '<table class="rmt rmmx"><thead><tr><th>#</th><th>PGD</th>'+D.map(r=>'<th'+(r[3].info?' title="Tham khảo, không tính vào cột Đạt"':'')+'>'+esc(r[0])+(r[3].info?'<small class="rm24">tham khảo</small>':'')+'</th>').join('')+'<th>KHM 4 kênh</th><th>Đạt</th></tr></thead><tbody>'+
+  return '<table class="rmt rmmx"><thead><tr><th>#</th><th>PGD</th>'+D.map(r=>'<th'+(r[3].info?' title="Tham khảo, không tính vào cột Đạt"':'')+'>'+esc(r[0])+'</th>').join('')+'<th>KHM 4 kênh</th><th>Đạt</th></tr></thead><tbody>'+
     rows.map((x,k)=>'<tr class="click" data-n="'+esc(x.n)+'"><td class="num">'+(k+1)+'</td><th>'+esc(short(x.n))+'<small class="rm24">'+esc(hsTP(x.n)||'')+'</small></th>'+x.R.map((y,j)=>c(y,D[j][2])).join('')+chc(x.ch)+'<td class="num"><b>'+x.ok+'/'+NK+'</b></td></tr>').join('')+
     '</tbody><tfoot><tr><td></td><th>Số PGD đạt</th>'+tot.map(t=>'<td class="num"><b>'+t+'/'+rows.length+'</b></td>').join('')+'<td></td><td></td></tr></tfoot></table>'; }
 /* v20: Lưu trữ Review KQKD theo tháng – máy chủ chụp toàn bộ file key mỗi ngày dữ liệu (ghi đè trong tháng), ngày cuối tháng thành bản chốt */

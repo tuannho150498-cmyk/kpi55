@@ -1688,8 +1688,8 @@ function renderNR(){ const box=$('nrBox'); if(!box) return;
 
 /* ---------- v19: Review KQKD tháng – 1 trang / PGD: nhánh chính, nhánh phụ, kênh bán, cam kết ---------- */
 // [nhãn, tab, đơn vị (amt|cnt|pct|pct2), tuỳ chọn]  ·  w24: có cột TH 2W/TH 4W  ·  low: thấp hơn là tốt  ·  ck: trường cam kết
-const RMMAIN=[['DPD0','DPD0','amt',{}],['Tăng NET','TĂNG NET','amt',{ck:'NET',neg:1}],['GN NET','GIẢI NGÂN NET','amt',{w24:1,ck:'GNN'}],['Rút gốc','RÚT GỐC','amt',{low:1,info:1}],['NET GN − Rút gốc','NET GIẢI NGÂN - RÚT GỐC','amt',{info:1}],['KH mới','KHM','cnt',{w24:1,ck:'KHM'}],
-  ['TLT (thu DPD0)','TỶ LỆ THU DPD0','pct',{ck:'TLT'}],['%RFW','RFW','pct2',{low:1,ck:'RFW'}],['RFW số tiền','RFW','amt',{low:1,rfwAmt:1}]];
+const RMMAIN=[['DPD0','DPD0','amt',{noscore:1}],['Tăng NET','TĂNG NET','amt',{ck:'NET',neg:1}],['GN NET','GIẢI NGÂN NET','amt',{w24:1,ck:'GNN'}],['Rút gốc','RÚT GỐC','amt',{low:1,info:1}],['NET GN − Rút gốc','NET GIẢI NGÂN - RÚT GỐC','amt',{info:1}],['KH mới','KHM','cnt',{w24:1,ck:'KHM'}],
+  ['TLT (thu DPD0)','TỶ LỆ THU DPD0','pct',{ck:'TLT'}],['%RFW','RFW','pct2',{low:1,ck:'RFW'}],['RFW số tiền','RFW','amt',{low:1,rfwAmt:1,noscore:1}]];
 const RMSUB=[['Giải ngân',[['GN tổng','GIẢI NGÂN TỔNG','amt',{w24:1}],['GN KH mới','GIẢI NGÂN KHM','amt',{w24:1}],['GN NET KH quay lại','GIẢI NGÂN NET KHQL','amt',{w24:1}],['GN vay lại','GIẢI NGÂN VAY LẠI','amt',{raw:9,parts:[['Ô tô',1],['Xe máy',5]]}],['GN NET Topup','GIẢI NGÂN NET TOPUP','amt',{raw:17,parts:[['Ô tô',[1,5]],['Xe máy',[9,13]],['My F88',[1,9]]]}]]],
   ['Chất lượng',[['Tỷ lệ trễ hạn','TỶ LỆ TRỄ HẠN','pct',{low:1}]]],
   ['Doanh thu & bảo hiểm',[['Doanh thu','DOANH THU','amt',{}],['Doanh thu vay','DOANH THU VAY','amt',{}],['Doanh thu bảo hiểm','DOANH THU BẢO HIỂM','amt',{}],['Phí BH quy đổi','PHÍ BẢO HIỂM QUY ĐỔI','amt',{}],['Phí BH bán kèm','PHÍ BH BÁN KÈM','amt',{tick:1}],['Phí BH tự nguyện','PHÍ BH TỰ NGUYỆN','dec',{}],['Phí BH độc lập','PHÍ BH ĐỘC LẬP','dec',{}]]],
@@ -1731,7 +1731,7 @@ function rmChannels(e){ const row=(ch,i)=>{ const g=k=>rmKv('c'+i+k,e), f=g('for
     (prog?'<p class="rmnote">Dòng nhỏ: <b>T-1</b> = số cả tháng trước · <b>cùng kỳ</b> = tăng/giảm so với cùng kỳ tháng trước.</p><h4 class="rmh4">Chi tiết chương trình</h4><table class="rmt"><thead><tr><th>Chương trình</th><th>Đầu vào</th><th>Chuyển đổi</th><th>Sale</th><th>KHM</th><th>Task</th></tr></thead><tbody>'+prog+'</tbody></table>':''); }
 function rmVerdict(R){ const good=R.filter(x=>x.cls==='good').map(x=>x.lab), bad=R.filter(x=>x.cls==='crit').map(x=>x.lab), warn=R.filter(x=>x.cls==='warn').map(x=>x.lab);
   return '<ul class="rmv">'+(good.length?'<li class="good">✅ Đạt: <b>'+good.join(', ')+'</b></li>':'')+(warn.length?'<li class="warn">🟡 Gần đạt (90–99%): <b>'+warn.join(', ')+'</b></li>':'')+(bad.length?'<li class="crit">🔴 Chưa đạt: <b>'+bad.join(', ')+'</b></li>':'')+'</ul>'; }
-function rmMatrix(){ const D=RMMAIN.filter(r=>!r[3].info||r[1]==='NET GIẢI NGÂN - RÚT GỐC'), NK=D.filter(r=>!r[3].info).length, rows=POINTS.map((n,i)=>{ const R=D.map(r=>rmRow(n,r)); const ok=R.filter((x,j)=>!D[j][3].info&&x.cls==='good').length;
+function rmMatrix(){ const D=RMMAIN.filter(r=>!r[3].info||r[1]==='NET GIẢI NGÂN - RÚT GỐC'), NK=D.filter(r=>!r[3].info&&!r[3].noscore).length, rows=POINTS.map((n,i)=>{ const R=D.map(r=>rmRow(n,r)); const ok=R.filter((x,j)=>!D[j][3].info&&!D[j][3].noscore&&x.cls==='good').length;
     const ch=CH.reduce((o,c,ci)=>{ try{ const v=kv('c'+ci+'khm',n); o.th+=v.th||0; o.mt+=v.mt||0; }catch(x){} return o; },{th:0,mt:0});
     return {n,i,R,ok,ch,net:R[1].ht==null?-9:R[1].ht}; }).sort((a,b)=>b.ok-a.ok||b.net-a.net);
   const tot=D.map((r,j)=>rows.filter(x=>x.R[j].cls==='good').length);
@@ -1767,14 +1767,14 @@ function renderRM(){ const box=$('rmBox'); if(!box) return; if(!CK.rows) ckLoad(
   const pr=$('rmPrint'); if(pr) pr.onclick=()=>{ document.body.classList.add('rmprint'); setTimeout(()=>{ window.print(); setTimeout(()=>document.body.classList.remove('rmprint'),500); },50); }; }
 function rmBody(){
   const e=ent(), isKV=sel<0, D=ckDays();
-  const M=rmTable(e,RMMAIN,!isKV), MK=M.R.filter((x,i)=>!RMMAIN[i][3].info), mainOk=MK.filter(x=>x.cls==='good').length;
+  const M=rmTable(e,RMMAIN,!isKV), MK=M.R.filter((x,i)=>!RMMAIN[i][3].info&&!RMMAIN[i][3].noscore), mainOk=MK.filter(x=>x.cls==='good').length;
   let rank=''; if(!isKV&&canRank()){ const rk=ranking(), pos=rk.findIndex(r=>r.i===sel); if(pos>=0) rank='Hạng <b>'+(pos+1)+'/'+rk.length+'</b> khu vực'; }
   let med=''; if(!isKV){ try{ const R=vdEval(CK.rows,D.key); const me=R.L.find(x=>x.p===e); if(me&&me.tier>=2) med='<span class="rmmed">'+(me.tier>=5?'🏆':me.tier===3?'🥇':'🥈')+' Vinh danh cam kết (tạm tính)</span>'; }catch(x){} }
   const subs=RMSUB.map(([g,rows])=>{ const T=rmTable(e,rows,false,true); return '<div class="panel"><div class="ph"><h2>'+esc(g)+'</h2></div><div class="tablebox">'+T.html+'</div></div>'; }).join('');
   return '<div class="panel rmhead"><span class="rmtag">'+(RMA.month?'📁 Bản lưu':'● Đang chạy')+'</span>'+(isKV?'':tpImg(e,'big'))+'<div class="rmid"><h2>Review KQKD tháng '+D.mm+' · '+esc(isKV?'Toàn khu vực':short(e))+'</h2><small>'+[!isKV&&hsTP(e)?'Trưởng PGD: '+esc(hsTP(e)):'','Số liệu đến '+esc(META.asof||''),rank].filter(Boolean).join(' · ')+'</small>'+
       '<p>Nhánh chính đạt <b>'+mainOk+'/'+MK.length+'</b> chỉ tiêu '+med+'</p>'+rmVerdict(MK)+'</div><div class="hsbtn"><button type="button" class="btn" id="rmPrint">In / lưu PDF</button></div></div>'+
     '<div class="panel"><div class="ph"><h2>Nhánh chính</h2><span class="sub">KH mới, GN NET có TH 2W/4W · RFW cả % và số tiền'+(isKV?'':' · cột Cam kết: ✓ đạt / ✗ chưa đạt')+'</span></div><div class="tablebox">'+M.html+'</div></div>'+
-    (isKV&&canRank()?'<div class="panel"><div class="ph"><h2>So sánh 12 PGD · nhánh chính</h2><span class="sub">Xếp theo số chỉ tiêu đạt, rồi %HT Tăng NET · bấm 1 dòng để mở review của PGD đó</span></div><div class="tablebox">'+rmMatrix()+'</div></div>':'')+
+    (isKV&&canRank()?'<div class="panel"><div class="ph"><h2>So sánh 12 PGD · nhánh chính</h2><span class="sub">Cột Đạt tính trên 5 chỉ tiêu: Tăng NET, GN NET, KH mới, TLT, %RFW · xếp theo số chỉ tiêu đạt, rồi %HT Tăng NET · bấm 1 dòng để mở review của PGD đó</span></div><div class="tablebox">'+rmMatrix()+'</div></div>':'')+
     '<div class="panel"><div class="ph"><h2>Kênh bán</h2><span class="sub">TH / MT từng kênh và từng chương trình</span></div><div class="tablebox">'+rmChannels(e)+'</div></div>'+
     '<h3 class="q4h">Nhánh phụ</h3><div class="rmsubs">'+subs+'</div>'; }
 

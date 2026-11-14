@@ -959,7 +959,8 @@ function ckChText(l){ let a=[]; try{ a=JSON.parse(l.ch); }catch(e){ return esc(l
 function ckTime(t){ const d=new Date(t); return isNaN(d)?esc(t):String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' '+d.getDate()+'/'+(d.getMonth()+1); }
 function renderCK(){ const box=$('ckBox'); if(!box) return;
   if(CK.rows==null){ box.innerHTML='<div class="panel"><p class="t-muted">Đang tải cam kết…</p></div>'; ckLoad(); return; }
-  const D=ckDays(), LEFT=D.dim-D.dd;
+  const D=ckDays(), LEFT=D.dim-D.dd, nowM=new Date().getMonth()+1;
+  if(D.mm!==nowM&&D.dd===D.dim&&!isAdm()){ box.innerHTML='<div class="panel"><div class="stnote crit">📅 <b>Cam kết tháng '+nowM+' chưa mở</b> vì số liệu tháng '+nowM+' chưa có (đang dừng ở '+esc(META.asof||'')+'). Khi khu vực cập nhật số mới, form cam kết T'+nowM+' sẽ tự mở.</div></div>'; return; }
   const head='<div class="ckhead"><div><b>Cam kết chỉ tiêu tháng '+D.mm+'</b><span class="t-muted"> · số thực tế đến '+esc(META.asof||'–')+' · còn '+LEFT+' ngày</span></div><button type="button" class="btn" id="ckRe">Tải lại</button></div>'+(CK.err?'<p class="ckerr">'+esc(CK.err)+'</p>':'');
   const adminSum=USER&&USER.role==='admin'&&sel<0;
   if(adminSum) box.innerHTML=head+vdPanel()+ckAdminHTML(D); else { const e=isPgdUser()?myPgd():(sel>=0?POINTS[sel]:null); box.innerHTML=head+(isPgdUser()?vdPanel():'')+(e?ckFormHTML(e,D):'<div class="panel"><p class="t-muted">Chọn PGD ở ô "Đang xem" để nhập cam kết.</p></div>'); if(e) ckWire(e,D); }
@@ -1687,10 +1688,10 @@ function renderNR(){ const box=$('nrBox'); if(!box) return;
 
 /* ---------- v19: Review KQKD tháng – 1 trang / PGD: nhánh chính, nhánh phụ, kênh bán, cam kết ---------- */
 // [nhãn, tab, đơn vị (amt|cnt|pct|pct2), tuỳ chọn]  ·  w24: có cột TH 2W/TH 4W  ·  low: thấp hơn là tốt  ·  ck: trường cam kết
-const RMMAIN=[['DPD0','DPD0','amt',{}],['Tăng NET','TĂNG NET','amt',{ck:'NET',neg:1}],['GN NET','GIẢI NGÂN NET','amt',{w24:1,ck:'GNN'}],['KH mới','KHM','cnt',{w24:1,ck:'KHM'}],
+const RMMAIN=[['DPD0','DPD0','amt',{}],['Tăng NET','TĂNG NET','amt',{ck:'NET',neg:1}],['GN NET','GIẢI NGÂN NET','amt',{w24:1,ck:'GNN'}],['Rút gốc','RÚT GỐC','amt',{low:1,info:1}],['NET GN − Rút gốc','NET GIẢI NGÂN - RÚT GỐC','amt',{info:1}],['KH mới','KHM','cnt',{w24:1,ck:'KHM'}],
   ['TLT (thu DPD0)','TỶ LỆ THU DPD0','pct',{ck:'TLT'}],['%RFW','RFW','pct2',{low:1,ck:'RFW'}],['RFW số tiền','RFW','amt',{low:1,rfwAmt:1}]];
 const RMSUB=[['Giải ngân',[['GN tổng','GIẢI NGÂN TỔNG','amt',{w24:1}],['GN KH mới','GIẢI NGÂN KHM','amt',{w24:1}],['GN NET KH quay lại','GIẢI NGÂN NET KHQL','amt',{w24:1}],['GN vay lại','GIẢI NGÂN VAY LẠI','amt',{raw:9,parts:[['Ô tô',1],['Xe máy',5]]}],['GN NET Topup','GIẢI NGÂN NET TOPUP','amt',{raw:17,parts:[['Ô tô',[1,5]],['Xe máy',[9,13]],['My F88',[1,9]]]}]]],
-  ['Rút gốc & chất lượng',[['Rút gốc','RÚT GỐC','amt',{low:1}],['NET GN − Rút gốc','NET GIẢI NGÂN - RÚT GỐC','amt',{}],['Tỷ lệ trễ hạn','TỶ LỆ TRỄ HẠN','pct',{low:1}]]],
+  ['Chất lượng',[['Tỷ lệ trễ hạn','TỶ LỆ TRỄ HẠN','pct',{low:1}]]],
   ['Doanh thu & bảo hiểm',[['Doanh thu','DOANH THU','amt',{}],['Doanh thu vay','DOANH THU VAY','amt',{}],['Doanh thu bảo hiểm','DOANH THU BẢO HIỂM','amt',{}],['Phí BH quy đổi','PHÍ BẢO HIỂM QUY ĐỔI','amt',{}],['Phí BH bán kèm','PHÍ BH BÁN KÈM','amt',{tick:1}],['Phí BH tự nguyện','PHÍ BH TỰ NGUYỆN','dec',{}],['Phí BH độc lập','PHÍ BH ĐỘC LẬP','dec',{}]]],
   ['MBBank',[['Nạp rút MBBank','NẠP RÚT MBBANK','cnt',{}],['Mở tài khoản MBBank','MỞ TÀI KHOẢN MBBANK','cnt',{}],['% KH vay mở TK','TỶ LỆ KH VAY MỞ TÀI KHOẢN','pct',{noMT:1}]]]];
 const rmF=(u,v)=>v==null?'–':u==='amt'?q4Fs('amt',v):u==='cnt'?nf0.format(Math.round(v)):u==='pct'?pct1(v):u==='pct2'?pct2(v):u==='dec'?nf1.format(v):fmt(v);
@@ -1715,25 +1716,29 @@ function rmTable(e,rows,withCk,noDb){ RMCKCOL=withCk; RMNODB=!!noDb; const R=row
 function rmKv(k,e){ let v={}; try{ v=kv(k,e)||{}; }catch(x){} if(v.th!=null||e!==REGION) return v;
   const L=POINTS.map(n=>{ try{ return kv(k,n)||{}; }catch(x){ return {}; } }).filter(x=>x.th!=null); if(!L.length) return v;
   const ratio=/f2s$|cv$/.test(k), sum=f=>L.reduce((a,x)=>a+(x[f]||0),0), avg=f=>{ const M=L.filter(x=>x[f]!=null); return M.length?M.reduce((a,x)=>a+x[f],0)/M.length:null; };
-  const th=ratio?avg('th'):sum('th'), mt=ratio?avg('mt'):(L.some(x=>x.mt!=null)?sum('mt'):null); return {th,mt,ht:mt?th/mt:null}; }
+  const th=ratio?avg('th'):sum('th'), mt=ratio?avg('mt'):(L.some(x=>x.mt!=null)?sum('mt'):null), t1=ratio?avg('t1'):(L.some(x=>x.t1!=null)?sum('t1'):null);
+  return {th,mt,t1,ht:mt?th/mt:null}; }
+function rmT1(u,v){ if(!v||v.t1==null) return ''; const ratio=u==='pct';   // kênh bán: T-1 = cả tháng trước; vs = so cùng kỳ tháng trước (từ Power BI)
+  const d=!ratio&&v.vs!=null?' · cùng kỳ <span class="'+(v.vs>=0?'good':'crit')+'">'+(v.vs>0?'+':v.vs<0?'−':'')+Math.round(Math.abs(v.vs)*100)+'%</span>':'';
+  return '<small class="rmt1">T-1 '+(ratio?pct1(v.t1):rmF(u,v.t1))+d+'</small>'; }
 function rmChannels(e){ const row=(ch,i)=>{ const g=k=>rmKv('c'+i+k,e), f=g('form'), s=g('f2s'), k=g('khm'), n=g('gn');
     const pill=v=>v.ht==null?'':' <span class="pill '+(v.ht>=1?'good':v.ht>=0.9?'warn':'crit')+'">'+pct0(v.ht)+'</span>';
-    return '<tr><th><i class="rmdot" style="background:'+ch[2]+'"></i>'+esc(ch[1])+'</th><td class="num">'+rmF('cnt',f.th)+(f.mt?'<small> / '+rmF('cnt',f.mt)+'</small>':'')+pill(f)+'</td><td class="num">'+pct1(s.th)+(s.mt?'<small> / '+pct1(s.mt)+'</small>':'')+'</td><td class="num">'+rmF('cnt',k.th)+(k.mt?'<small> / '+rmF('cnt',k.mt)+'</small>':'')+pill(k)+'</td><td class="num">'+rmF('amt',n.th)+(n.mt?'<small> / '+rmF('amt',n.mt)+'</small>':'')+pill(n)+'</td></tr>'; };
+    return '<tr><th><i class="rmdot" style="background:'+ch[2]+'"></i>'+esc(ch[1])+'</th><td class="num">'+rmF('cnt',f.th)+(f.mt?'<small> / '+rmF('cnt',f.mt)+'</small>':'')+pill(f)+rmT1('cnt',f)+'</td><td class="num">'+pct1(s.th)+(s.mt?'<small> / '+pct1(s.mt)+'</small>':'')+rmT1('pct',s)+'</td><td class="num">'+rmF('cnt',k.th)+(k.mt?'<small> / '+rmF('cnt',k.mt)+'</small>':'')+pill(k)+rmT1('cnt',k)+'</td><td class="num">'+rmF('amt',n.th)+(n.mt?'<small> / '+rmF('amt',n.mt)+'</small>':'')+pill(n)+rmT1('amt',n)+'</td></tr>'; };
   const prog=CHD.map((c,ci)=>c.progs.map((p,pi)=>{ const id='x'+ci+'_'+pi, g=k=>rmKv(id+k,e), a=g('in'), cv=g('cv'), sa=g('sale'), kh=g('khm'), pr=p[6]?g('pre'):null;
       if(a.th==null&&sa.th==null&&kh.th==null) return '';
-      return '<tr><th><small class="t-muted">'+esc(c.lab)+'</small> '+esc(p[1])+'</th><td class="num">'+rmF('cnt',a.th)+' <small>'+esc(p[4])+'</small></td><td class="num">'+pct1(cv.th)+' <small>'+esc(p[5])+'</small></td><td class="num">'+rmF('cnt',sa.th)+'</td><td class="num">'+rmF('cnt',kh.th)+'</td><td class="num">'+(pr?rmF('cnt',pr.th):'–')+'</td></tr>'; }).join('')).join('');
+      return '<tr><th><small class="t-muted">'+esc(c.lab)+'</small> '+esc(p[1])+'</th><td class="num">'+rmF('cnt',a.th)+' <small>'+esc(p[4])+'</small>'+rmT1('cnt',a)+'</td><td class="num">'+pct1(cv.th)+' <small>'+esc(p[5])+'</small>'+rmT1('pct',cv)+'</td><td class="num">'+rmF('cnt',sa.th)+rmT1('cnt',sa)+'</td><td class="num">'+rmF('cnt',kh.th)+rmT1('cnt',kh)+'</td><td class="num">'+(pr?rmF('cnt',pr.th)+rmT1('cnt',pr):'–')+'</td></tr>'; }).join('')).join('');
   return '<table class="rmt"><thead><tr><th>Kênh</th><th>Form · /MT</th><th>F2S</th><th>KHM · /MT</th><th>Giải ngân · /MT</th></tr></thead><tbody>'+CH.map(row).join('')+'</tbody></table>'+
-    (prog?'<h4 class="rmh4">Chi tiết chương trình</h4><table class="rmt"><thead><tr><th>Chương trình</th><th>Đầu vào</th><th>Chuyển đổi</th><th>Sale</th><th>KHM</th><th>Task</th></tr></thead><tbody>'+prog+'</tbody></table>':''); }
+    (prog?'<p class="rmnote">Dòng nhỏ: <b>T-1</b> = số cả tháng trước · <b>cùng kỳ</b> = tăng/giảm so với cùng kỳ tháng trước.</p><h4 class="rmh4">Chi tiết chương trình</h4><table class="rmt"><thead><tr><th>Chương trình</th><th>Đầu vào</th><th>Chuyển đổi</th><th>Sale</th><th>KHM</th><th>Task</th></tr></thead><tbody>'+prog+'</tbody></table>':''); }
 function rmVerdict(R){ const good=R.filter(x=>x.cls==='good').map(x=>x.lab), bad=R.filter(x=>x.cls==='crit').map(x=>x.lab), warn=R.filter(x=>x.cls==='warn').map(x=>x.lab);
   return '<ul class="rmv">'+(good.length?'<li class="good">✅ Đạt: <b>'+good.join(', ')+'</b></li>':'')+(warn.length?'<li class="warn">🟡 Gần đạt (90–99%): <b>'+warn.join(', ')+'</b></li>':'')+(bad.length?'<li class="crit">🔴 Chưa đạt: <b>'+bad.join(', ')+'</b></li>':'')+'</ul>'; }
-function rmMatrix(){ const D=RMMAIN, rows=POINTS.map((n,i)=>{ const R=D.map(r=>rmRow(n,r)); const ok=R.filter(x=>x.cls==='good').length;
+function rmMatrix(){ const D=RMMAIN.filter(r=>!r[3].info||r[1]==='NET GIẢI NGÂN - RÚT GỐC'), NK=D.filter(r=>!r[3].info).length, rows=POINTS.map((n,i)=>{ const R=D.map(r=>rmRow(n,r)); const ok=R.filter((x,j)=>!D[j][3].info&&x.cls==='good').length;
     const ch=CH.reduce((o,c,ci)=>{ try{ const v=kv('c'+ci+'khm',n); o.th+=v.th||0; o.mt+=v.mt||0; }catch(x){} return o; },{th:0,mt:0});
     return {n,i,R,ok,ch,net:R[1].ht==null?-9:R[1].ht}; }).sort((a,b)=>b.ok-a.ok||b.net-a.net);
   const tot=D.map((r,j)=>rows.filter(x=>x.R[j].cls==='good').length);
   const c=(x,u)=>'<td class="num"><b class="'+x.cls+'">'+rmF(u,x.th)+'</b>'+(x.ht==null?'':'<br><span class="pill '+x.cls+'">'+pct0(x.ht)+'</span>')+'</td>';
   const chc=o=>{ const h=o.mt?o.th/o.mt:null, cl=h==null?'':h>=1?'good':h>=0.9?'warn':'crit'; return '<td class="num"><b class="'+cl+'">'+nf0.format(o.th)+'</b>'+(h==null?'':'<br><span class="pill '+cl+'">'+pct0(h)+'</span>')+'</td>'; };
-  return '<table class="rmt rmmx"><thead><tr><th>#</th><th>PGD</th>'+D.map(r=>'<th>'+esc(r[0])+'</th>').join('')+'<th>KHM 4 kênh</th><th>Đạt</th></tr></thead><tbody>'+
-    rows.map((x,k)=>'<tr class="click" data-n="'+esc(x.n)+'"><td class="num">'+(k+1)+'</td><th>'+esc(short(x.n))+'<small class="rm24">'+esc(hsTP(x.n)||'')+'</small></th>'+x.R.map((y,j)=>c(y,D[j][2])).join('')+chc(x.ch)+'<td class="num"><b>'+x.ok+'/'+D.length+'</b></td></tr>').join('')+
+  return '<table class="rmt rmmx"><thead><tr><th>#</th><th>PGD</th>'+D.map(r=>'<th'+(r[3].info?' title="Tham khảo, không tính vào cột Đạt"':'')+'>'+esc(r[0])+(r[3].info?'<small class="rm24">tham khảo</small>':'')+'</th>').join('')+'<th>KHM 4 kênh</th><th>Đạt</th></tr></thead><tbody>'+
+    rows.map((x,k)=>'<tr class="click" data-n="'+esc(x.n)+'"><td class="num">'+(k+1)+'</td><th>'+esc(short(x.n))+'<small class="rm24">'+esc(hsTP(x.n)||'')+'</small></th>'+x.R.map((y,j)=>c(y,D[j][2])).join('')+chc(x.ch)+'<td class="num"><b>'+x.ok+'/'+NK+'</b></td></tr>').join('')+
     '</tbody><tfoot><tr><td></td><th>Số PGD đạt</th>'+tot.map(t=>'<td class="num"><b>'+t+'/'+rows.length+'</b></td>').join('')+'<td></td><td></td></tr></tfoot></table>'; }
 /* v20: Lưu trữ Review KQKD theo tháng – máy chủ chụp toàn bộ file key mỗi ngày dữ liệu (ghi đè trong tháng), ngày cuối tháng thành bản chốt */
 const RMA={list:null, month:'', cache:{}, loading:{}, err:''};
@@ -1762,12 +1767,12 @@ function renderRM(){ const box=$('rmBox'); if(!box) return; if(!CK.rows) ckLoad(
   const pr=$('rmPrint'); if(pr) pr.onclick=()=>{ document.body.classList.add('rmprint'); setTimeout(()=>{ window.print(); setTimeout(()=>document.body.classList.remove('rmprint'),500); },50); }; }
 function rmBody(){
   const e=ent(), isKV=sel<0, D=ckDays();
-  const M=rmTable(e,RMMAIN,!isKV), mainOk=M.R.filter(x=>x.cls==='good').length;
+  const M=rmTable(e,RMMAIN,!isKV), MK=M.R.filter((x,i)=>!RMMAIN[i][3].info), mainOk=MK.filter(x=>x.cls==='good').length;
   let rank=''; if(!isKV&&canRank()){ const rk=ranking(), pos=rk.findIndex(r=>r.i===sel); if(pos>=0) rank='Hạng <b>'+(pos+1)+'/'+rk.length+'</b> khu vực'; }
   let med=''; if(!isKV){ try{ const R=vdEval(CK.rows,D.key); const me=R.L.find(x=>x.p===e); if(me&&me.tier>=2) med='<span class="rmmed">'+(me.tier>=5?'🏆':me.tier===3?'🥇':'🥈')+' Vinh danh cam kết (tạm tính)</span>'; }catch(x){} }
   const subs=RMSUB.map(([g,rows])=>{ const T=rmTable(e,rows,false,true); return '<div class="panel"><div class="ph"><h2>'+esc(g)+'</h2></div><div class="tablebox">'+T.html+'</div></div>'; }).join('');
   return '<div class="panel rmhead"><span class="rmtag">'+(RMA.month?'📁 Bản lưu':'● Đang chạy')+'</span>'+(isKV?'':tpImg(e,'big'))+'<div class="rmid"><h2>Review KQKD tháng '+D.mm+' · '+esc(isKV?'Toàn khu vực':short(e))+'</h2><small>'+[!isKV&&hsTP(e)?'Trưởng PGD: '+esc(hsTP(e)):'','Số liệu đến '+esc(META.asof||''),rank].filter(Boolean).join(' · ')+'</small>'+
-      '<p>Nhánh chính đạt <b>'+mainOk+'/'+M.R.length+'</b> chỉ tiêu '+med+'</p>'+rmVerdict(M.R)+'</div><div class="hsbtn"><button type="button" class="btn" id="rmPrint">In / lưu PDF</button></div></div>'+
+      '<p>Nhánh chính đạt <b>'+mainOk+'/'+MK.length+'</b> chỉ tiêu '+med+'</p>'+rmVerdict(MK)+'</div><div class="hsbtn"><button type="button" class="btn" id="rmPrint">In / lưu PDF</button></div></div>'+
     '<div class="panel"><div class="ph"><h2>Nhánh chính</h2><span class="sub">KH mới, GN NET có TH 2W/4W · RFW cả % và số tiền'+(isKV?'':' · cột Cam kết: ✓ đạt / ✗ chưa đạt')+'</span></div><div class="tablebox">'+M.html+'</div></div>'+
     (isKV&&canRank()?'<div class="panel"><div class="ph"><h2>So sánh 12 PGD · nhánh chính</h2><span class="sub">Xếp theo số chỉ tiêu đạt, rồi %HT Tăng NET · bấm 1 dòng để mở review của PGD đó</span></div><div class="tablebox">'+rmMatrix()+'</div></div>':'')+
     '<div class="panel"><div class="ph"><h2>Kênh bán</h2><span class="sub">TH / MT từng kênh và từng chương trình</span></div><div class="tablebox">'+rmChannels(e)+'</div></div>'+
@@ -1775,7 +1780,22 @@ function rmBody(){
 
 /* ---------- wiring ---------- */
 function select(i){ sel=(sel===i&&i>=0)?-1:i; $('pick').value=String(sel); render(); }
-function render(){ if(!booted) return; syncBar(); ({tq:renderOverview,hs:()=>{renderHS();renderHSPro();},xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,hd:renderHD,bb:renderBB,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,q4:renderQ4,ht:renderHT,nr:renderNR,rm:renderRM,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
+/* ---------- v24: dải thông báo số liệu cũ (mọi trang, mọi tài khoản) ---------- */
+function staleInfo(){ const out=[]; const now=new Date(); now.setHours(0,0,0,0); const pm=String(META.asof||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(pm){ const a=new Date(+pm[3],+pm[2]-1,+pm[1]), lag=Math.round((now-a)/864e5), ds=pm[1].padStart(2,'0')+'/'+pm[2].padStart(2,'0'), nx=new Date(a); nx.setDate(a.getDate()+1);
+    const nxs=String(nx.getDate()).padStart(2,'0')+'/'+String(nx.getMonth()+1).padStart(2,'0');
+    if(+pm[2]!==now.getMonth()+1&&lag>=1) out.push({lv:'crit',t:'📅 <b>Đã sang tháng '+(now.getMonth()+1)+' nhưng số liệu vẫn là tháng '+(+pm[2])+'</b> (đến '+ds+'). Cam kết T'+(now.getMonth()+1)+' sẽ mở khi có số tháng mới.',adm:'file key'});
+    else if(lag>=3) out.push({lv:'crit',t:'⚠️ <b>Số liệu dừng ở '+ds+'</b> (đã '+lag+' ngày chưa cập nhật). Tạm thời không dùng để báo cáo, chờ khu vực cập nhật.',adm:'file key (dừng '+ds+')'});
+    else if(lag===2) out.push({lv:'warn',t:'⏳ <b>Số liệu đang dừng ở '+ds+'</b>, chưa có số ngày '+nxs+'. Số trên trang chưa phải mới nhất.',adm:'file key (dừng '+ds+')'}); }
+  const R=dnDataRaw(); if(R&&R.stale) out.push({lv:'warn',t:'📄 <b>File nợ cần thu '+(R.tagged?'là tháng '+R.mon:'là file cũ')+'</b> (có số tới ngày '+R.nd+'), chưa có số tháng '+(now.getMonth()+1)+'. Phần cảnh báo nợ tạm ẩn.',adm:'DN cần thu tháng '+(now.getMonth()+1),dn:1});
+  else if(R&&R.nd-R.today<3) out.push({lv:'warn',t:'📄 <b>File nợ cần thu chỉ có số tới '+R.nd+'/'+R.mon+'</b>, cảnh báo nợ các ngày sau đó chưa có.',adm:'DN cần thu (hết số từ '+(R.nd+1)+'/'+R.mon+')',dn:1});
+  return out; }
+function renderStale(){ const b=$('staleBar'); if(!b) return; const L=staleInfo(); if(!L.length){ b.hidden=true; b.innerHTML=''; return; }
+  const adm=USER&&USER.role==='admin', need=L.map(x=>x.adm).filter(Boolean);
+  b.hidden=false; b.innerHTML=L.map(x=>'<div class="stnote '+x.lv+'">'+x.t+'</div>').join('')+
+    (adm?'<div class="stadm"><span>🔧 <b>Admin cần cập nhật:</b> '+need.join(' · ')+'</span>'+(L.some(x=>x.dn)?'<button type="button" class="btn" id="stDn">Tải file nợ</button>':'')+'</div>':'');
+  const g=$('stDn'); if(g) g.onclick=()=>show('no'); }
+function render(){ if(!booted) return; syncBar(); try{ renderStale(); }catch(e){} ({tq:renderOverview,hs:()=>{renderHS();renderHSPro();},xh:()=>{renderXH();renderHeat();},kt:renderKT,dn:renderDN,tt:renderTT,ck:renderCK,hd:renderHD,bb:renderBB,gn:renderGN,kn:renderKN,pt:renderPT,dt:renderDT,mb:renderMB,q4:renderQ4,ht:renderHT,nr:renderNR,rm:renderRM,raw:renderRaw,nk:renderNK,cb:renderCB,no:renderNO})[view](); if(view==='hs') renderNotes(); if($('hsTbl')) $('hsTbl').classList.toggle('nohist',!HIST.length); const sec=$('v-'+view); if(sec){ sec.querySelectorAll('.tiles').forEach(t=>t.style.setProperty('--n',t.children.length)); countUp(sec); tilt(sec); } }
 function show(v){ const changed=view!==v; view=v;
   document.querySelectorAll('.navbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   document.querySelectorAll('.bn').forEach(b=>b.setAttribute('aria-current',(b.dataset.grp||'').split(' ').includes(v)?'page':'false'));
@@ -1933,9 +1953,12 @@ function renderBotLog(){ const box=$('nkBot'); if(!box) return; const L=(ACT&&AC
 
 /* ---------- v9: Cảnh báo nợ · DN cần thu 5 ngày tiếp theo ---------- */
 let DNSTART=null;
-function dnData(){ if(!DNRAW||DNRAW.length<3) return null;
+function dnData(){ const D=dnDataRaw(); return D&&!D.stale?D:null; }
+function dnDataRaw(){ if(!DNRAW||DNRAW.length<3) return null;
   let nd=DNRAW[0].length-1; const h=DNRAW[0].map(c=>String(c).trim().toUpperCase()); const it=h.indexOf('TOTAL'); if(it>0) nd=it-1;
-  const m=String(META.asof||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/), mon=m?+m[2]:new Date().getMonth()+1, yr=m?+m[3]:new Date().getFullYear();
+  const m=String(META.asof||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/), tg=String(DNRAW[0][0]||'').match(/T(\d{1,2})\/(\d{4})/), now0=new Date();
+  const mon=tg?+tg[1]:(m?+m[2]:now0.getMonth()+1), yr=tg?+tg[2]:(m?+m[3]:now0.getFullYear());
+  const stale=!!tg&&(mon!==now0.getMonth()+1||yr!==now0.getFullYear());   // v24: file nợ có ghi tháng (tải từ bản này) mà khác tháng hiện tại → coi là cũ; file cũ chưa ghi tháng thì coi như tháng của số liệu
   const rows=[]; for(let r=1;r<DNRAW.length;r++){ const nm=String(DNRAW[r][0]||'').trim(); if(!/^[A-Z]{2,5}\d/.test(nm)) continue;
     const code=pgdCode(nm), n=POINTS.find(p=>pgdCode(p)===code)||nm; rows.push({n,d:Array.from({length:nd},(_,i)=>num(DNRAW[r][i+1])||0)}); }
   if(!rows.length) return null;
@@ -1943,7 +1966,7 @@ function dnData(){ if(!DNRAW||DNRAW.length<3) return null;
   const davg=d=>{ const mx=Math.max(...d); const v=d.filter(x=>x>=0.1*mx&&x>0); return v.length?v.reduce((a,b)=>a+b,0)/v.length:0; };
   rows.forEach(o=>{ o.tot=o.d.reduce((a,b)=>a+b,0); o.avg=davg(o.d); });
   const reg={n:REGION,d:Array.from({length:nd},(_,i)=>rows.reduce((s,o)=>s+o.d[i],0))}; reg.tot=reg.d.reduce((a,b)=>a+b,0); reg.avg=davg(reg.d);
-  return {rows,reg,nd,mon,yr,today}; }
+  return {rows,reg,nd,mon,yr,today,stale,tagged:!!tg}; }
 function dnWin(D,start){ const s=start==null?D.today:start, w=[]; for(let i=s+1;i<=s+5;i++) w.push(i); return w; }   // ngày (1-based) sau ngày s
 const dnV=(o,day)=>day>=1&&day<=o.d.length?o.d[day-1]:null;
 const dnLv=(v,avg)=>v!=null&&v>0&&v>=1.5*avg?'hot':v!=null&&v>0&&v>=avg?'mid':'';
@@ -1968,6 +1991,10 @@ function dnPeakHTML(D,e,o){ const P=dnPeaks(D,o); if(!P.length) return ''; const
   return '<div class="panel"><div class="ph"><h2>5 ngày đỉnh nợ tháng '+D.mon+' · '+esc(short(e))+'</h2><span class="sub">'+fmt(sumP)+' tr = '+pct0(sumP/tot)+' DN cần thu cả tháng dồn vào 5 ngày: '+rank.map(d=>dnDL(D,d)).join(', ')+'</span></div>'+
     '<div class="dnpks">'+P.map(card).join('')+'</div><p class="foot">Xếp theo DN cần thu từ cao xuống thấp. '+(isReg?'Mỗi ngày kèm 3 PGD có DN cần thu lớn nhất. ':'')+'Nhắc khách trước 1–2 ngày, dồn nhân sự gọi nhắc vào các ngày này.</p></div>'; }
 function renderNO(){ const box=$('noBox'); if(!box) return; const D=dnData();
+  if(!D){ const R=dnDataRaw(); if(R&&R.stale){ const adm=USER&&USER.role==='admin';
+    box.innerHTML='<div class="panel"><div class="stnote warn">📄 <b>File nợ cần thu '+(R.tagged?'là tháng '+R.mon+' (có số tới '+R.nd+'/'+R.mon+')':'là file cũ (có số tới ngày '+R.nd+')')+'</b>, chưa có số tháng '+(new Date().getMonth()+1)+'. Cảnh báo nợ tạm ẩn để không nhầm ngày.'+(adm?'':' Khu vực sẽ cập nhật sớm.')+'</div>'+
+      (adm?'<div class="dnup"><label class="btn primary">📤 Cập nhật file DN cần thu tháng '+(new Date().getMonth()+1)+'<input type="file" accept=".xlsx,.xls" id="dnFile" hidden></label><small>Chọn file Excel trên máy, dashboard tự cập nhật.</small></div>':'')+'</div>';
+    const f=$('dnFile'); if(f) f.onchange=()=>{ dnUpload(f.files[0]); f.value=''; }; return; } }
   const wireUp=()=>{ const f=$('dnFile'); if(f) f.onchange=()=>{ dnUpload(f.files[0]); f.value=''; }; };
   if(!D){ box.innerHTML='<div class="panel"><p class="t-muted">Chưa có dữ liệu DN cần thu.'+(USER&&USER.role==='admin'?' Bấm nút dưới để tải file lên.':' Admin sẽ cập nhật sớm.')+'</p>'+(USER&&USER.role==='admin'?'<div class="dnup"><label class="btn">📤 Cập nhật file DN cần thu<input type="file" accept=".xlsx,.xls" id="dnFile" hidden></label><small>Chọn file Excel trên máy (ví dụ "DN cần thu T10.xlsx"), dashboard tự cập nhật.</small></div>':'')+'</div>'; wireUp(); return; }
   const e=dnE(), o=dnEnt(D,e)||D.reg, st0=DNSTART==null?D.today:DNSTART, W=dnWin(D,st0), x=dnSum(D,o,W), mx=Math.max(...W.map(d=>dnV(o,d)||0),1), miss=W.filter(d=>d>D.nd);
@@ -2173,7 +2200,7 @@ async function dnUpload(file){ if(!file||!window.kpiApi) return; toast('Đang đ
     const rows=X.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
     if(rows.length<3) throw new Error('File không có dữ liệu');
     const w=rows[0].length; const out=rows.map((r,i)=>{ const a=[]; for(let c=0;c<w;c++){ let v=r[c]; if(v instanceof Date) v=c; if(i===0&&c>0&&String(v).trim().toUpperCase()!=='TOTAL'&&typeof v!=='number') v=c; a.push(v==null?'':v); } return a; });
-    out[0][0]='Ngày';
+    { const t=new Date(); out[0][0]='Ngày T'+(t.getMonth()+1)+'/'+t.getFullYear(); }
     toast('Đang cập nhật…'); const j=await window.kpiApi('dnUpload',{rows:out}); toast('Đã cập nhật '+j.rows+' dòng DN cần thu');
     const rb=$('refreshBtn'); if(rb) rb.click(); }
   catch(err){ toast(err.message||'Không cập nhật được'); } }

@@ -1551,7 +1551,12 @@ function htTPView(w,pw,chips,tiles,e){
 const HSP={bb:{}, loading:{}};
 const tpImg=(p,cls)=>'<span class="tpav '+(cls||'')+'"><img src="tp/'+esc(pgdCode(p))+'.jpg" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'noimg\');this.remove()"><b>'+esc(hsIni(hsTP(p)||short(p)))+'</b></span>';
 const hsIni=t=>{ const w=String(t||'').trim().split(/\s+/); return (w.length?w[w.length-1][0]:'?').toUpperCase(); };
-function hsTP(e){ const r=ckRowOf(e); if(r&&r.Ten) return r.Ten; const p=(HD.picks||{})[e]; return p&&p.name?p.name:''; }
+// Tên TPGD: ưu tiên danh sách TPGD cố định (NETTP, tra theo mã PGD) — không phụ thuộc ai gửi cam kết.
+// Chỉ khi PGD chưa có trong danh sách mới lấy tên người gửi cam kết / chọn hành động, và bỏ qua tên của tài khoản admin.
+function hsTPFix(e){ const c=pgdCode(e); for(const k in NETTP){ if(pgdCode(k)===c) return NETTP[k]; } return ''; }
+function hsTP(e){ const f=hsTPFix(e); if(f) return f;
+  const ok=n=>{ n=String(n||'').trim(); return n&&!/chủ dashboard|admin/i.test(n)?n:''; };
+  const r=ckRowOf(e), a=ok(r&&r.Ten); if(a) return a; const p=(HD.picks||{})[e]; return ok(p&&p.name); }
 function hsWeeks(){ const W=htWeeks(); if(!W.length) return {}; const hasD=x=>!!x&&(HT.rows||[]).some(r=>{ const d=String(r[0]).slice(0,10); return d>=x.s&&d<=x.e; });
   const fi=W[0].full?0:(hasD(W[1])?1:0); return {W, run:W[0].full?null:W[0], full:W[fi], prev:W[fi+1]}; }
 function hsMedals(e){ const out=[];
